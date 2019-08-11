@@ -23,6 +23,7 @@ class GlobalState:
 
         self.cur_open_filename = None
         self.cur_save_filename = None
+        self.is_interactive = None
 
         self.options = {}   # Additional program options
 
@@ -248,7 +249,7 @@ class Subfigure(FigObject):
 
 
     def get_children(self):
-        return self.axes + self.datalines + self.drawlines + self.texts
+        return self.axes + [self.legend] + self.datalines + self.drawlines + self.texts 
 
     def set_style(self, name, value):
         if name.startswith('padding-'):
@@ -295,29 +296,53 @@ class Subfigure(FigObject):
         self.datalines[-1].style = self.dataline_template[len(self.datalines)-1]
         for s, v in style_dict.items():
             try:
-                self.datalines[idx].set_style(s, v)
+                self.datalines[-1].set_style(s, v)
             except KeyError as e:
                 warn(e)
         
 
     def add_drawline(self, start_pos, end_pos, style_dict:dict):
-        new_dataline_style = self.style['default-drawline'].copy()
-        new_dataline_style.update(style_dict)
+        new_style = self.style['default-drawline'].copy()
         self.drawlines.append(
-            DrawLine(start_pos, end_pos, 'drawline%d'%len(self.drawlines), new_dataline_style)
+            DrawLine(start_pos, end_pos, 'drawline%d'%len(self.drawlines), new_style)
         )
+        for s, v in style_dict.items():
+            try:
+                self.drawlines[-1].set_style(s, v)
+            except KeyError as e:
+                warn(e)
 
     def add_text(self, text, pos, style_dict:dict):
-        new_text_style = self.style['default-text'].copy()
-        new_text_style.update(style_dict)
+        new_style = self.style['default-text'].copy()
         self.texts.append(
-            Text(text, pos, 'text%d'%len(self.texts), new_text_style)
+            Text(text, pos, 'text%d'%len(self.texts), new_style)
         )
+        for s, v in style_dict.items():
+            try:
+                self.texts[-1].set_style(s, v)
+            except KeyError as e:
+                warn(e)
     
     def clear(self):
         self.datalines.clear()
         self.drawlines.clear()
         self.texts.clear()
+
+    def get_axes_coord(self, x, y, side='left'):
+
+        if x is not None:
+            xlo, xhi = self.axes[0].attr['range']
+            x = (x-xlo)/(xhi-xlo)
+        else:
+            x = -1.0 if side == 'left' else 1.0
+
+        if y is not None:
+            ylo, yhi = self.axes[1].attr['range']
+            y = (y-ylo)/(yhi-ylo)
+        else:
+            y = -1.0 if side == 'left' else 1.0
+
+        return x, y
 
     def update_template_palatte(self):
 
@@ -432,8 +457,8 @@ class Text(FigObject):
 
     def set_style(self, name, value):
         if name == 'font':
-            super().set_style('fontfamily', name[0])
-            super().set_style('fontsize', name[1])
+            super().set_style('fontfamily', value[0])
+            super().set_style('fontsize', value[1])
         else:
             super().set_style(name, value)
 

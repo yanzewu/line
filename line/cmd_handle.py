@@ -14,6 +14,7 @@ from . import parse
 from . import process
 from .errors import LineParseError
 from . import defaults
+from . import plot
 
 
 logger = logging.getLogger('line')
@@ -53,6 +54,7 @@ class CMDHandler:
 
     def proc_file(self, filename):
         with open(filename, 'r') as f:
+            self.m_state.is_interactive = False
             for line in f.readlines():
                 try:
                     ret = self.handle_line(line, self.token_buffer, True)
@@ -68,6 +70,7 @@ class CMDHandler:
                         continue
 
     def proc_input(self, ps=PS1):
+        self.m_state.is_interactive = True
         line = input(ps)
         if 'readline' in sys.modules and self.HISTORY_NAME:
             readline.write_history_file(self.HISTORY_NAME)
@@ -85,6 +88,13 @@ class CMDHandler:
                 return 1
             elif ret == self.RET_CONTINUE:
                 self.proc_input(self.PS2)
+
+    def input_loop(self):
+        plot.initialize(True)
+        ret = 0
+        while ret == 0:
+            ret = self.proc_input()
+        plot.finalize(True)
 
     def handle_line(self, line, token_buffer, execute=True):
         """ Preprocessing and execute

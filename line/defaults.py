@@ -16,8 +16,6 @@ default_options = {
     'remove-element-by-style':False,
     'prompt-overwrite':True,
     'set-allow-empty-selection':False,  # not used now
-    'drawline-coord':'data',
-    'text-coord':'axis',
     'adjust-range':'auto',
     'auto-save':False,
     'broadcast-style':['linewidth', 'linetype', 'pointsize', 'edgewidth']
@@ -124,6 +122,7 @@ default_drawline_style = RestrictDict({
     'edgecolor':Color.BLACK,
     'fillcolor':Color.BLACK,
     'visible':True,
+    'coord': 'data',
     'zindex':0
 })
 
@@ -132,6 +131,7 @@ default_text_style = RestrictDict({
     'fontsize':14,
     'color':Color.BLACK,
     'visible':True,
+    'coord': 'axis',
     'zindex':0
 })
 
@@ -192,6 +192,7 @@ default_subfigure_attr = RestrictDict({
     'group': tuple()
 })
 
+# TODO LOW consistency of global options
 def init_global_state(m_state):
 
     m_state.default_figure = state.Figure(

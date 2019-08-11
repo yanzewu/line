@@ -82,6 +82,16 @@ def str2color(s):
     else:
         return Color(v//0x1000, (v % 0x1000)//0x10, v % 0x10)
 
+# A good way to implement pos is considering the size of object
+# but here I just use fixed coordinates
+Str2Pos = {
+    'topleft': (0.1,0.9),
+    'centerleft': (0.1,0.6),
+    'bottomleft':(0.1,0.2),
+    'topright':(0.7,0.9),
+    'centerright':(0.7,0.6),
+    'bottomright':(0.7,0.2)
+}
 
 PALETTES = {
     'default':[

@@ -164,9 +164,6 @@ Usage:
 - x1,x2,y1,y2: Coordinate in data coordinates.
 - style, val: Line styles.
 
-Related options:
-
-- --drawline-coord=data/figure/axis: Specify coordinate system for line. (Default: data)
 
 ### text
 ---
@@ -175,16 +172,13 @@ Display text in current figure.
 
 Usage:
 
-    text pos string (style=val ...)
+    text string pos (style=val ...)
 
 Args:
 
 - pos: Either position descriptor ('left-top', 'left-bottom', ... ), or positions 'x,y', with pixel as unit **inside** axis (--text-inside-axis=true)
 - style,val: Style parameters.
 
-Related options:
-
-- --text-coord=data/figure/axis: Specify coordinate system for text. (Default: axis)
 
 ### split, hsplit, vsplit
 ---
@@ -277,17 +271,18 @@ Usage:
 
 ### List of Element Name and Applicable Styles
 
- Element Name | Style (self)  |Style (redirected)
+ Element Name | Style 
  --- | --- | ---
- figure | size, margin, (h/v)spacing | 
- subfigure | rsize, rpos, palatte, padding, title  | xlabel, ylabel, xrange, yrange
+ figure | size, margin, (h/v)spacing, dpi | 
+ subfigure | rsize, rpos, palatte, padding, title  | 
+ subfigure (redirect) | xlabel, ylabel, xrange, yrange, xtick, ytick
  axis | linewidth, color, range, visible, zindex |
  label | font, fontfamily, fontsize, text |
  tick | orient, color, font, fontfamily, fontsize, format, visible |
  grid | linewidth, color, linetype, visible |
  dataline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, visible, zindex
- drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, visible, zindex
- text | font, fontfamily, fontsize, color, pos, text, visible, zindex
+ drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, startpos, endpos, coord, visible, zindex
+ text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
  legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, visible, zindex
  option | (set option flags)
 
@@ -298,6 +293,8 @@ Style Name | Value Description
 alpha | float
 bgcolor | 'r'/'g'/'red'/'dark-red'... or 70707F ...
 color |  'r'/'g'/'red'/'dark-red'... or 70707F...
+coord | 'data'/'axis'/'figure'
+dpi | int
 edgecolor | 'r'/'g'/'red'/'dark-red'... or 70707F...
 edgewidth | int
 fillcolor | 'r'/'g'/'red'/'dark-red'... or 70707F...
@@ -316,13 +313,14 @@ padding | float,float,float,float (bottom,left,right,top)
 palette | string
 pointsize | float
 pointtype | '.'/'x'/'o'/'d'/'s'/'^'/'v'
-pos | float,float
+pos | float,float or 'topleft'/'topright'/'topcenter'/'bottomleft'/...
 rsize | float,float (x,y)
 range | float:float:float float:float
 size | int,int (x,y)
 skippoint | int
 spacing | float,float
 title | string
+tick | string
 text | string
 visible | 'true'/'false'
 vspacing | float

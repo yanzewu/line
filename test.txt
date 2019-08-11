@@ -39,3 +39,16 @@ show gca xrange
 show line lw
 show line
 show figure dpi
+
+# Line and text
+line 0,0 2,2 lc=red
+hline 2 lt=-- lc=grey lw=1
+line 0.1,0.1 0.5,0.1 coord=axis
+text "123" bottomright font=Arial,9
+
+# Split
+hsplit 2
+vsplit 3
+subfigure 0
+set legend fontsize 9
+split 1,1

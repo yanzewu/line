@@ -68,52 +68,45 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'show':
         parse_and_process_show(m_state, m_tokens)
 
-    # TODO HIGH (line-text): coordinate transformation
-
     elif command == 'line':
-
-        stonum = stof if m_state.options['drawline-coord'] == 'data' else stod
-
-        x1 = stonum(get_token(m_tokens))
+        x1 = stof(get_token(m_tokens))
         assert_token(get_token(m_tokens), ',')
-        y1 = stonum(get_token(m_tokens))
-        x2 = stonum(get_token(m_tokens))
+        y1 = stof(get_token(m_tokens))
+        x2 = stof(get_token(m_tokens))
         assert_token(get_token(m_tokens), ',')
-        y2 = stonum(get_token(m_tokens))
+        y2 = stof(get_token(m_tokens))
         
         m_state.cur_subfigure().add_drawline((x1,y1), (x2,y2), parse_style(m_tokens))
+        plot.update_subfigure(m_state)
 
     elif command == 'hline':
-        stonum = stof if m_state.options['drawline-coord'] == 'data' else stod
-        y = stonum(get_token(m_tokens))
+        y = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((None,y), (None,y), parse_style(m_tokens))
+        plot.update_subfigure(m_state)
 
     elif command == 'vline':
-        stonum = stof if m_state.options['drawline-coord'] == 'data' else stod
-        x = stonum(get_token(m_tokens))
+        x = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((x,None), (x,None), parse_style(m_tokens))
+        plot.update_subfigure(m_state)
 
     elif command == 'text':
-        
+        text = get_token(m_tokens)
         token1 = get_token(m_tokens)
-        token2 = get_token(m_tokens)
-        if token2 == ',':
-            if m_state.options['text-coord'] in ('axis', 'figure'):
-                pos = (stod(token1), stod(get_token(m_tokens)))
-            else:
-                pos = (stof(token1), stof(get_token(m_tokens)))
-            text = get_token(m_tokens)
+        if len(m_tokens) > 0 and m_tokens[0] == ',':
+            get_token(m_tokens)
+            pos = (stof(token1), stof(get_token(m_tokens)))
+            m_state.cur_subfigure().add_text(text, pos, parse_style(m_tokens))
         else:
-            pos = token1
-            text = token2
+            pos = style.Str2Pos[token1]
+            style_list = parse_style(m_tokens)
+            style_list['coord'] = 'axis'
+            m_state.cur_subfigure().add_text(text, pos, style_list)
 
-        # change coordination? depends on plot implementation
-
-        m_state.cur_subfigure().add_text(text, pos, parse_style(m_tokens))
         plot.update_subfigure(m_state)
 
     elif command == 'split':
         hsplitnum = stod(get_token(m_tokens))
+        assert_token(get_token(m_tokens), ',')
         vsplitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
         process_split(m_state, hsplitnum, vsplitnum)
@@ -121,12 +114,12 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'hsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, splitnum, m_state.cur_figure().split[1])
+        process_split(m_state, splitnum, m_state.cur_figure().attr['split'][1])
 
     elif command == 'vsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, m_state.cur_figure().split[0], splitnum)
+        process_split(m_state, m_state.cur_figure().attr['split'][0], splitnum)
 
     # select or create figure
     elif command == 'figure':
@@ -177,6 +170,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         arg1 = None
         if len(m_tokens) >= 1:
             assert_token(get_token(m_tokens), 'all')
+            arg1 = 'all'
 
         assert_no_token(m_tokens)
         if arg1:
@@ -404,14 +398,14 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
                 elif isinstance(element, state.DrawLine):
                     drawline_sel.add(int(element.name[8:]))
                 elif isinstance(element, state.Text):
-                    drawline_sel.add(int(element.name[4:]))
+                    text_sel.add(int(element.name[4:]))
 
     if m_state.options['prompt-multi-removal'] and len(dataline_sel) > 1:
         if input('Remove data %s?' % (' '.join((str(d) for d in dataline_sel)))) in ('y', 'Y', 'yes'):
             for idx in sorted(dataline_sel, reverse=True):
                 m_subfig.datalines.pop(idx)
             logger.debug('Removed dataline: %s' % dataline_sel)
-    else:
+    elif len(dataline_sel) == 1:
         m_subfig.datalines.pop(dataline_sel.pop())
 
     for idx in sorted(drawline_sel, reverse=True):
@@ -456,7 +450,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         if not has_updated:
             warn('No style is set')
 
-
+    # TODO MID implement `set future`
     elif m_tokens[0] == 'option':
         get_token(m_tokens)
 
@@ -587,14 +581,14 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
 
     m_fig = m_state.cur_figure()
     hsplit, vsplit = m_fig.get_attr('split')
-    hspacing, vspacing = m_fig.get_attr('spacing')
+    hspacing, vspacing = m_fig.get_style('spacing')
 
     subfig_state_2d = []
     for i in range(vsplitnum):
         subfig_state_2d.append([])
         for j in range(hsplitnum):
             if i < vsplit and j < hsplit:
-                subfig_state_2d[i].append(m_fig.cur_subfigure[i*hsplit + j])
+                subfig_state_2d[i].append(m_fig.subfigures[i*hsplit + j])
             else:
                 subfig_state_2d[i].append(m_state.default_figure.subfigures[0].copy())
 
@@ -609,7 +603,7 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
             ))
     
     m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
-    plot.update_figure(m_state, redraw_subfigures=False)
+    plot.update_figure(m_state, redraw_subfigures=True)
     m_fig.set_style('split', [hsplitnum, vsplitnum])
 
 

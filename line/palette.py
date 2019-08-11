@@ -5,7 +5,6 @@ import numpy as np
 
 from . import style
 
-# TODO HIGH Reverse mpl color string
 
 def _load_palette_mpl():
     """ Try importing all palettes from Matplotlib.

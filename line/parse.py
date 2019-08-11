@@ -153,14 +153,25 @@ def translate_style_val(style_name:str, style_val:str):
             raise LineParseError('Invalid orient style: %s' % style_val)
         return style_val
 
-    # require multiple num value
-    elif style_name in ('size', 'rsize', 'pos', 'rpos', 'spacing'):
+    elif style_name == 'pos':
+        try:
+            return style.Str2Pos[style_name]
+        except KeyError:
+            v1, v2 = style_val.split(',')
+            return stof(v1), stof(v2)    
+
+    elif style_name == 'size':
         v1, v2 = style_val.split(',')
         return stod(v1), stod(v2)
 
+    # require multiple num value
+    elif style_name in ('rsize', 'rpos', 'spacing'):
+        v1, v2 = style_val.split(',')
+        return stof(v1), stof(v2)
+
     elif style_name in ('margin', 'padding'):
         vs = style_val.split(',')
-        return [stod(vs[i]) for i in range(4)]
+        return [stof(vs[i]) for i in range(4)]
 
     # range
     elif style_name.endswith('range'):
@@ -171,7 +182,7 @@ def translate_style_val(style_name:str, style_val:str):
         return STOB[style_name]
 
     # int
-    elif style_name in ('fontsize', 'skippoint', 'zindex'):
+    elif style_name in ('fontsize', 'skippoint', 'zindex', 'dpi'):
         return stod(style_val)
 
     # float
@@ -181,7 +192,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # require str only
     elif style_name in ('text', 'title', 'label', 'xlabel', 'ylabel', 'format', 
-        'tick', 'xtick', 'ytick', 'fontfamily', 'palette'):
+        'tick', 'xtick', 'ytick', 'fontfamily', 'palette', 'coord'):
         return style_val
 
     # general    

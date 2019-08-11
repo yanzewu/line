@@ -14,16 +14,17 @@ from . import style
 
 logger = logging.getLogger('line')
 
+# TODO MID imporve logic of closing figures
 
 def initialize(interactive, plt_backend='Qt5Agg'):
-
     plt.switch_backend(plt_backend)
-
     if interactive:
         plt.ion()
 
 def finalize(interactive):
-    if not interactive:
+    if interactive:
+        plt.ioff()
+    else:
         plt.show()
 
 def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
@@ -36,15 +37,18 @@ def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
     size = m_fig.style['size']
     size_inches = (size[0]/dpi, size[1]/dpi)
 
-    if m_fig.backend == None:
+    if m_fig.backend == None or not plt.fignum_exists(m_fig.backend.number):
         m_fig.backend = plt.figure(m_state.cur_figurename, figsize=size_inches, dpi=dpi)
         logger.debug('Creating new figure: %s' % m_state.cur_figurename)
+
+        for subfig in m_fig.subfigures:
+            subfig.backend = None
     else:
         m_fig.backend.dpi = dpi
         m_fig.backend.set_size_inches(*size_inches)
 
     m_plt_fig = m_fig.backend
-    m_plt_fig.axes.clear()
+    m_plt_fig.clear()
     margin = m_fig.style['margin']
 
     def scale(x):
@@ -79,21 +83,35 @@ def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
 
         for idx, subfig in enumerate(m_fig.subfigures):
             m_fig.cur_subfigure = idx
-            update_subfigure(m_state)
+            update_subfigure(m_state, show=False)
             logger.debug('Updated subfigure %d' % idx)
 
         m_fig.cur_subfigure = cur_subfig
+
+    #plt.show(block=False)
 
 
 def update_focus_figure(m_state:state.GlobalState):
     """ Bring figure m_state.cur_figure to the front.
     """
     plt.figure(m_state.cur_figurename)
+    if not m_state.is_interactive:
+        return
+    if plt.get_backend().startswith('Qt'):
+        plt.get_current_fig_manager().window.raise_()
+    elif plt.get_backend().startswith('Tk'):
+        plt.get_current_fig_manager().window.attributes('-topmost', 1)
+        plt.get_current_fig_manager().window.attributes('-topmost', 0)
 
 
-def update_subfigure(m_state:state.GlobalState):
+def update_subfigure(m_state:state.GlobalState, show=True):
     """ Update m_state.cur_subfigure()
     """
+
+    # figure is closed -> redraw the figure.
+    if not plt.fignum_exists(m_state.cur_figure().backend.number):
+        update_figure(m_state)
+        return
     
     logger.debug('Updating figure %s, subfigure %d' % (m_state.cur_figurename, m_state.cur_figure().cur_subfigure))
     plt.figure(m_state.cur_figurename)
@@ -188,16 +206,21 @@ def update_subfigure(m_state:state.GlobalState):
 
     for drawline in m_subfig.drawlines:
         m_style = drawline.export_style()
+        coord = m_style['coord']
 
-        xlo, xhi = m_style['startpos']
-        ylo, yhi = m_style['endpos']
+        xlo, ylo = drawline.attr['startpos']
+        xhi, yhi = drawline.attr['endpos']
 
-        # TODO HGIH coordination change when None (use axvline/axhline)
+        if xlo is None or xhi is None or ylo is None or yhi is None:
+            if coord == 'data':
+                xlo, ylo = m_subfig.get_axes_coord(xlo, ylo, 'left')
+                xhi, yhi = m_subfig.get_axes_coord(xhi, yhi, 'right')
+            coord = 'axis'
 
         ax.add_line(lines.Line2D(
             (xlo, xhi),
             (ylo, yhi),
-            color=m_style['color'],
+            color=m_style['linecolor'],
             linestyle=m_style['linetype'].to_str(),
             linewidth=m_style['linewidth'],
             marker=m_style['pointtype'].to_str(),
@@ -205,6 +228,7 @@ def update_subfigure(m_state:state.GlobalState):
             mew=m_style['edgewidth'],
             mfc=m_style['fillcolor'],
             ms=m_style['pointsize'],
+            transform=ax.transData if coord == 'data' else ax.transAxes,
             visible=m_style['visible'],
             zorder=m_style['zindex']
         ))
@@ -213,15 +237,16 @@ def update_subfigure(m_state:state.GlobalState):
 
         m_style = text.export_style()
 
-        x, y = m_style['pos']
+        x, y = text.attr['pos']
 
         ax.text(
-            m_style['pos'][0],
-            m_style['pos'][1],
+            x,
+            y,
             text.attr['text'],
             color=m_style['color'],
             fontfamily=m_style['fontfamily'],
             fontsize=m_style['fontsize'],
+            transform=ax.transData if m_style['coord'] == 'data' else ax.transAxes,
             visible=m_style['visible'],
             zorder=m_style['zindex']
         )
@@ -267,6 +292,10 @@ def update_subfigure(m_state:state.GlobalState):
 
         for t in legend.get_texts():
             t.set_fontfamily(m_style['fontfamily'])
+
+    if show:
+        #plt.show(block=False)
+        pass
 
 
 def save_figure(m_state:state.GlobalState, filename):
