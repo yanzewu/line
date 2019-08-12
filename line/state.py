@@ -328,21 +328,13 @@ class Subfigure(FigObject):
         self.drawlines.clear()
         self.texts.clear()
 
-    def get_axes_coord(self, x, y, side='left'):
+    def get_axes_coord(self, d, axis=0, side='left'):
 
-        if x is not None:
-            xlo, xhi = self.axes[0].attr['range']
-            x = (x-xlo)/(xhi-xlo)
+        if d is not None:
+            lo, hi = self.axes[axis].attr['range']
+            return (d-lo)/(hi-lo)
         else:
-            x = -1.0 if side == 'left' else 1.0
-
-        if y is not None:
-            ylo, yhi = self.axes[1].attr['range']
-            y = (y-ylo)/(yhi-ylo)
-        else:
-            y = -1.0 if side == 'left' else 1.0
-
-        return x, y
+            return 0 if side == 'left' else 1.0
 
     def update_template_palatte(self):
 
@@ -350,7 +342,7 @@ class Subfigure(FigObject):
         if not self.dataline_template:
             self.dataline_template = [self.style['default-dataline'].copy() for i in range(len(colors)-1)]
 
-        # TODO point color and style support
+        # TODO LOW point color and style support
         for idx in range(len(colors)-1):
             self.dataline_template[idx]['linecolor'] = colors[idx+1]
 

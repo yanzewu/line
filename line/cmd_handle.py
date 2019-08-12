@@ -21,11 +21,14 @@ logger = logging.getLogger('line')
 sh = logging.StreamHandler()
 sh.setFormatter(logging.Formatter('[%(filename)s: %(funcName)s()] %(message)s'))
 logger.addHandler(sh)
-logger.setLevel(logging.DEBUG)
+
+
+# TODO LOW include other file
+
 
 class CMDHandler:
 
-    PS1 = 'line > '
+    PS1 = 'line> '
     PS2 = '> '
     HISTORY_NAME = None
     TOKEN_MATCHER = re.compile(r"(?P<a>([\"\'])(?:\\\2|(?:(?!\2)).)*(\2)?)|(?P<b>[^,:=;#\\\"\'\s]+)|(?P<c>[,:=;#\\])")
@@ -34,6 +37,9 @@ class CMDHandler:
 
     RET_EXIT = 1
     RET_CONTINUE = 2
+    RET_INTERACTIVE = 3
+
+    _debug = False
 
     def __init__(self):
         self.m_state = state.GlobalState()
@@ -55,31 +61,46 @@ class CMDHandler:
     def proc_file(self, filename):
         with open(filename, 'r') as f:
             self.m_state.is_interactive = False
-            for line in f.readlines():
-                try:
-                    ret = self.handle_line(line, self.token_buffer, True)
-                except Exception as e:
+            self.proc_lines(f.readlines())
+
+    def proc_lines(self, lines):
+        plot.initialize(self.m_state)
+        for line in lines:
+            try:
+                ret = self.handle_line(line, self.token_buffer, True)
+            except Exception as e:
+                if self._debug:
                     raise
-                    return
                 else:
-                    if ret == 0:
-                        self.token_buffer.clear()
-                    elif ret == self.RET_EXIT:
-                        break
-                    elif ret == self.RET_CONTINUE:
-                        continue
+                    print(e)
+                    return
+            else:
+                if ret == 0:
+                    self.token_buffer.clear()
+                elif ret == self.RET_EXIT:
+                    break
+                elif ret == self.RET_CONTINUE:
+                    continue
+            
+            if self.m_state.is_interactive:
+                self.input_loop()
+                self.m_state.is_interactive = False
+                # TODO LOW handle initialize and finalize and other 
+                # interfaces when switching plotting mode
+        plot.finalize(self.m_state)
 
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
         line = input(ps)
-        if 'readline' in sys.modules and self.HISTORY_NAME:
-            readline.write_history_file(self.HISTORY_NAME)
+        # if 'readline' in sys.modules and self.HISTORY_NAME:
+        #     readline.write_history_file(self.HISTORY_NAME)
 
         try:
             ret = self.handle_line(line, self.token_buffer, True)
         except Exception as e:
             self.token_buffer.clear()
             raise
+            # TODO LOW error line number and token position
         else:
             if ret == 0:
                 self.token_buffer.clear()
@@ -90,11 +111,11 @@ class CMDHandler:
                 self.proc_input(self.PS2)
 
     def input_loop(self):
-        plot.initialize(True)
+        plot.initialize(self.m_state)
         ret = 0
         while ret == 0:
             ret = self.proc_input()
-        plot.finalize(True)
+        plot.finalize(self.m_state)
 
     def handle_line(self, line, token_buffer, execute=True):
         """ Preprocessing and execute
@@ -130,15 +151,14 @@ class CMDHandler:
                         raise LineParseError('There should not be any characters after "\\"')
                 elif char == ';':
                     if execute:
-                        if process.parse_and_process_command(self.token_buffer, self.m_state) == 1:
-                            return self.RET_EXIT
-                    token_buffer.clear()
+                        ret = process.parse_and_process_command(self.token_buffer, self.m_state)
+                        if ret != 0:
+                            return ret
+                        else:
+                            self.token_buffer.clear()
 
         if execute:
-            if process.parse_and_process_command(self.token_buffer, self.m_state) == 1:
-                return self.RET_EXIT
-
-        return 0
+            return process.parse_and_process_command(self.token_buffer, self.m_state)
 
     def complete(self, text, state):
         """ Complete function

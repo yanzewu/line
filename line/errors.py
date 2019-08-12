@@ -1,6 +1,8 @@
 
 import sys
 
+# TODO MID error management
+
 class LineParseError(Exception):
 
     def __init__(self, message):
@@ -22,4 +24,4 @@ class LineProcessError(Exception):
 
 
 def warn(message):
-    print(message, file=sys.stderr)
+    print('WARNING: ', message, file=sys.stderr)

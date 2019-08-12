@@ -19,7 +19,7 @@ from .errors import LineParseError, LineProcessError, warn
 
 logger = logging.getLogger('line')
 
-
+# TODO LOW prompt only in interactive mode
 
 def parse_and_process_command(tokens, m_state:state.GlobalState):
     """ Parse and execute sequence of tokens.
@@ -183,16 +183,26 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'quit':
         if m_state.options['auto-save']:
-            # TODO MID save all figures present
-            if input('Save current figure?') in ('yes', 'Y', 'y'):
-                process_save(m_state, m_state.cur_save_filename)
+            if len(m_state.figures) == 1:
+                if input('Save current figure? ') in ('yes', 'Y', 'y'):
+                    process_save(m_state, m_state.cur_save_filename)
+
+            for name, figure in m_state.figures.items():
+                m_state.cur_save_filename = None
+                m_state.cur_figurename = name
+                if input('Save figure %s? ' % name) in ('yes', 'Y', 'y'):
+                    process_save(m_state, '')
+                plot.close_figure(m_state)
 
         return True
+
+    elif command == 'input':
+        m_state.is_interactive = True
 
     else:
         raise LineParseError('No command named %s' % command)
 
-
+    return 0
 
 def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed):
     """ Parsing and processing `plot` and `append` commands.
@@ -612,12 +622,16 @@ def process_save(m_state:state.GlobalState, filename:str):
     """
 
     if not filename:
-        m_state.cur_save_filename = input('Enter filename here:')
-        if not m_state.cur_save_filename:
+        if m_state.cur_save_filename:
+            filename = input('Enter filename here (default: %s): ' % m_state.cur_save_filename)
+        else:
+            filename = input('Enter filename here: ')
+        if not filename:
+            logger.info('Saving cancelled')
             return
 
-    if m_state.options['prompt-overwrite'] and io_util.test_file_exist(m_state.cur_save_filename):
-        answer = input('Overwrite current file "%s"?' % m_state.cur_save_filename)
+    if m_state.options['prompt-overwrite'] and io_util.file_exist(filename):
+        answer = input('Overwrite current file "%s"? ' % filename)
         if not answer in ('yes', 'y', 'Y'):
             print('Canceled')
             return

@@ -52,3 +52,8 @@ vsplit 3
 subfigure 0
 set legend fontsize 9
 split 1,1
+
+# save
+save tests/1.png
+
+input

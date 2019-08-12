@@ -16,14 +16,18 @@ logger = logging.getLogger('line')
 
 # TODO MID imporve logic of closing figures
 
-def initialize(interactive, plt_backend='Qt5Agg'):
-    plt.switch_backend(plt_backend)
-    if interactive:
+def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
+    try:
+        plt.switch_backend(plt_backend)
+    except ImportError:
+        logger.info('Fallback to TK backend')
+        
+    if m_state.is_interactive:
         plt.ion()
 
-def finalize(interactive):
-    if interactive:
-        plt.ioff()
+def finalize(m_state:state.GlobalState):
+    if m_state.is_interactive:
+        pass
     else:
         plt.show()
 
@@ -206,16 +210,21 @@ def update_subfigure(m_state:state.GlobalState, show=True):
 
     for drawline in m_subfig.drawlines:
         m_style = drawline.export_style()
-        coord = m_style['coord']
 
         xlo, ylo = drawline.attr['startpos']
         xhi, yhi = drawline.attr['endpos']
 
-        if xlo is None or xhi is None or ylo is None or yhi is None:
-            if coord == 'data':
-                xlo, ylo = m_subfig.get_axes_coord(xlo, ylo, 'left')
-                xhi, yhi = m_subfig.get_axes_coord(xhi, yhi, 'right')
-            coord = 'axis'
+        if m_style['coord'] == 'data' and (xlo is None or xhi is None or ylo is None or yhi is None):
+            if xlo is None or xhi is None:
+                trans = ax.get_yaxis_transform()
+                xlo = m_subfig.get_axes_coord(xlo, 0, 'left')
+                xhi = m_subfig.get_axes_coord(xhi, 0, 'right')
+            else:
+                trans = ax.get_xaxis_transform()
+                ylo = m_subfig.get_axes_coord(ylo, 1, 'left')
+                yhi = m_subfig.get_axes_coord(yhi, 1, 'left')
+        else:
+            trans = ax.transData if m_style['coord'] == 'data' else ax.transAxes
 
         ax.add_line(lines.Line2D(
             (xlo, xhi),
@@ -228,7 +237,7 @@ def update_subfigure(m_state:state.GlobalState, show=True):
             mew=m_style['edgewidth'],
             mfc=m_style['fillcolor'],
             ms=m_style['pointsize'],
-            transform=ax.transData if coord == 'data' else ax.transAxes,
+            transform=trans,
             visible=m_style['visible'],
             zorder=m_style['zindex']
         ))
@@ -303,6 +312,8 @@ def save_figure(m_state:state.GlobalState, filename):
         filename
     )
 
+def close_figure(m_state:state.GlobalState):
+    plt.close(m_state.cur_figurename)
 
 def cla(m_state:state.GlobalState):
 
