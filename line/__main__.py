@@ -32,6 +32,7 @@ Additional options can be shown by `line -e 'show option'`'''
             exit(0)
         elif arg in ('-d', '--debug'):
             logging.getLogger('line').setLevel(logging.DEBUG)
+            cmd_handler._debug = True
         elif arg.startswith('--'):
             opt, val = arg[2:].split('=')
             cmd_handler.m_state.options[opt] = translate_option_val(opt, val)
@@ -39,6 +40,7 @@ Additional options can be shown by `line -e 'show option'`'''
             args.append(arg)
     
     if len(args) == 0:
+        cmd_handler.m_state.is_interactive = True
         cmd_handler.init_input()
         cmd_handler.input_loop()
     elif mode == 'script':

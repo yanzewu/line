@@ -19,7 +19,7 @@ from .errors import LineParseError, LineProcessError, warn
 
 logger = logging.getLogger('line')
 
-# TODO LOW prompt only in interactive mode
+# TODO LOW FIX prompt only in interactive mode
 
 def parse_and_process_command(tokens, m_state:state.GlobalState):
     """ Parse and execute sequence of tokens.
@@ -180,9 +180,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'print':
         print(' '.join(m_tokens))
+        #TODO FEATURE variable system
 
     elif command == 'quit':
-        if m_state.options['auto-save']:
+        if m_state.options['prompt-save-when-quit']:
             if len(m_state.figures) == 1:
                 if input('Save current figure? ') in ('yes', 'Y', 'y'):
                     process_save(m_state, m_state.cur_save_filename)
@@ -212,14 +213,16 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     """
     # LL(2)
 
-    reload_file = True  # if the file should be reloaded
+    file_loaded = {}
     
     data_list = []
     style_list = []
 
-    while len(m_tokens) > 0:
+    # Recording x data and label
+    cur_xdata = None
+    cur_xlabel = None
 
-        is_new_file = False
+    while len(m_tokens) > 0:
 
         # when it could be filename:
         # force-column-selection is not set
@@ -230,24 +233,22 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             (m_tokens[0] != '' and m_tokens[0][0] not in '$('):
 
             if io_util.file_exist(m_tokens[0]):
-                is_new_file = True
                 filename = get_token(m_tokens)
                 logger.debug('New file found: %s' % filename)
             else:
+                filename = m_state.cur_open_filename
                 warn('Treat %s as column label' % m_tokens[0])
 
-        elif m_tokens[0] == '':
-            get_token(m_tokens)
-        
-        if not is_new_file and reload_file:
+        else:
             filename = m_state.cur_open_filename
-            if not filename:
-                raise LineParseError('Filename expected')
-            else:
-                logger.debug('Exist file found: %s' % filename)
-                
-        # old file is reloaded once per command.
-        if is_new_file or reload_file:
+            get_token(m_tokens)
+
+        if not filename:
+            raise LineParseError('Filename expected')
+        elif filename in file_loaded:
+            logger.debug('Exist file found: %s' % filename)
+            m_file = file_loaded[filename]
+        else:              
             m_file = sheet_util.load_file(filename,
                 m_state.options['data-title'],
                 m_state.options['data-delimiter'],
@@ -258,10 +259,9 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 skip_tokens(m_tokens, ',')
                 continue
             else:
-                logger.debug('File loaded: %s' % m_file)
+                logger.debug('New file loaded: %s' % m_file)
                 m_state.cur_open_filename = filename
-
-        reload_file = False
+                file_loaded[filename] = m_file
 
         # no column expr 
         if not m_state.options['force-column-selection'] and (
@@ -292,10 +292,11 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 skip_tokens(m_tokens, ',')
                 continue
 
-            # TODO MID Default x data to additional y
-            # For example: plot 1:2,3 => plot 1:2, 1:3
-
             if len(m_tokens) > 0 and m_tokens[0] == ':':
+                # when a x data appears, the following y data is based on this x.
+                cur_xdata = column
+                cur_xlabel = label
+
                 logger.debug('Try parsing y data')
                 get_token(m_tokens)
                 column_expr2 = parse_column(m_tokens)
@@ -307,7 +308,10 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                     skip_tokens(m_tokens, ',')
                     warn('Skipping column %s with no valid data' % column_expr2)
             else:
-                data_list.append((m_file.get_sequence(), column, column_expr, ''))
+                if cur_xdata is None:
+                    cur_xdata = m_file.get_sequence()
+                    cur_xlabel = ''
+                data_list.append((cur_xdata, column, label, cur_xlabel))
 
         # style parameters
         styles = parse_style(m_tokens, ',', recog_comma=False)
@@ -326,15 +330,13 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             for i in range(1, len(style_list)):
                 style_list[i].setdefault(bc_style, style_list[0][bc_style])
 
-    # TODO LOW automatically determine skip points (or can be done later)
+    # TODO LOW FEATURE automatically determine skip points (or can be done later)
+    # TODO FEATURE automatic select styles to avoid covering
 
     logger.debug('Processing plot')
-    # do the plot!
     if len(data_list) > 0:
         
         # first time: create figure
-        # TODO MID initiate figure instance first, and then show
-        # to avoid setting before plot.
         if m_state.cur_figurename is None:
             m_state.create_figure()
             plot.update_figure(m_state)
@@ -355,7 +357,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             m_state.cur_subfigure().axes[1].label.set_style('text', ylabels.pop())
 
         # Set range
-        if m_state.options['adjust-range'] == 'auto' or (
+        if m_state.options['auto-adjust-range'] or (
             m_state.cur_subfigure().axes[0].attr['range'][0] is None or
             m_state.cur_subfigure().axes[0].attr['range'][1] is None or
             m_state.cur_subfigure().axes[1].attr['range'][0] is None or
@@ -450,7 +452,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             elements = [m_state.default_figure.subfigures[0]]
             style_list = parse_style(m_tokens)
             for s, v in style_list.items():
-                has_updated = has_updated or m_state.cur_figure().set_style_recur(s, v)
+                has_updated = m_state.cur_figure().set_style_recur(s, v) or has_updated
 
         else:
             element_names = parse_token_with_comma(m_tokens)
@@ -460,7 +462,35 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         if not has_updated:
             warn('No style is set')
 
-    # TODO MID implement `set future`
+    elif m_tokens[0] == 'future':
+        get_token(m_tokens)
+
+        # `set future` only applies to line/drawline/text
+        element_names = parse_token_with_comma(m_tokens)
+        style_dict = parse_style(m_tokens)
+
+        for element_name in element_names:
+            if element_name == 'line':
+                elements = m_state.cur_subfigure().dataline_template + \
+                     [m_state.cur_subfigure().style['default-dataline']]
+            elif element_name.startswith('line'):
+                elements = [m_state.cur_subfigure().dataline_template[int(element_name[4:])]]
+            elif element_name == 'drawline':
+                elements = [m_state.cur_subfigure().style['default-drawline']]
+            elif element_name == 'text':
+                elements = [m_state.cur_subfigure().style['default-text']]
+            else:
+                raise LineProcessError('Element %s cannot be used in `set future`' % element_name)
+            
+        if len(elements) == 0:
+            warn('No element is selected')
+            return
+
+        for element in elements:
+            for s, v in style_dict.items():
+                element[s] = v
+        
+
     elif m_tokens[0] == 'option':
         get_token(m_tokens)
 
@@ -485,15 +515,19 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             elements = [m_state.cur_subfigure()]
             style_list = parse_style(m_tokens)
             for s, v in style_list.items():
-                has_updated = has_updated or m_state.cur_figure().set_style_recur(s, v)
+                has_updated = m_state.cur_figure().set_style_recur(s, v) or has_updated
 
         else:
             element_names = parse_token_with_comma(m_tokens)
-            style_dict = parse_style(m_tokens)
-
+            if m_tokens[0] == 'clear':
+                get_token(m_tokens)
+                assert_no_token(m_tokens)
+                style_dict = None
+            else:
+                style_dict = parse_style(m_tokens)
             has_updated = process_set_style(m_state, element_names, style_dict, m_state)
 
-        # TODO HIGH Implement clear
+        # TODO FEATURE? apply clear to other sub-commands
 
         if has_updated:
             plot.update_figure(m_state)
@@ -559,25 +593,62 @@ def process_autorange(m_state:state.GlobalState):
 
 
 def process_set_style(m_state, element_names, style_dict, scope):
+    """ Find elements in `scope` and applies styles in `style_dict`.
+    If style_dict is `None`, apply default style (which is default style in
+    gca for lines and texts, default figure style for other components)
+    """
 
     for element_name in element_names:
-        elements = scope.find_elements(element_name)
+        elements = scope.find_elements(element_name, not m_state.options['set-skip-invalid-selection'])
     if not elements:
         warn('No element is selected by %s' % element_name)
         return False
 
     has_updated = False
-    for e in elements:
-        for s, v in style_dict.items():
-            # By default, failure to set style will cause error.
-            try:
-                e.set_style(s, v)
-            except (KeyError, ValueError):
-                raise LineProcessError('Cannot set %s to style %s for %s' % (
-                    v, s, e.name
-                ))
+
+    if style_dict is not None:
+        for e in elements:
+            for s, v in style_dict.items():
+                # By default, failure to set style will cause error.
+                try:
+                    e.set_style(s, v)
+                except (KeyError, ValueError):
+                    raise LineProcessError('Cannot set %s to style %s for %s' % (
+                        v, s, e.name
+                    ))
+                else:
+                    has_updated = True
+
+        # dataline is special - style might also be applied to futures
+        if m_state.options['set-future-line-style'] and 'line' in element_names:
+            for line_style in m_state.cur_subfigure().dataline_template + \
+                     [m_state.cur_subfigure().style['default-dataline']]:
+                try:
+                    line_style.update(style_dict)
+                except (KeyError, ValueError):
+                    raise LineProcessError('Error in updating style')
+
+    else:
+        # also clear only works on style, not attr.
+        for e in elements:
+            if isinstance(e, state.Figure):
+                src_style = m_state.default_figure.style
+            elif isinstance(e, state.Subfigure):
+                src_style = m_state.default_figure.subfigures[0].style
+            elif isinstance(e, (state.Axis, state.Legend, state.Tick, state.Grid)):
+                src_style = m_state.default_figure.subfigures[0].find_elements(e.name)[0].style
+            elif isinstance(e, state.DataLine):
+                src_style = m_state.cur_subfigure().style['default-dataline']
+            elif isinstance(e, state.DrawLine):
+                src_style = m_state.cur_subfigure().style['default-drawline']
+            elif isinstance(e, state.Text):
+                src_style = m_state.cur_subfigure().style['default-text']
             else:
-                has_updated = True
+                raise RuntimeError('Cannot clear style of %s' % e)
+
+            e.style.update(src_style, False)
+            has_updated = True
+
     return has_updated
 
 

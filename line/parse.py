@@ -71,7 +71,6 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
     elif require_equal:
         raise LineParseError('\"=\" required')
 
-    # TODO MID deduce whether next token belong to multi-valued style
     while len(m_tokens) > 0:
         if m_tokens[0] == ',' and recog_comma:
             style_val += get_token(m_tokens)
@@ -206,11 +205,6 @@ def translate_option_val(option:str, value:str):
         return value
     elif option == 'data-title':
         if value == 'auto':
-            return value
-    elif option in ('drawline-coord', 'text-coord'):
-        if value not in ('data', 'axis', 'figure'):
-            raise errors.LineParseError('Invalid value for option %s: %s' % (option, value))
-        else:
             return value
 
     try:

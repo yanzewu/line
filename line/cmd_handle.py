@@ -23,7 +23,7 @@ sh.setFormatter(logging.Formatter('[%(filename)s: %(funcName)s()] %(message)s'))
 logger.addHandler(sh)
 
 
-# TODO LOW include other file
+# TODO LOW FEATURE include other file
 
 
 class CMDHandler:
@@ -85,7 +85,7 @@ class CMDHandler:
             if self.m_state.is_interactive:
                 self.input_loop()
                 self.m_state.is_interactive = False
-                # TODO LOW handle initialize and finalize and other 
+                # TODO MID FIX handle initialize and finalize and other 
                 # interfaces when switching plotting mode
         plot.finalize(self.m_state)
 
@@ -100,7 +100,7 @@ class CMDHandler:
         except Exception as e:
             self.token_buffer.clear()
             raise
-            # TODO LOW error line number and token position
+            # TODO MID FIX error line number and token position
         else:
             if ret == 0:
                 self.token_buffer.clear()

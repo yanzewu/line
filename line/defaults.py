@@ -7,18 +7,20 @@ from .style import Color, LineType, PointType
 from .collection_util import RestrictDict
 
 default_options = {
+    'auto-adjust-range':True,
+    'data-title':'auto',
+    'broadcast-style':['linewidth', 'linetype', 'pointsize', 'edgewidth'],
+    'data-delimiter':'auto',
     'force-column-selection':False,
     'ignore-data-comment': True,
     'identify-data':False,              # not used now
-    'data-delimiter':'auto',
-    'data-title':'auto',
+    'prompt-always':False,
     'prompt-multi-removal':True,
-    'remove-element-by-style':False,
     'prompt-overwrite':True,
-    'set-allow-empty-selection':False,  # not used now
-    'adjust-range':'auto',
-    'auto-save':False,
-    'broadcast-style':['linewidth', 'linetype', 'pointsize', 'edgewidth']
+    'prompt-save-when-quit':False,
+    'remove-element-by-style':False,
+    'set-future-line-style':True,
+    'set-skip-invalid-selection':True,
 }
 
 default_figure_style = RestrictDict({
@@ -27,7 +29,7 @@ default_figure_style = RestrictDict({
     'margin': [0.05, 0.05, 0.05, 0.05],
     'spacing': [0.05, 0.05]
 })
-# TODO LOW dpi aware of high-resolution 
+# TODO LOW FEATURE dpi aware of high-resolution 
 default_figure_size_inches = [6,4]
 default_figure_style['size'] = [
     default_figure_size_inches[0]*default_figure_style['dpi'],
@@ -192,7 +194,6 @@ default_subfigure_attr = RestrictDict({
     'group': tuple()
 })
 
-# TODO LOW consistency of global options
 def init_global_state(m_state):
 
     m_state.default_figure = state.Figure(

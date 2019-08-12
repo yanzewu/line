@@ -9,6 +9,7 @@ from .style import *
 from .errors import warn
 from .collection_util import RestrictDict
 
+# TODO MID FEATURE custom font path
 
 class GlobalState:
     """ State of program.
@@ -117,7 +118,7 @@ class FigObject:
         except (KeyError, ValueError):
             has_style = False
             for e in self.get_children():
-                has_style = has_style or e.set_style_recur(name, value)
+                has_style = e.set_style_recur(name, value) or has_style
             return has_style
         else:
             return True
@@ -338,11 +339,18 @@ class Subfigure(FigObject):
 
     def update_template_palatte(self):
 
+        # TODO MID FIX default-figure consists of lines so set default works.
+        # Template is simply copied when initiation. Also change palatte of 
+        # default-figure changes its data template.
+
+        # TODO LOW FIX setting 'default' as a style option for dataline as a 
+        # indicator whether style is managed by custom or template.
+
         colors = PALETTES[self.style['palatte']]
         if not self.dataline_template:
             self.dataline_template = [self.style['default-dataline'].copy() for i in range(len(colors)-1)]
 
-        # TODO LOW point color and style support
+        # TODO FEATURE point color and style support
         for idx in range(len(colors)-1):
             self.dataline_template[idx]['linecolor'] = colors[idx+1]
 
@@ -371,8 +379,8 @@ class Axis(FigObject):
         c = name[0]
 
         self.label = Text('', None, c+'label', style[c+'label'])
-        self.tick = FigObject(c+'tick', style[c+'tick'], RestrictDict({}))
-        self.grid = FigObject(c+'grid', style[c+'grid'], RestrictDict({}))
+        self.tick = Tick(c+'tick', style[c+'tick'], RestrictDict({}))
+        self.grid = Grid(c+'grid', style[c+'grid'], RestrictDict({}))
 
         super().__init__(name, style['axis'], defaults.default_axis_attr)
 
@@ -387,6 +395,11 @@ class Axis(FigObject):
         else:
             super().set_style(name, value)
 
+class Tick(FigObject):
+    pass
+
+class Grid(FigObject):
+    pass
 
 class Legend(FigObject):
 

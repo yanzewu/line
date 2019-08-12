@@ -127,8 +127,7 @@ Usage:
 
 Related options:
 
-- --set-allow-empty-selection=true/false: Allow empty selection. (Default: true)
-- --set-skip-invalid-selection=true/false: Skip invalid selection of element. (Default: false)
+- --set-skip-invalid-selection=true/false: Skip invalid selection of element. (Default: true)
 - --set-future-line-style=true/false: Apply line styles to future lines. (Default: true)
 
 ### show
@@ -252,6 +251,28 @@ Print a string.
 Usage:
 
     print 'Hello world'
+
+
+### input
+---
+
+Switch to input mode. This is extermely useful in line input and script input.
+
+Usage:
+
+    input
+
+### quit
+---
+
+Quit the program.
+
+Usage:
+
+    quit
+
+Related options:
+- --prompt-save-when-quit=true/false: Prompt to save current figure when quitting. (Default: false).
 
 
 ## Style Names and Element Names

@@ -1,5 +1,5 @@
 
-style_keywords = set([
+style_keywords = {
     'alpha',
     'bgcolor',
     'color',
@@ -25,7 +25,7 @@ style_keywords = set([
     'text',
     'visible',
     'zindex'
-])
+}
 
 
 style_alias = {

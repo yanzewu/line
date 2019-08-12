@@ -28,7 +28,7 @@ class RestrictDict:
     def export(self):
         return self.data.copy()
 
-    def update(self, data_dict:dict, raise_error):
+    def update(self, data_dict, raise_error):
         for key, value in data_dict.items():
             try:
                 self[key] = value
@@ -41,4 +41,5 @@ class RestrictDict:
     def copy(self):
         return RestrictDict(self.data.copy())
 
-        
+    def items(self):
+        return self.data.items()

@@ -40,6 +40,13 @@ def stof(token):
     except ValueError:
         raise LineParseError('Integer required')
 
+def is_num(token):
+    try:
+        float(token)
+        return True
+    except ValueError:
+        return False
+
 def parse_token_with_comma(m_tokens):
 
     tokenlist = []

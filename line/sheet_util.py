@@ -61,7 +61,7 @@ class SheetFile:
 
 
     def sniff(self, f, ignore_data_comment=True):
-        
+        # TODO MID FIX check title recognition
         lines = []
 
         line = f.readline()

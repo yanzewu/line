@@ -14,8 +14,6 @@ from . import style
 
 logger = logging.getLogger('line')
 
-# TODO MID imporve logic of closing figures
-
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:
         plt.switch_backend(plt_backend)
