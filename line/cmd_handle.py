@@ -85,8 +85,7 @@ class CMDHandler:
             if self.m_state.is_interactive:
                 self.input_loop()
                 self.m_state.is_interactive = False
-                # TODO MID FIX handle initialize and finalize and other 
-                # interfaces when switching plotting mode
+
         plot.finalize(self.m_state)
 
     def proc_input(self, ps=PS1):
@@ -99,7 +98,11 @@ class CMDHandler:
             ret = self.handle_line(line, self.token_buffer, True)
         except Exception as e:
             self.token_buffer.clear()
-            raise
+            if self._debug:
+                raise
+            else:
+                print(e)
+                return 0
             # TODO MID FIX error line number and token position
         else:
             if ret == 0:

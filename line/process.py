@@ -42,6 +42,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     command = get_token(m_tokens)
     command = keywords.command_alias.get(command, command)   # expand short commands
 
+    do_prompt = m_state.is_interactive or m_state.options['prompt-always']   # prompt
+    do_focus_up = False # update focus
+
     # Long commands
 
     if command == 'plot':
@@ -60,7 +63,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         logger.debug('Group is: %s' % str(m_state.cur_subfigure().attr['group']))
 
         m_state.cur_subfigure().update_template_palatte()
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
 
     elif command == 'set':
         parse_and_process_set(m_state, m_tokens)
@@ -77,17 +80,17 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         y2 = stof(get_token(m_tokens))
         
         m_state.cur_subfigure().add_drawline((x1,y1), (x2,y2), parse_style(m_tokens))
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
 
     elif command == 'hline':
         y = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((None,y), (None,y), parse_style(m_tokens))
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
 
     elif command == 'vline':
         x = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((x,None), (x,None), parse_style(m_tokens))
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
 
     elif command == 'text':
         text = get_token(m_tokens)
@@ -102,7 +105,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             style_list['coord'] = 'axis'
             m_state.cur_subfigure().add_text(text, pos, style_list)
 
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
 
     elif command == 'split':
         hsplitnum = stod(get_token(m_tokens))
@@ -129,9 +132,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_figurename = fig_name
         if fig_name not in m_state.figures:
             m_state.create_figure()
-            plot.update_figure(m_state)
+            m_state.cur_figure().is_changed = True
 
-        plot.update_focus_figure(m_state)
+        if is_interactive:
+            do_focus_up = True
 
     # select subfigure
     elif command == 'subfigure':
@@ -148,7 +152,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     # save figure
     elif command == 'save':
         if len(m_tokens) == 0:
-            print('Using current filename: %s' % m_state.cur_save_filename)
+            warn('Using current filename: %s' % m_state.cur_save_filename)
             filename = m_state.cur_save_filename
         else:
             filename = get_token(m_tokens)
@@ -158,12 +162,6 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'clear':
         assert_no_token(m_tokens)
-        plot.cla(m_state)
-        m_state.cur_subfigure().clear()
-
-    elif command == 'cls':
-        assert_no_token(m_tokens)
-        plot.cls(m_state)
         m_state.cur_subfigure().clear()
 
     elif command == 'replot':
@@ -174,34 +172,59 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
         assert_no_token(m_tokens)
         if arg1:
-            plot.update_figure(m_state)
+            m_state.cur_figure().is_changed = True
         else:
-            plot.update_subfigure(m_state)
+            m_state.cur_subfigure().is_changed = True
 
     elif command == 'print':
         print(' '.join(m_tokens))
         #TODO FEATURE variable system
 
     elif command == 'quit':
+        if m_state.options['display-when-quit'] and not m_state.is_interactive:
+            plot.show(m_state)
+
         if m_state.options['prompt-save-when-quit']:
             if len(m_state.figures) == 1:
-                if input('Save current figure? ') in ('yes', 'Y', 'y'):
+                if io_util.query_cond('Save current figure? ', do_prompt, False):
                     process_save(m_state, m_state.cur_save_filename)
 
             for name, figure in m_state.figures.items():
                 m_state.cur_save_filename = None
                 m_state.cur_figurename = name
-                if input('Save figure %s? ' % name) in ('yes', 'Y', 'y'):
+                if io_util.query_cond('Save figure %s? ' % name, do_prompt, False):
                     process_save(m_state, '')
-                plot.close_figure(m_state)
+                if m_state.is_interactive:
+                    plot.close_figure(m_state)
 
         return True
 
     elif command == 'input':
         m_state.is_interactive = True
 
+    elif command == 'display':
+        if not m_state.is_interactive:
+            plot.show(m_state)
+
     else:
         raise LineParseError('No command named %s' % command)
+
+    if not m_state.is_interactive:
+        return 0
+
+    # update figure
+    if m_state.cur_figure().is_changed:
+        plot.update_figure(m_state)
+        m_state.cur_figure().is_changed = False
+        for m_subfig in m_state.cur_figure().subfigures:
+            m_subfig.is_changed = False
+
+    elif m_state.cur_subfigure().is_changed:
+        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = False
+
+    if do_focus_up:
+        plot.update_focus_figure(m_state)
 
     return 0
 
@@ -339,7 +362,6 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         # first time: create figure
         if m_state.cur_figurename is None:
             m_state.create_figure()
-            plot.update_figure(m_state)
 
         # handle append
         if not keep_existed:
@@ -366,7 +388,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             logger.debug('Setting automatic range')
             process_autorange(m_state)
 
-        plot.update_subfigure(m_state)
+        m_state.cur_subfigure().is_changed = True
     else:
         warn('No valid data for plotting...')
 
@@ -412,8 +434,10 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
                 elif isinstance(element, state.Text):
                     text_sel.add(int(element.name[4:]))
 
-    if m_state.options['prompt-multi-removal'] and len(dataline_sel) > 1:
-        if input('Remove data %s?' % (' '.join((str(d) for d in dataline_sel)))) in ('y', 'Y', 'yes'):
+    if len(dataline_sel) > 1:
+        if io_util.query_cond('Remove data %s?' % (' '.join((str(d) for d in dataline_sel))), 
+            m_state.options['prompt-multi-removal'] and (m_state.options['prompt-always'] or 
+            m_state.is_interactive), True):
             for idx in sorted(dataline_sel, reverse=True):
                 m_subfig.datalines.pop(idx)
             logger.debug('Removed dataline: %s' % dataline_sel)
@@ -436,7 +460,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     for i, l in enumerate(m_subfig.texts):
         l.name = 'text%d' % i
 
-    plot.update_subfigure(m_state)
+    m_state.cur_subfigure().is_changed = True
 
 
 def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
@@ -530,7 +554,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         # TODO FEATURE? apply clear to other sub-commands
 
         if has_updated:
-            plot.update_figure(m_state)
+            m_state.cur_figure().is_changed = True
         else:
             warn('No style is set')
 
@@ -684,31 +708,33 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
             ))
     
     m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
-    plot.update_figure(m_state, redraw_subfigures=True)
+    m_fig.is_changed = True
     m_fig.set_style('split', [hsplitnum, vsplitnum])
 
 
 def process_save(m_state:state.GlobalState, filename:str):
     """ Saving current figure.
     """
+    do_prompt = m_state.is_interactive or m_state.options['prompt-always']
 
     if not filename:
         if m_state.cur_save_filename:
-            filename = input('Enter filename here (default: %s): ' % m_state.cur_save_filename)
+            filename = io_util.query_cond('Enter filename here (default: %s): ' % m_state.cur_save_filename,
+            do_prompt, m_state.cur_save_filename, False)
         else:
-            filename = input('Enter filename here: ')
+            filename = io_util.query_cond('Enter filename here: ', do_prompt, None, False)
         if not filename:
             logger.info('Saving cancelled')
             return
 
     if m_state.options['prompt-overwrite'] and io_util.file_exist(filename):
-        answer = input('Overwrite current file "%s"? ' % filename)
-        if not answer in ('yes', 'y', 'Y'):
-            print('Canceled')
+        if not io_util.query_cond('Overwrite current file "%s"? ' % filename, do_prompt, False):
+            warn('Canceled')
             return
 
     plot.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
+
 
 def get_completions(tokens):
     pass

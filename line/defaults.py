@@ -11,6 +11,7 @@ default_options = {
     'data-title':'auto',
     'broadcast-style':['linewidth', 'linetype', 'pointsize', 'edgewidth'],
     'data-delimiter':'auto',
+    'display-when-quit':False,
     'force-column-selection':False,
     'ignore-data-comment': True,
     'identify-data':False,              # not used now
@@ -161,6 +162,7 @@ default_subfigure_style = RestrictDict({
     'default-drawline': default_drawline_style,
     'default-text': default_text_style,
     'title':'',
+    'visible':True,
     'xaxis':{
         'axis':default_major_axis_style['axis'],
         'xlabel':default_major_axis_style['label'],

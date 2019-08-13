@@ -222,15 +222,16 @@ Related options:
 
 - --prompt-overwrite=true/false: Prompt before overwritting a file. (Default: true).
 
-### clear, cls
+### clear
 ---
 
-Clear current subfigure. `clear` does not remove axis, but `cls` does.
+Clear current subfigure but keeps style.
 
 Usage:
 
     clear
-    cls
+
+Use `set gca visible=false` to completely hide current subfigure.
 
 ### replot
 ---
@@ -262,6 +263,17 @@ Usage:
 
     input
 
+To function properly, `input` must be the last command of one line.
+
+### display
+
+Display the current figure. Only works in non-interactive mode.
+
+Usage:
+
+    display
+
+
 ### quit
 ---
 
@@ -273,6 +285,7 @@ Usage:
 
 Related options:
 - --prompt-save-when-quit=true/false: Prompt to save current figure when quitting. (Default: false).
+- --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
 
 
 ## Style Names and Element Names

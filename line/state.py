@@ -9,8 +9,6 @@ from .style import *
 from .errors import warn
 from .collection_util import RestrictDict
 
-# TODO MID FEATURE custom font path
-
 class GlobalState:
     """ State of program.
     """
@@ -148,6 +146,7 @@ class Figure(FigObject):
         
         self.subfigures = []        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
+        self.is_changed = True      # changed
         self.backend = None         # object for plotting
 
         super().__init__(name, style, defaults.default_figure_attr)
@@ -192,6 +191,11 @@ class Figure(FigObject):
     def get_children(self):
         return self.subfigures
 
+    def clear_backend(self):
+        self.backend = None
+        for m_subfig in self.subfigures:
+            m_subfig.backend = None
+
 
 class Subfigure(FigObject):
 
@@ -202,7 +206,9 @@ class Subfigure(FigObject):
             'palatte':style_dict['palatte'],
             'default-dataline':style_dict['default-dataline'],
             'default-drawline':style_dict['default-drawline'],
-            'default-text':style_dict['default-text']
+            'default-text':style_dict['default-text'],
+            'title':style_dict['title'],
+            'visible':style_dict['visible']
         })
 
         super().__init__(name, style, defaults.default_subfigure_attr)
@@ -223,6 +229,7 @@ class Subfigure(FigObject):
         self.dataline_template = []
         self.update_template_palatte()
 
+        self.is_changed = True
         self.backend = None
 
     
@@ -325,9 +332,13 @@ class Subfigure(FigObject):
                 warn(e)
     
     def clear(self):
+        """ Clear lines and texts but keep style.
+        """
         self.datalines.clear()
         self.drawlines.clear()
         self.texts.clear()
+        for i in range(4):
+            self.axes[i].label.set_attr('text', '')
 
     def get_axes_coord(self, d, axis=0, side='left'):
 

@@ -3,16 +3,21 @@
 
 import numpy as np
 import logging
+import os
 
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as font_manager
 
 from . import state
 from . import style
 
-
 logger = logging.getLogger('line')
+
+# things between initialize() and finalize() can be viewed as a show() process
+# so everything need to be redraw once closed.
+
 
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:
@@ -22,26 +27,33 @@ def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
         
     if m_state.is_interactive:
         plt.ion()
+        for name, figure in m_state.figures.items():
+            _update_figure(figure, name)
 
 def finalize(m_state:state.GlobalState):
     if m_state.is_interactive:
-        pass
-    else:
-        plt.show()
+        plt.ioff()
+        for figure in m_state.figures.values():
+            figure.clear_backend()
+    
 
 def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
     """ Replot current figure;
     If `redraw_subfigures` is set, will update all subfigures.
     """
 
-    m_fig = m_state.cur_figure()
+    _update_figure(m_state.cur_figure(), m_state.cur_figurename, redraw_subfigures)
+
+
+def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
+
     dpi = m_fig.style['dpi']
     size = m_fig.style['size']
     size_inches = (size[0]/dpi, size[1]/dpi)
 
     if m_fig.backend == None or not plt.fignum_exists(m_fig.backend.number):
-        m_fig.backend = plt.figure(m_state.cur_figurename, figsize=size_inches, dpi=dpi)
-        logger.debug('Creating new figure: %s' % m_state.cur_figurename)
+        m_fig.backend = plt.figure(name, figsize=size_inches, dpi=dpi)
+        logger.debug('Creating new figure: %s' % name)
 
         for subfig in m_fig.subfigures:
             subfig.backend = None
@@ -81,32 +93,14 @@ def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
         logger.debug('Subfigure found at %s' % str(ax.get_position().bounds))
 
     if redraw_subfigures:
-        cur_subfig = m_fig.cur_subfigure
-
-        for idx, subfig in enumerate(m_fig.subfigures):
-            m_fig.cur_subfigure = idx
-            update_subfigure(m_state, show=False)
-            logger.debug('Updated subfigure %d' % idx)
-
-        m_fig.cur_subfigure = cur_subfig
+        for subfig in m_fig.subfigures:
+            _update_subfigure(subfig)
+            logger.debug('Updated subfigure %s' % subfig.name)
 
     #plt.show(block=False)
 
 
-def update_focus_figure(m_state:state.GlobalState):
-    """ Bring figure m_state.cur_figure to the front.
-    """
-    plt.figure(m_state.cur_figurename)
-    if not m_state.is_interactive:
-        return
-    if plt.get_backend().startswith('Qt'):
-        plt.get_current_fig_manager().window.raise_()
-    elif plt.get_backend().startswith('Tk'):
-        plt.get_current_fig_manager().window.attributes('-topmost', 1)
-        plt.get_current_fig_manager().window.attributes('-topmost', 0)
-
-
-def update_subfigure(m_state:state.GlobalState, show=True):
+def update_subfigure(m_state:state.GlobalState):
     """ Update m_state.cur_subfigure()
     """
 
@@ -117,10 +111,13 @@ def update_subfigure(m_state:state.GlobalState, show=True):
     
     logger.debug('Updating figure %s, subfigure %d' % (m_state.cur_figurename, m_state.cur_figure().cur_subfigure))
     plt.figure(m_state.cur_figurename)
-    m_subfig = m_state.cur_subfigure()
+    _update_subfigure(m_state.cur_subfigure())
+
+def _update_subfigure(m_subfig:state.Subfigure):
 
     ax = m_subfig.backend
     ax.cla()
+    ax.set_visible(m_subfig.style['visible'])
     ax.set_frame_on(True)
 
     # ax.set_title(m_subfig.attr['title']) TITLE has fonts...
@@ -300,24 +297,50 @@ def update_subfigure(m_state:state.GlobalState, show=True):
         for t in legend.get_texts():
             t.set_fontfamily(m_style['fontfamily'])
 
-    if show:
-        #plt.show(block=False)
-        pass
-
 
 def save_figure(m_state:state.GlobalState, filename):
+    """ Save current figure. Update if necessary.
+    """
+
+    if not m_state.is_interactive:  # delayed evaluation
+        update_figure(m_state)
     plt.savefig(
-        filename
+        filename, dpi='figure'
     )
+    if not m_state.is_interactive:
+        m_state.cur_figure().clear_backend()
+
+
+# Interactive mode functions
+
+def update_focus_figure(m_state:state.GlobalState):
+    """ Bring figure m_state.cur_figure to the front. Only called
+    in interactive mode.
+    """
+    plt.figure(m_state.cur_figurename)
+    if plt.get_backend().startswith('Qt'):
+        plt.get_current_fig_manager().window.raise_()
+    elif plt.get_backend().startswith('Tk'):
+        plt.get_current_fig_manager().window.attributes('-topmost', 1)
+        plt.get_current_fig_manager().window.attributes('-topmost', 0)
+
 
 def close_figure(m_state:state.GlobalState):
+    """ Close current figure. Only called in interactive mode.
+    """
     plt.close(m_state.cur_figurename)
 
-def cla(m_state:state.GlobalState):
 
-    m_state.cur_subfigure().backend.cla()
+# Noninteractive mode functions
 
-def cls(m_state:state.GlobalState):
+def show(m_state:state.GlobalState):
+    """ Showing all figures. Only called in non-interactive mode.
+    """
+    for name, figure in m_state.figures.items():
+        _update_figure(figure, name)
 
-    m_state.cur_subfigure().backend.cls()
+    plt.show()
+
+    for figure in m_state.figures.values():
+        figure.clear_backend()
 
