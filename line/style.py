@@ -2,7 +2,7 @@
 import enum
 from . import palette
 
-#TODO MID Add style class inhereit RestrictDict
+#TODO LOW Add style class inhereit RestrictDict
 
 PositionStyle = enum.Enum('PositionStyle', 'TOPLEFT TOPMID TOPRIGHT BOTTOMLEFT BOTTOMMID BOTTOMRIGHT')
 

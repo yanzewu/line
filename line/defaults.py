@@ -4,7 +4,7 @@ import argparse
 from . import state
 from . import errors
 from .style import Color, LineType, PointType
-from .collection_util import RestrictDict
+from .collection_util import RestrictDict, extract_single
 
 default_options = {
     'auto-adjust-range':True,
@@ -42,13 +42,11 @@ default_figure_attr = RestrictDict({
 })
 
 default_major_axis_style = RestrictDict({
-    'axis':RestrictDict({
-        'linewidth':1,
-        'linetype':LineType.SOLID,
-        'color':Color.BLACK,
-        'visible':True,
-        'zindex':0
-    }),
+    'linewidth':0.5,
+    'linetype':LineType.SOLID,
+    'color':Color.BLACK,
+    'visible':True,
+    'zindex':0,
     'label':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':14,
@@ -62,17 +60,21 @@ default_major_axis_style = RestrictDict({
         'color':Color.BLACK,
         'orient':'out',
         'visible':True
+    }),
+    'grid':RestrictDict({
+        'linewidth': 0,
+        'linetype':LineType.DASH,
+        'linecolor':Color.GREY,
+        'visible':False
     })
 })
 
 default_minor_axis_style = RestrictDict({
-    'axis':RestrictDict({
-        'linewidth':1,
-        'linetype':LineType.SOLID,
-        'color':Color.BLACK,
-        'visible':True,
-        'zindex':0
-    }),
+    'linewidth':0.5,
+    'linetype':LineType.SOLID,
+    'color':Color.BLACK,
+    'visible':True,
+    'zindex':0,
     'label':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':14,
@@ -86,19 +88,18 @@ default_minor_axis_style = RestrictDict({
         'color':Color.BLACK,
         'orient':'out',
         'visible':False
+    }),
+    'grid':RestrictDict({
+        'linewidth': 0,
+        'linetype':LineType.DASH,
+        'linecolor':Color.GREY,
+        'visible':False
     })
 })
 
 default_axis_attr = RestrictDict({
     'range': (None, None),
     'interval': 0.1
-})
-
-default_grid_style = RestrictDict({
-    'linewidth': 0,
-    'linetype':LineType.DASH,
-    'linecolor':Color.GREY,
-    'visible':False
 })
 
 default_dataline_style = RestrictDict({
@@ -163,30 +164,10 @@ default_subfigure_style = RestrictDict({
     'default-text': default_text_style,
     'title':'',
     'visible':True,
-    'xaxis':{
-        'axis':default_major_axis_style['axis'],
-        'xlabel':default_major_axis_style['label'],
-        'xtick':default_major_axis_style['tick'],
-        'xgrid': default_grid_style
-    },
-    'yaxis':{
-        'axis':default_major_axis_style['axis'],
-        'ylabel':default_major_axis_style['label'],
-        'ytick':default_major_axis_style['tick'],
-        'ygrid': default_grid_style
-    },
-    'raxis':{
-        'axis':default_minor_axis_style['axis'],
-        'rlabel':default_minor_axis_style['label'],
-        'rtick':default_minor_axis_style['tick'],
-        'rgrid': default_grid_style
-    },
-    'taxis':{
-        'axis':default_minor_axis_style['axis'],
-        'tlabel':default_minor_axis_style['label'],
-        'ttick':default_minor_axis_style['tick'],
-        'tgrid': default_grid_style
-    },
+    'xaxis':default_major_axis_style,
+    'yaxis':default_major_axis_style,
+    'raxis':default_minor_axis_style,
+    'taxis':default_minor_axis_style,
     'legend':default_legend_style
 })
 
@@ -196,16 +177,19 @@ default_subfigure_attr = RestrictDict({
     'group': tuple()
 })
 
+default_figure_style.data['subfigure0'] = default_subfigure_style
+
 def init_global_state(m_state):
 
     m_state.default_figure = state.Figure(
         'default-figure',
-        default_figure_style
-    )
-    m_state.default_figure.subfigures.append(
-        state.Subfigure(
-            'subfigure0',
-            default_subfigure_style
-        )
+        RestrictDict(extract_single(default_figure_style))
     )
     m_state.options = default_options
+    m_subfig = m_state.default_figure.subfigures[0]
+    m_subfig.datalines = [
+        state.FigObject('line%d'%i, RestrictDict({}), RestrictDict({}))
+         for i in range(len(m_subfig.dataline_template))
+    ]
+    for i in range(len(m_subfig.datalines)):
+        m_subfig.datalines[i].style = m_subfig.dataline_template[i]

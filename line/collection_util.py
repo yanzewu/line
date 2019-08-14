@@ -43,3 +43,8 @@ class RestrictDict:
 
     def items(self):
         return self.data.items()
+
+def extract_single(d):
+
+    return dict((d_ for d_ in d.items() if not isinstance(d_[0], (dict, RestrictDict))))
+    

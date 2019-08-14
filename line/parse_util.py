@@ -21,10 +21,12 @@ def assert_token(token, expected):
         raise LineParseError('%s expected' % expected)
 
 def skip_tokens(m_tokens, termflag):
-    """ Skip tokens until the end or termflag is meet (not included)
+    """ Skip tokens until the end or termflag is meet (included)
     """
-    while len(m_tokens) > 0 and m_tokens[0] != termflag:
+    while len(m_tokens) > 0:
         get_token(m_tokens)
+        if m_tokens[0] == termflag:
+            break
 
 def stod(token):
 

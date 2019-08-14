@@ -7,7 +7,7 @@ from itertools import chain
 from . import defaults
 from .style import *
 from .errors import warn
-from .collection_util import RestrictDict
+from .collection_util import RestrictDict, extract_single
 
 class GlobalState:
     """ State of program.
@@ -50,6 +50,8 @@ class GlobalState:
 
         self.figures[self.cur_figurename] = self.default_figure.copy()
         self.cur_figure().name = 'figure%s' % self.cur_figurename
+        self.cur_figure().subfigures[0].dataline_template = copy.deepcopy(
+            self.default_figure.subfigures[0].dataline_template)
 
     def find_elements(self, name, raise_error=False):
         """ Find elements by name recursively.
@@ -132,24 +134,36 @@ class FigObject:
         style_exp = self.export_style()
         for e in self.get_children():
             style_exp[e.name] = e.export_style()
+        return style_exp
 
     def get_children(self):
         return []
 
-    def copy(self):
-        return copy.deepcopy(self)
+    def find_elements(self, name, raise_error):
+        if self.name == name:
+            return self
+        else:
+            chain.from_iterable((c.find_elements() for c in self.get_children()))
+
+    def copy(self, copy_attr=False):
+        """ Copies only style if copy_attr is not set.
+        """
+        new_obj = type(self)(self.name, self.export_style_recur())
+        if copy_attr:
+            new_obj.attr = self.attr.copy()
+        return new_obj
 
 
 class Figure(FigObject):
 
     def __init__(self, name, style):
         
-        self.subfigures = []        # list of subfigures
+        self.subfigures = [Subfigure('subfigure0', style['subfigure0'])]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
         self.backend = None         # object for plotting
 
-        super().__init__(name, style, defaults.default_figure_attr)
+        super().__init__(name, RestrictDict(extract_single(style)), defaults.default_figure_attr)
 
     def find_elements(self, name, raise_error=False):
         if name == 'figure':
@@ -200,18 +214,9 @@ class Figure(FigObject):
 class Subfigure(FigObject):
 
     def __init__(self, name, style_dict={}):
-        
-        style = RestrictDict({
-            'padding':style_dict['padding'],
-            'palatte':style_dict['palatte'],
-            'default-dataline':style_dict['default-dataline'],
-            'default-drawline':style_dict['default-drawline'],
-            'default-text':style_dict['default-text'],
-            'title':style_dict['title'],
-            'visible':style_dict['visible']
-        })
 
-        super().__init__(name, style, defaults.default_subfigure_attr)
+        super().__init__(name, RestrictDict(extract_single(style_dict)),
+            defaults.default_subfigure_attr)
 
         self.axes = [
             Axis('xaxis', style_dict['xaxis']),
@@ -254,7 +259,6 @@ class Subfigure(FigObject):
                 for c in _mychildren:
                     _ret += c.get_children()
             return list(filter(lambda x:x.name == name, _ret))
-
 
     def get_children(self):
         return self.axes + [self.legend] + self.datalines + self.drawlines + self.texts 
@@ -350,10 +354,6 @@ class Subfigure(FigObject):
 
     def update_template_palatte(self):
 
-        # TODO MID FIX default-figure consists of lines so set default works.
-        # Template is simply copied when initiation. Also change palatte of 
-        # default-figure changes its data template.
-
         # TODO LOW FIX setting 'default' as a style option for dataline as a 
         # indicator whether style is managed by custom or template.
 
@@ -386,14 +386,26 @@ class Subfigure(FigObject):
 class Axis(FigObject):
 
     def __init__(self, name, style):
+
+        self.label = Text('', None, 'label', style['label'])
+        self.tick = Tick('tick', style['tick'], RestrictDict({}))
+        self.grid = Grid('grid', style['grid'], RestrictDict({}))
+
+        super().__init__(name, RestrictDict(extract_single(style)), defaults.default_axis_attr)
+
+    def find_elements(self, name, raise_error):
         
         c = name[0]
-
-        self.label = Text('', None, c+'label', style[c+'label'])
-        self.tick = Tick(c+'tick', style[c+'tick'], RestrictDict({}))
-        self.grid = Grid(c+'grid', style[c+'grid'], RestrictDict({}))
-
-        super().__init__(name, style['axis'], defaults.default_axis_attr)
+        if name in ('axis' , c+'axis'):
+            return self
+        elif name in ('label', c+'label'):
+            return self.label
+        elif name in ('tick', c+'tick'):
+            return self.tick
+        elif name in ('grid', c+'grid'):
+            return self.grid
+        elif raise_error:
+            raise KeyError(name)
 
     def get_children(self):
         return [self.label, self.tick, self.grid]

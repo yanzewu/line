@@ -19,8 +19,6 @@ from .errors import LineParseError, LineProcessError, warn
 
 logger = logging.getLogger('line')
 
-# TODO LOW FIX prompt only in interactive mode
-
 def parse_and_process_command(tokens, m_state:state.GlobalState):
     """ Parse and execute sequence of tokens.
     Args:
@@ -209,7 +207,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     else:
         raise LineParseError('No command named %s' % command)
 
-    if not m_state.is_interactive:
+    if not m_state.is_interactive or m_state.cur_figurename is None:
         return 0
 
     # update figure
@@ -258,6 +256,13 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             if io_util.file_exist(m_tokens[0]):
                 filename = get_token(m_tokens)
                 logger.debug('New file found: %s' % filename)
+            elif m_tokens[0][0] not in '$(':    # maybe a column title?
+                m_file_test = file_loaded.get(m_state.cur_open_filename, None)
+                if m_file_test and ((m_tokens[0].isdigit() and int(m_tokens[0])-1 < m_file_test.cols()) or 
+                    m_file_test.has_label(m_tokens[0])):
+                    warn('File %s not found' % m_tokens[0])
+                    skip_tokens(m_tokens, ',')
+                    continue
             else:
                 filename = m_state.cur_open_filename
                 warn('Treat %s as column label' % m_tokens[0])
@@ -330,6 +335,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 else:
                     skip_tokens(m_tokens, ',')
                     warn('Skipping column %s with no valid data' % column_expr2)
+                    continue
             else:
                 if cur_xdata is None:
                     cur_xdata = m_file.get_sequence()

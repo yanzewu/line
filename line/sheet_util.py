@@ -125,6 +125,9 @@ class SheetFile:
     def get_sequence(self):
         return np.arange(self.data.shape[0])
 
+    def has_label(self, label):
+        return label in self.data.columns
+
     def eval_column_expr(self, col_expr):
         if not col_expr[0] in '$(':
             try:
