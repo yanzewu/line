@@ -18,3 +18,7 @@ def query_cond(question, cond, default, set_true=True):
         return answer
     else:
         return default
+
+def get_cwd_files(cwd=os.getcwd()):
+    f = os.listdir()
+    return f + ['\'%s\'' % f_ for f_ in f ] + ['\"%s\"' % f_ for f_ in f ] 

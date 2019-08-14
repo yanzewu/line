@@ -13,6 +13,7 @@ from . import io_util
 from . import keywords
 from . import defaults
 from . import scale
+from . import cmd_handle
 
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
@@ -132,7 +133,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             m_state.create_figure()
             m_state.cur_figure().is_changed = True
 
-        if is_interactive:
+        if m_state.is_interactive:
             do_focus_up = True
 
     # select subfigure
@@ -204,6 +205,19 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if not m_state.is_interactive:
             plot.show(m_state)
 
+    elif command == 'load':
+        filename = get_token(m_tokens)
+        assert_no_token(m_tokens)
+        handler = cmd_handle.CMDHandler(m_state)
+        is_interactive = m_state.is_interactive
+        try:
+            plot.finalize(m_state)
+            handler.proc_file(filename)
+        except IOError:
+            raise LineProcessError('Cannot open file: %s' % filename)
+        m_state.is_interactive = is_interactive
+        plot.initialize(m_state)
+
     else:
         raise LineParseError('No command named %s' % command)
 
@@ -258,7 +272,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 logger.debug('New file found: %s' % filename)
             elif m_tokens[0][0] not in '$(':    # maybe a column title?
                 m_file_test = file_loaded.get(m_state.cur_open_filename, None)
-                if m_file_test and ((m_tokens[0].isdigit() and int(m_tokens[0])-1 < m_file_test.cols()) or 
+                if m_file_test and ((m_tokens[0].isdigit() and int(m_tokens[0])-1 > m_file_test.cols()) or 
                     m_file_test.has_label(m_tokens[0])):
                     warn('File %s not found' % m_tokens[0])
                     skip_tokens(m_tokens, ',')
@@ -269,7 +283,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
         else:
             filename = m_state.cur_open_filename
-            get_token(m_tokens)
+            warn('Treat %s as column label' % m_tokens[0])
 
         if not filename:
             raise LineParseError('Filename expected')
@@ -482,7 +496,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             elements = [m_state.default_figure.subfigures[0]]
             style_list = parse_style(m_tokens)
             for s, v in style_list.items():
-                has_updated = m_state.cur_figure().set_style_recur(s, v) or has_updated
+                has_updated = m_state.default_figure.set_style_recur(s, v) or has_updated
 
         else:
             element_names = parse_token_with_comma(m_tokens)
@@ -741,6 +755,3 @@ def process_save(m_state:state.GlobalState, filename:str):
     plot.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
 
-
-def get_completions(tokens):
-    pass

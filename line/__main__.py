@@ -40,16 +40,19 @@ Additional options can be shown by `line -e 'show option'`'''
             args.append(arg)
     
     if len(args) == 0:
+        cmd_handler.read_source()
         cmd_handler.m_state.is_interactive = True
-        cmd_handler.init_input()
         cmd_handler.input_loop()
     elif mode == 'script':
+        cmd_handler.read_source()
         for filename in args:
             cmd_handler.proc_file(filename)
     elif mode == 'eval':
+        cmd_handler.read_source()
         cmd_handler.proc_lines([' '.join(args)])
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
+        cmd_handler.read_source()
         cmd_handler.proc_lines(['plot ' + ' '.join(args)])
 
         

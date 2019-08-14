@@ -43,6 +43,28 @@ style_alias = {
     'ytics':'ytick'
 }
 
+command_keywords = {
+    'append',
+    'clear',
+    'display',
+    'figure',
+    'group',
+    'input',
+    'load',
+    'line', 'hline', 'vline',
+    'plot',
+    'print',
+    'quit',
+    'remove',
+    'replot',
+    'save',
+    'set',
+    'split', 'hsplit', 'vsplit',
+    'show',
+    'subfigure',
+    'text'
+}
+
 command_alias = {
     'cla':'clear',
     'q':'quit',
@@ -56,3 +78,6 @@ command_alias = {
 def is_style_keyword(token):
 
     return token in style_alias or token in style_keywords
+
+all_style_keywords = style_keywords.union(list(style_alias.keys()))
+all_command_keywords = command_keywords.union(list(command_alias.keys()))

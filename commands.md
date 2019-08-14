@@ -274,6 +274,15 @@ Usage:
     display
 
 
+### load
+
+Load an external script.
+
+Usage:
+
+    load filename
+
+
 ### quit
 ---
 
