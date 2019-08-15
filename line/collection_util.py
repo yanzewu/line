@@ -6,8 +6,11 @@ class RestrictDict:
         is_valid() may be overrided to check data validity.
     """
     
-    def __init__(self, init_data:dict):
-        self.data = init_data
+    def __init__(self, init_data):
+        if isinstance(init_data, RestrictDict):
+            self.data = init_data.data.copy()
+        else:
+            self.data = dict(init_data)
 
     def __getitem__(self, name):
         return self.data[name]
@@ -46,5 +49,5 @@ class RestrictDict:
 
 def extract_single(d):
 
-    return dict((d_ for d_ in d.items() if not isinstance(d_[0], (dict, RestrictDict))))
+    return dict((d_ for d_ in d.items() if not isinstance(d_[1], (dict, RestrictDict))))
     

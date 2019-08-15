@@ -183,7 +183,7 @@ def init_global_state(m_state):
 
     m_state.default_figure = state.Figure(
         'default-figure',
-        RestrictDict(extract_single(default_figure_style))
+        RestrictDict(default_figure_style)
     )
     m_state.options = default_options
     m_subfig = m_state.default_figure.subfigures[0]

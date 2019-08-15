@@ -61,7 +61,6 @@ class SheetFile:
 
 
     def sniff(self, f, ignore_data_comment=True):
-        # TODO MID FIX check title recognition
         lines = []
 
         line = f.readline()
@@ -107,6 +106,9 @@ class SheetFile:
                 data_info['title'] = False
         else:
             data_info['title'] = s.has_header(sample)
+            if not data_info['title']:
+                if re.match(r'[a-zA-Z_]', lines[0]):
+                    data_info['title'] = True   # anything not number is regarded as title.
 
         data_info['delimiter'] = dialect.delimiter
         data_info['initial_space'] = dialect.skipinitialspace

@@ -133,7 +133,7 @@ class FigObject:
 
         style_exp = self.export_style()
         for e in self.get_children():
-            style_exp[e.name] = e.export_style()
+            style_exp[e.name] = e.export_style_recur()
         return style_exp
 
     def get_children(self):
@@ -215,8 +215,12 @@ class Subfigure(FigObject):
 
     def __init__(self, name, style_dict={}):
 
-        super().__init__(name, RestrictDict(extract_single(style_dict)),
-            defaults.default_subfigure_attr)
+        style = extract_single(style_dict)
+        style.update((('default-dataline', style_dict['default-dataline']),
+        ('default-drawline', style_dict['default-drawline']),
+        ('default-text', style_dict['default-text'])))
+
+        super().__init__(name, RestrictDict(style), defaults.default_subfigure_attr)
 
         self.axes = [
             Axis('xaxis', style_dict['xaxis']),
@@ -225,7 +229,7 @@ class Subfigure(FigObject):
             Axis('taxis', style_dict['taxis']),
             ]
 
-        self.legend = Legend('legend', style_dict['legend'])
+        self.legend = Legend('legend', RestrictDict(style_dict['legend']))
 
         self.datalines = [] # datalines
         self.drawlines = [] # drawlines
@@ -387,9 +391,9 @@ class Axis(FigObject):
 
     def __init__(self, name, style):
 
-        self.label = Text('', None, 'label', style['label'])
-        self.tick = Tick('tick', style['tick'], RestrictDict({}))
-        self.grid = Grid('grid', style['grid'], RestrictDict({}))
+        self.label = Text('', None, 'label', RestrictDict(style['label']))
+        self.tick = Tick('tick', RestrictDict(style['tick']), RestrictDict({}))
+        self.grid = Grid('grid', RestrictDict(style['grid']), RestrictDict({}))
 
         super().__init__(name, RestrictDict(extract_single(style)), defaults.default_axis_attr)
 

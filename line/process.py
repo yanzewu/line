@@ -20,6 +20,8 @@ from .errors import LineParseError, LineProcessError, warn
 
 logger = logging.getLogger('line')
 
+# TODO MID FEATURE add cd support and cwd system
+
 def parse_and_process_command(tokens, m_state:state.GlobalState):
     """ Parse and execute sequence of tokens.
     Args:
@@ -33,7 +35,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     """
     
     if len(tokens) == 0:
-        return
+        return 0
 
     logger.debug('Tokens are: %s' % tokens)
 
@@ -209,7 +211,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         filename = get_token(m_tokens)
         assert_no_token(m_tokens)
         handler = cmd_handle.CMDHandler(m_state)
-        is_interactive = m_state.is_interactive
+        is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
         try:
             plot.finalize(m_state)
             handler.proc_file(filename)
@@ -263,25 +265,25 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         # force-column-selection is not set
         # no : at next
         # not starting with $ or (
+
+        is_newfile = False  # is new filename 
+
         if m_state.options['force-column-selection'] == False and \
             (len(m_tokens) == 1 or m_tokens[1] != ':') or \
             (m_tokens[0] != '' and m_tokens[0][0] not in '$('):
 
             if io_util.file_exist(m_tokens[0]):
                 filename = get_token(m_tokens)
+                is_newfile = True
                 logger.debug('New file found: %s' % filename)
-            elif m_tokens[0][0] not in '$(':    # maybe a column title?
+            elif m_tokens[0][0] not in '$(' and not m_tokens[0].isdigit():    # maybe a column title?
                 m_file_test = file_loaded.get(m_state.cur_open_filename, None)
-                if m_file_test and ((m_tokens[0].isdigit() and int(m_tokens[0])-1 > m_file_test.cols()) or 
-                    m_file_test.has_label(m_tokens[0])):
+                if not m_file_test or not m_file_test.has_label(m_tokens[0]):
                     warn('File %s not found' % m_tokens[0])
                     skip_tokens(m_tokens, ',')
                     continue
-            else:
-                filename = m_state.cur_open_filename
-                warn('Treat %s as column label' % m_tokens[0])
-
-        else:
+                
+        if not is_newfile:
             filename = m_state.cur_open_filename
             warn('Treat %s as column label' % m_tokens[0])
 
@@ -367,6 +369,10 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
     assert_no_token(m_tokens)
 
+    if len(data_list) == 0:
+        warn('No valid data for plotting...')
+        return
+
     # Broadcasting styles
     for bc_style in m_state.options['broadcast-style']:
         if bc_style in style_list[0]:
@@ -410,7 +416,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
         m_state.cur_subfigure().is_changed = True
     else:
-        warn('No valid data for plotting...')
+        pass
 
 
 def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):

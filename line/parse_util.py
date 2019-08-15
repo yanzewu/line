@@ -24,8 +24,7 @@ def skip_tokens(m_tokens, termflag):
     """ Skip tokens until the end or termflag is meet (included)
     """
     while len(m_tokens) > 0:
-        get_token(m_tokens)
-        if m_tokens[0] == termflag:
+        if get_token(m_tokens) == termflag:
             break
 
 def stod(token):
