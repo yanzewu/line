@@ -1,6 +1,7 @@
 
 import sys
 import logging
+import warnings
 
 from . import cmd_handle
 from .parse import translate_option_val
@@ -39,6 +40,9 @@ Additional options can be shown by `line -e 'show option'`'''
         else:
             args.append(arg)
     
+    if not cmd_handler._debug:
+        warnings.filterwarnings('ignore')
+
     if len(args) == 0:
         cmd_handler.read_source()
         cmd_handler.m_state.is_interactive = True

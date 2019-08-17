@@ -273,6 +273,15 @@ def _update_subfigure(m_subfig:state.Subfigure):
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
 
+    # grid
+    for i, n in enumerate('xy'):
+        ax.grid(grid_styles[i]['visible'], which='major', axis=n, 
+            linewidth=grid_styles[i]['linewidth'],
+            linestyle=grid_styles[i]['linetype'].to_str(),
+            color=grid_styles[i]['linecolor'],
+            visible=grid_styles[i]['visible']
+        )
+
     # legend
     if m_subfig.legend.style['visible'] and m_subfig.datalines:
 

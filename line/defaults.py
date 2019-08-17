@@ -46,7 +46,7 @@ default_major_axis_style = RestrictDict({
     'linetype':LineType.SOLID,
     'color':Color.BLACK,
     'visible':True,
-    'zindex':0,
+    'zindex':-1,
     'label':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':14,
@@ -62,10 +62,11 @@ default_major_axis_style = RestrictDict({
         'visible':True
     }),
     'grid':RestrictDict({
-        'linewidth': 0,
-        'linetype':LineType.DASH,
+        'linewidth': 0.2,
+        'linetype':LineType.DOT,
         'linecolor':Color.GREY,
-        'visible':False
+        'visible':False,
+        'zindex':-2
     })
 })
 
@@ -74,7 +75,7 @@ default_minor_axis_style = RestrictDict({
     'linetype':LineType.SOLID,
     'color':Color.BLACK,
     'visible':True,
-    'zindex':0,
+    'zindex':-1,
     'label':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':14,
@@ -90,7 +91,7 @@ default_minor_axis_style = RestrictDict({
         'visible':False
     }),
     'grid':RestrictDict({
-        'linewidth': 0,
+        'linewidth': 0.5,
         'linetype':LineType.DASH,
         'linecolor':Color.GREY,
         'visible':False

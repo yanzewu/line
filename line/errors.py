@@ -42,7 +42,7 @@ def print_sys_error(e):
 
     print('[%s:%d %s()] %s: %s' % (file_name, line_no, func_name, exc_type.__name__, e), file=sys.stderr)
 
-def print_as_warning():
+def print_as_warning(e):
     warn(sys.exc_info()[1])
 
 def print_line_error(e):

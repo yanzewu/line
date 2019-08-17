@@ -17,6 +17,7 @@ from . import cmd_handle
 
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
+from .collection_util import extract_single
 
 logger = logging.getLogger('line')
 
@@ -279,13 +280,13 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             elif m_tokens[0][0] not in '$(' and not m_tokens[0].isdigit():    # maybe a column title?
                 m_file_test = file_loaded.get(m_state.cur_open_filename, None)
                 if not m_file_test or not m_file_test.has_label(m_tokens[0]):
-                    warn('File %s not found' % m_tokens[0])
+                    warn('File "%s" not found' % m_tokens[0])
                     skip_tokens(m_tokens, ',')
                     continue
                 
         if not is_newfile:
             filename = m_state.cur_open_filename
-            warn('Treat %s as column label' % m_tokens[0])
+            warn('Treat "%s" as column label' % m_tokens[0])
 
         if not filename:
             raise LineParseError('Filename expected')
@@ -299,7 +300,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 m_state.options['ignore-data-comment']
             )
             if not m_file:
-                warn('Cannot open file %s, skipping...' % filename)
+                warn('Skip invalid file "%s"' % filename)
                 skip_tokens(m_tokens, ',')
                 continue
             else:
@@ -331,7 +332,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             column = m_file.eval_column_expr(column_expr)
             label = m_file.get_label(int(column_expr)-1) if column_expr.isdigit() else column_expr
             if column is None:  # failed
-                warn('Skipping column %s with no valid data' % column_expr)
+                warn('Skip column "%s" with no valid data' % column_expr)
                 skip_tokens(m_tokens, ',')
                 continue
 
@@ -349,7 +350,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                     data_list.append((column, column2, label2, label))
                 else:
                     skip_tokens(m_tokens, ',')
-                    warn('Skipping column %s with no valid data' % column_expr2)
+                    warn('Skip column "%s" with no valid data' % column_expr2)
                     continue
             else:
                 if cur_xdata is None:
@@ -369,7 +370,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     assert_no_token(m_tokens)
 
     if len(data_list) == 0:
-        warn('No valid data for plotting...')
+        warn('No data to plot')
         return
 
     # Broadcasting styles
@@ -448,7 +449,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
             element_name = get_token(m_tokens)
             elements = m_subfig.find_elements(element_name, False)
             if not elements:
-                warn('No element is selected by %s' % element_name)
+                warn('No element is selected by "%s"' % element_name)
 
             for element in elements:
                 if isinstance(element, state.DataLine):
@@ -531,7 +532,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
                 raise LineProcessError('Element "%s" cannot be set in `set future`' % element_name)
             
         if len(elements) == 0:
-            warn('No element is selected')
+            warn('No element to set')
             return
 
         for element in elements:
@@ -548,10 +549,10 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             if arg == '=':
                 arg = get_token(m_tokens)
             if opt not in m_state.options:
-                warn('Skipping option "%s"' % opt)
+                warn('Skip invalid option "%s"' % opt)
             else:
                 if opt not in m_state.options:
-                    raise LineParseError('Invalid option: %s' % opt)
+                    raise LineParseError('Invalid option: "%s"' % opt)
                 m_state.options[opt] = translate_option_val(opt, arg)
 
     else:
@@ -591,33 +592,38 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         print('File opened:', m_state.cur_open_filename)
         print('File saved:', m_state.cur_save_filename)
 
-    elif element_name == 'option' or element_name in 'options':
+    elif element_name in ('option',  'options'):
         if len(m_tokens) == 0:
-            print('Option\tValue\n---- ----')
+            print('OPTION                          VALUE')
+            print('------                          -----')
             for opt, val in m_state.options.items():
-                print('%s\t%s' % (opt, val))
+                print('%s%s%s' % (opt, ' '*(32-len(opt)), val))
         else:
             print(m_state.options[get_token(m_tokens)])
             assert_no_token(m_tokens)
 
-    else:   # show style
-        elements = m_state.find_elements(element_name)
+    else:
+        if element_name == 'default':
+            elements = m_state.default_figure.find_elements(get_token(m_tokens))
+        else:
+            elements = m_state.find_elements(element_name)
+
         if not elements:
-            warn('No element is selected')
+            warn('No element to set')
             return
 
         # show all styles
         if len(m_tokens) == 0:
             for e in elements:
                 print(e.name + ':')
-                print('\n'.join(('%s=%s' % item for item in e.export_style().items())))
+                print('\n'.join(('%s =\t%s' % item for item in extract_single(e.export_style()).items())))
 
         # show specified style
         else:
             for style_name in m_tokens:
                 style_name = keywords.style_alias.get(style_name, style_name)
                 if style_name not in keywords.style_keywords:
-                    warn('Skipping invalid style: %s' % style_name)
+                    warn('Skip invalid style "%s"' % style_name)
                 print('%s:' % style_name)
                 print('\n'.join(('%s\t%s' % (e.name, e.get_style(style_name)) 
                     for e in elements)))
@@ -647,7 +653,7 @@ def process_set_style(m_state, element_names, style_dict, scope):
     for element_name in element_names:
         elements = scope.find_elements(element_name, not m_state.options['set-skip-invalid-selection'])
     if not elements:
-        warn('No element is selected by %s' % element_name)
+        warn('No element is selected by "%s"' % element_name)
         return False
 
     has_updated = False
@@ -670,11 +676,11 @@ def process_set_style(m_state, element_names, style_dict, scope):
             for line_style in m_state.cur_subfigure().dataline_template + \
                      [m_state.cur_subfigure().style['default-dataline']]:
                 try:
-                    line_style.update(style_dict)
+                    line_style.update(style_dict, True)
                 except KeyError as e:
-                    raise LineProcessError('Invalid style name: %s' % e.args[0])
+                    raise LineProcessError('Invalid style name: "%s"' % e.args[0])
                 except ValueError as e:
-                    raise LineProcessError('Invalid style value: %s' % e.args[0])
+                    raise LineProcessError('Invalid style value: "%s"' % e.args[0])
 
     else:
         # also clear only works on style, not attr.

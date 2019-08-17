@@ -161,7 +161,7 @@ class CMDHandler:
             if cur_token.group('a'):    # string
                 string = cur_token.group('a')
                 if string[-1] != string[0]:
-                    raise LineParseError("Quote not match", string)
+                    raise LineParseError("Quote not match")
                 token_buffer.append(string[1:-1])
 
             elif cur_token.group('b'):  # variable or others
@@ -178,7 +178,7 @@ class CMDHandler:
                     if cur_token is None or cur_token.group('c') == '#':
                         return self.RET_CONTINUE # ask for next line
                     else:
-                        raise LineParseError('Character after "\\"', cur_token.string)
+                        raise LineParseError('Character after "\\"')
                 elif char == ';':
                     if execute:
                         ret = process.parse_and_process_command(self.token_buffer, self.m_state)

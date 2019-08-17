@@ -63,6 +63,11 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
     """
 
     style_name = get_token(m_tokens)
+    if style_name == 'on':
+        return 'visible', True
+    elif style_name == 'off':
+        return 'visible', False
+        
     style_val = get_token(m_tokens)
     if style_val == '=':
         style_val = get_token(m_tokens)
@@ -82,14 +87,14 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
     # validity of style
     style_name = keywords.style_alias.get(style_name, style_name)
     if style_name not in keywords.style_keywords:
-        warn('Skipping invalid style: %s' % style_name)
+        warn('Skip invalid style "%s"' % style_name)
         return None, None
 
     try:
         style_val_real = translate_style_val(style_name, style_val)
     except (LineParseError, KeyError, ValueError) as e:
         print_as_warning(e)
-        warn('Skipping invalid style parameter for %s: %s' % (style_name, style_val))
+        warn('Skip invalid style parameter for "%s": %s' % (style_name, style_val))
         return None, None
     else:
         return style_name, style_val_real
@@ -151,12 +156,12 @@ def translate_style_val(style_name:str, style_val:str):
 
     elif style_name == 'orient':
         if style_val not in ('in', 'out'):
-            raise LineParseError('Invalid orient style: %s' % style_val)
+            raise LineParseError('Invalid orient style "%s"' % style_val)
         return style_val
 
     elif style_name == 'pos':
         try:
-            return style.Str2Pos[style_name]
+            return style.Str2Pos[style_val]
         except KeyError:
             v1, v2 = style_val.split(',')
             return stof(v1), stof(v2)    
@@ -180,7 +185,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # bool
     elif style_name == 'visible':
-        return stob(style_name)
+        return stob(style_val)
 
     # int
     elif style_name in ('fontsize', 'skippoint', 'zindex', 'dpi'):
@@ -212,5 +217,5 @@ def translate_option_val(option:str, value:str):
     try:
         return STOB[value]
     except KeyError:
-        raise LineParseError('true/false requried for option %s, got %s' % (option, value))
+        raise LineParseError('true/false requried for option "%s", got "%s"' % (option, value))
 

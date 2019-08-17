@@ -150,9 +150,9 @@ class FigObject:
 
     def find_elements(self, name, raise_error):
         if self.name == name:
-            return self
+            return [self]
         else:
-            chain.from_iterable((c.find_elements() for c in self.get_children()))
+            return list(chain.from_iterable((c.find_elements() for c in self.get_children())))
 
     def copy(self, copy_attr=False):
         """ Copies only style if copy_attr is not set.
@@ -186,7 +186,7 @@ class Figure(FigObject):
                 if raise_error:
                     raise
                 else:
-                    warn('Invalid selection: %s, skipping' % name)
+                    warn('Skip invalid selection "%s"' % name)
                     return []
 
         else:
@@ -270,8 +270,8 @@ class Subfigure(FigObject):
             _ret = list(filter(lambda x:x.name == name, _mychildren))
             if len(_ret) == 0:
                 for c in _mychildren:
-                    _ret += c.get_children()
-            return list(filter(lambda x:x.name == name, _ret))
+                    _ret += c.find_elements(name, raise_error)
+            return _ret
 
     def get_children(self):
         return self.axes + [self.legend] + self.datalines + self.drawlines + self.texts 
@@ -404,17 +404,19 @@ class Axis(FigObject):
 
     def find_elements(self, name, raise_error):
         
-        c = name[0]
+        c = self.name[0]
         if name in ('axis' , c+'axis'):
-            return self
+            return [self]
         elif name in ('label', c+'label'):
-            return self.label
+            return [self.label]
         elif name in ('tick', c+'tick'):
-            return self.tick
+            return [self.tick]
         elif name in ('grid', c+'grid'):
-            return self.grid
+            return [self.grid]
         elif raise_error:
             raise KeyError(name)
+        else:
+            return []
 
     def get_children(self):
         return [self.label, self.tick, self.grid]
