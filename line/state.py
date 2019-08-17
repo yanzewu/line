@@ -289,6 +289,10 @@ class Subfigure(FigObject):
             axis_index = {'x':0, 'y':1, 'r':2, 't':3}
             self.axes[axis_index[name[:-5]]].set_style('range', value)
 
+        elif name == 'palette':
+            super().set_style(name, value)
+            self.update_template_palette()
+
         else:
             super().set_style(name, value)
 
@@ -369,7 +373,10 @@ class Subfigure(FigObject):
 
         colors = PALETTES[self.style['palette']]
         if not self.dataline_template:
-            self.dataline_template = [self.style['default-dataline'].copy() for i in range(len(colors)-1)]
+            self.dataline_template = []
+            
+        while len(self.dataline_template) < len(colors) - 1:
+            self.dataline_template.append(self.style['default-dataline'].copy())
 
         for idx in range(len(colors)-1):
             self.dataline_template[idx]['linecolor'] = colors[idx+1]

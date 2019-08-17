@@ -58,7 +58,8 @@ default_major_axis_style = RestrictDict({
         'fontsize':12,
         'format':'%.2f',
         'color':Color.BLACK,
-        'orient':'out',
+        'orient':'in',
+        'linewidth':0.5,
         'visible':True
     }),
     'grid':RestrictDict({
@@ -87,7 +88,8 @@ default_minor_axis_style = RestrictDict({
         'fontsize':12,
         'format':'%.1f',
         'color':Color.BLACK,
-        'orient':'out',
+        'orient':'in',
+        'linewidth':0.5,
         'visible':False
     }),
     'grid':RestrictDict({

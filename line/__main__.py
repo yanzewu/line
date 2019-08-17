@@ -7,8 +7,8 @@ from . import cmd_handle
 from .parse import translate_option_val
 
 
-if __name__ == '__main__':
-    
+def main():
+
     help_str = '''
 line: Visualizing sequential data smartly.
 Available options are:
@@ -59,4 +59,7 @@ Additional options can be shown by `line -e 'show option'`'''
         cmd_handler.read_source()
         cmd_handler.proc_lines(['plot ' + ' '.join(args)])
 
-        
+
+if __name__ == '__main__':
+    
+    main()

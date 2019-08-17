@@ -1,6 +1,47 @@
 
 
-## List of Commands
+# Documentation of Line
+
+## Command Line Options
+
+Entering interactive mode:
+
+    line 
+
+Run script:
+
+    line [scriptname]
+
+Run commands in line:
+
+    line -e 'command1;command2;...'
+
+Plotting file directly:
+
+    line -p [filename1] (col_selection) (styles) ...
+
+The file plotting mode has same grammar as `plot` command.
+
+### Switches
+
+Controls the program behavior. Can be also adjusted by `set option`.
+
+- --auto-adjust-range
+- --data-title
+- --broadcast-style
+- --data-delimiter
+- --display-when-quit
+- --force-column-selection
+- --ignore-data-comment
+- --prompt-always
+- --prompt-multi-removal
+- --prompt-overwrite
+- --prompt-save-when-quit
+- --remove-element-by-style
+- --set-future-line-style
+- --set-skip-invalid-selection
+
+## Command Reference
 
 ### plot
 ---
@@ -41,8 +82,6 @@ Related options:
 - --force-column-selection=true/false: If true, column selection must be present after a file. This may reduced the time of identifying whether a string is column title or new file. (Default: false).
 
 - --ignore-data-comment=true/false: If true, ignore lines starting with `#`. (Default: true)
-
-- --identify-data=true/false: Analyze file automatically to select plottable data. (Default: false).
 
 - --data-delimiter=(delimiter)/white/auto: Set the data delimiter. 'white' means both tab and space. 'auto' means automatically identifing. (Default: auto).
 
@@ -137,7 +176,7 @@ Show style parameters and options.
 
 Usage:
 
-    show [element] (stylename)
+    show (default) [element] (stylename)
     show currentfile
     show option [optionname]
 
@@ -152,15 +191,15 @@ Args:
 ### line, hline, vline
 ---
 
-Draw line on current subfigure.
+Draw line on current subfigure. `hline` and `vline` draws horizontally and vertically.
 
 Usage:
 
     line x1,y1 x2,y2 (style=val ...)
-    hline x1 (style=val ...)
-    vline y1 (style=val ...)
+    hline y1 (style=val ...)
+    vline x1 (style=val ...)
 
-- x1,x2,y1,y2: Coordinate in data coordinates.
+- x1,x2,y1,y2: Start and end position. By default it's data coordinate. Specify `coord=data/axis` to change it.
 - style, val: Line styles.
 
 
@@ -175,7 +214,7 @@ Usage:
 
 Args:
 
-- pos: Either position descriptor ('left-top', 'left-bottom', ... ), or positions 'x,y', with pixel as unit **inside** axis (--text-inside-axis=true)
+- pos: Either position descriptor ('topleft', 'topright', ... ), or positions 'x,y'. By default it's axis coordinate. Specify `coord=data/axis` to change it.
 - style,val: Style parameters.
 
 
@@ -192,7 +231,7 @@ Usage:
 
 Args:
 
-- hnum,vnum: Numbers of subfigures in horizontal/vertical direction. If it is less than current number, additional subfigures will be removed.
+- hnum,vnum: Numbers of subfigures in horizontal/vertical direction. If it is less than current number, extra subfigures will be removed.
 
 ### figure, subfigure
 ---
@@ -204,7 +243,8 @@ Usage:
     figure (title)
     subfigure index
 
-The behavior of `figure` is similar with matlab's figure. It will create new figure if no figure has proper title.
+The behavior of `figure` is similar with matlab's figure. It creates new figure and bring it to the front.
+
 The index of subfigure is an integer, starting from left to right and top to bottom.
 
 ### save
@@ -257,7 +297,7 @@ Usage:
 ### input
 ---
 
-Switch to input mode. This is extermely useful in line input and script input.
+Switch to interactive mode. This is useful in line input and script input.
 
 Usage:
 
@@ -266,7 +306,7 @@ Usage:
 To function properly, `input` must be the last command of one line.
 
 ### display
-
+---
 Display the current figure. Only works in non-interactive mode.
 
 Usage:
@@ -275,7 +315,7 @@ Usage:
 
 
 ### load
-
+---
 Load an external script.
 
 Usage:
@@ -297,7 +337,11 @@ Related options:
 - --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
 
 
-## Style Names and Element Names
+## Styles
+
+### Figure Model
+
+![](FigureModel.png)
 
 ### Element Inheritance
 
@@ -321,7 +365,7 @@ Related options:
  subfigure (redirect) | xlabel, ylabel, xrange, yrange, xtick, ytick
  axis | linewidth, color, range, visible, zindex |
  label | font, fontfamily, fontsize, text |
- tick | orient, color, font, fontfamily, fontsize, format, visible |
+ tick | orient, color, font, fontfamily, fontsize, format, linewidth, visible |
  grid | linewidth, color, linetype, visible |
  dataline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, startpos, endpos, coord, visible, zindex
@@ -334,28 +378,24 @@ Related options:
 Style Name | Value Description
 --- | ---
 alpha | float
-bgcolor | 'r'/'g'/'red'/'dark-red'... or 70707F ...
-color |  'r'/'g'/'red'/'dark-red'... or 70707F...
+color |  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
 coord | 'data'/'axis'/'figure'
 dpi | int
-edgecolor | 'r'/'g'/'red'/'dark-red'... or 70707F...
 edgewidth | int
-fillcolor | 'r'/'g'/'red'/'dark-red'... or 70707F...
 font | string,int (font name, size) or string (font name)
 fontfamily | string (font name)
 fontsize | float
 format | string (indicator like '%f')
 hspacing | float
 label | string
-linecolor | 'r'/'g'/'red'/'dark-red'... or 70707F...
 linetype | '-'/'--'/'-.'/':'/'solid'/'dash'/'dot'/'dashdot'
 linewidth | float
 margin | float,float,float,float (bottom,left,right,top)
 orient | 'in/out'
 padding | float,float,float,float (bottom,left,right,top)
-palette | string
+palette | string (name of a palette)
 pointsize | float
-pointtype | '.'/'x'/'o'/'d'/'s'/'^'/'v'
+pointtype | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
 pos | float,float or 'topleft'/'topright'/'topcenter'/'bottomleft'/...
 rsize | float,float (x,y)
 range | float:float:float float:float
@@ -368,7 +408,6 @@ text | string
 visible | 'true'/'false'
 vspacing | float
 zindex | int
-
 
 ### Broadcasting
 

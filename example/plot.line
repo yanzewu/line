@@ -1,0 +1,6 @@
+plot test-data.txt 1:2,3,(2-$3) t='y3'
+set palette mpl.Set1
+group 0ab
+set ylabel y
+set yrange -2:3
+display

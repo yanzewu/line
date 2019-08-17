@@ -60,8 +60,11 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'group':
         group_descriptor = get_token(m_tokens)
         assert_no_token(m_tokens)
-        m_state.cur_subfigure().set_style('group', parse_group(group_descriptor))
-        logger.debug('Group is: %s' % str(m_state.cur_subfigure().attr['group']))
+        if group_descriptor == 'clear':
+            m_state.cur_subfigure().set_style('group', None)
+        else:
+            m_state.cur_subfigure().set_style('group', parse_group(group_descriptor))
+            logger.debug('Group is: %s' % str(m_state.cur_subfigure().attr['group']))
 
         m_state.cur_subfigure().update_template_palette()
         m_state.cur_subfigure().is_changed = True
@@ -127,8 +130,14 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # select or create figure
     elif command == 'figure':
-        fig_name = get_token(m_tokens)
-        assert_no_token(m_tokens)
+        if len(m_tokens) == 0:
+            i = 1
+            while str(i) in m_state.figures:
+                i += 1
+            fig_name = str(i)
+        else:
+            fig_name = get_token(m_tokens)
+            assert_no_token(m_tokens)
 
         m_state.cur_figurename = fig_name
         if fig_name not in m_state.figures:
