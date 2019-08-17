@@ -6,7 +6,7 @@ import logging
 from . import style
 from . import keywords
 
-from .errors import LineParseError, LineProcessError, warn
+from .errors import LineParseError, LineProcessError, warn, print_as_warning
 from .parse_util import *
 
 logger = logging.getLogger('line')
@@ -25,9 +25,7 @@ def parse_column(m_tokens):
             
     elif m_tokens[0][0] == '$':
         column_expr = get_token(m_tokens)
-        while (len(m_tokens) > 0 and m_tokens[0] not in ':,\"\'') and \
-            (len(m_tokens) < 2 or m_tokens[1] != '='):
-            
+        while lookup_rev(m_tokens) not in ':,\"\'' and (len(m_tokens) < 2 or m_tokens[1] != '='):
             column_expr += get_token(m_tokens)
 
     else:
@@ -46,7 +44,7 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
     """
     m_styles = {}
 
-    while len(m_tokens) > 0 and m_tokens[0] not in termflag:
+    while lookup_rev(m_tokens) not in termflag:
         style_name, style_val_real = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon)
         if not style_name:
             continue
@@ -89,7 +87,8 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
 
     try:
         style_val_real = translate_style_val(style_name, style_val)
-    except (LineParseError, KeyError, ValueError):
+    except (LineParseError, KeyError, ValueError) as e:
+        print_as_warning(e)
         warn('Skipping invalid style parameter for %s: %s' % (style_name, style_val))
         return None, None
     else:
@@ -117,9 +116,12 @@ def parse_group(group:str):
 
 
 def _text_order(text):
-    order = {}
-    for i, t in enumerate(text):
-        order.setdefault(t, i)
+    order = {'0':0}
+    i = 1
+    for t in text:
+        if t not in order:
+            order[t] = i
+            i += 1
     return order
 
 
@@ -178,7 +180,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # bool
     elif style_name == 'visible':
-        return STOB[style_name]
+        return stob(style_name)
 
     # int
     elif style_name in ('fontsize', 'skippoint', 'zindex', 'dpi'):
@@ -210,5 +212,5 @@ def translate_option_val(option:str, value:str):
     try:
         return STOB[value]
     except KeyError:
-        raise errors.LineParseError('true/false requried for option %s, got %s' % (option, value))
+        raise LineParseError('true/false requried for option %s, got %s' % (option, value))
 

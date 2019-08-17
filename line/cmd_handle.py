@@ -3,12 +3,7 @@ import re
 import sys
 import logging
 import os.path
-
-# try:
-#     import readline
-# except ImportError:
-#     import pyreadline.rlmain
-#     import readline
+from collections import deque
 import rlcompleter
 import readline
 
@@ -16,7 +11,7 @@ from . import state
 from . import parse
 from . import process
 from . import completion
-from .errors import LineParseError
+from .errors import LineParseError, print_error
 from . import defaults
 from . import plot
 
@@ -43,7 +38,7 @@ class CMDHandler:
 
     def __init__(self, m_state=None):
 
-        self.token_buffer = []
+        self.token_buffer = deque()
         self.completion_buffer = []
 
         if m_state is None:
@@ -53,6 +48,7 @@ class CMDHandler:
         else:
             self.m_state = m_state
 
+        self._filename = None
 
     def init_input(self):
         if self.HISTORY_NAME:
@@ -84,6 +80,7 @@ class CMDHandler:
     def proc_file(self, filename, do_interactive=False):
         with open(filename, 'r') as f:
             self.m_state.is_interactive = do_interactive
+            self._filename = filename
             self.proc_lines(f.readlines())
 
     def proc_lines(self, lines):
@@ -95,7 +92,12 @@ class CMDHandler:
                 if self._debug:
                     raise
                 else:
-                    print(e)
+                    if self._filename:
+                        print('"%s", line %d:' % (self._filename, lines.index(line)), file=sys.stderr)
+                    else:
+                        print('line %d:' % lines.index(line), file=sys.stderr)
+
+                    print_error(e)
                     return
             else:
                 if ret == 0:
@@ -113,7 +115,10 @@ class CMDHandler:
 
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
-        line = input(ps)
+        try:
+            line = input(ps)
+        except KeyboardInterrupt:
+            return 1
 
         try:
             ret = self.handle_line(line, self.token_buffer, True)
@@ -122,7 +127,7 @@ class CMDHandler:
             if self._debug:
                 raise
             else:
-                print(e)
+                print_error(e)
                 return 0            
         else:
             if ret == 0:
@@ -156,7 +161,7 @@ class CMDHandler:
             if cur_token.group('a'):    # string
                 string = cur_token.group('a')
                 if string[-1] != string[0]:
-                    raise LineParseError("Quote not match")
+                    raise LineParseError("Quote not match", string)
                 token_buffer.append(string[1:-1])
 
             elif cur_token.group('b'):  # variable or others
@@ -173,7 +178,7 @@ class CMDHandler:
                     if cur_token is None or cur_token.group('c') == '#':
                         return self.RET_CONTINUE # ask for next line
                     else:
-                        raise LineParseError('There should not be any characters after "\\"')
+                        raise LineParseError('Character after "\\"', cur_token.string)
                 elif char == ';':
                     if execute:
                         ret = process.parse_and_process_command(self.token_buffer, self.m_state)

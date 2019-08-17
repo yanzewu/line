@@ -158,7 +158,7 @@ default_legend_attr = RestrictDict({
 
 default_subfigure_style = RestrictDict({
     'padding': [0.1, 0.1, 0.0, 0.0],
-    'palatte': 'mpl.Spectral',
+    'palette': 'mpl.Spectral',
     'default-dataline': default_dataline_style,
     'default-drawline': default_drawline_style,
     'default-text': default_text_style,

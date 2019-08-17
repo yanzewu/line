@@ -14,11 +14,19 @@ def get_token(m_tokens):
 
 def assert_no_token(m_tokens):
     if len(m_tokens) != 0:
-        raise LineParseError('Extra tokens')
+        raise LineParseError('Extra tokens: "%s"' % m_tokens[0])
 
 def assert_token(token, expected):
     if token != expected:
-        raise LineParseError('%s expected' % expected)
+        raise LineParseError('"%s" expected' % expected)
+
+def lookup(m_tokens, idx=0):
+
+    return m_tokens[idx] if len(m_tokens) > idx else None
+
+def lookup_rev(m_tokens, idx=0):
+    return m_tokens[idx] if len(m_tokens) > idx else ''
+
 
 def skip_tokens(m_tokens, termflag):
     """ Skip tokens until the end or termflag is meet (included)
@@ -39,7 +47,13 @@ def stof(token):
     try:
         return float(token)
     except ValueError:
-        raise LineParseError('Integer required')
+        raise LineParseError('Number required')
+
+def stob(token):
+    try:
+        return STOB[token]
+    except KeyError:
+        raise LineParseError("true/false required")
 
 def is_num(token):
     try:
@@ -49,11 +63,12 @@ def is_num(token):
         return False
 
 def parse_token_with_comma(m_tokens):
-
+    """ Parse consecutive tokens separated by ",", return the list.
+    """
     tokenlist = []
     while len(m_tokens) > 0:
         tokenlist.append(get_token(m_tokens))
-        if m_tokens[0] == ',':
+        if lookup(m_tokens) == ',':
             get_token(m_tokens)
         else:
             break
@@ -61,6 +76,8 @@ def parse_token_with_comma(m_tokens):
 
 
 def parse_range(token):
+    """ Parse the range start:step:stop / start:stop into tuple (start, stop, step)
+    """
     ssplit = token.split(':')
     start = stof(ssplit[0]) if ssplit[0] else None
     if len(ssplit) == 3:

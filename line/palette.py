@@ -1,4 +1,4 @@
-""" Loading palatte and colors.
+""" Loading palette and colors.
 """
 
 import numpy as np

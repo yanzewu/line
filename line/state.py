@@ -6,7 +6,7 @@ from itertools import chain
 
 from . import defaults
 from .style import *
-from .errors import warn
+from .errors import warn, LineProcessError, print_as_warning
 from .collection_util import RestrictDict, extract_single
 
 class GlobalState:
@@ -29,12 +29,19 @@ class GlobalState:
     def cur_figure(self):
         """ Get current figure state
         """
+        
+        if self.cur_figurename is None:
+            raise LineProcessError("No figure is created yet")
+
         return self.figures[self.cur_figurename]
 
 
     def cur_subfigure(self):
         """ Get current subfigure state
         """
+        if self.cur_figurename is None:
+            raise LineProcessError("No figure is created yet")
+
         return self.figures[self.cur_figurename].subfigures[
             self.figures[self.cur_figurename].cur_subfigure
         ]
@@ -67,8 +74,10 @@ class GlobalState:
                     raise
                 else:
                     return []
-        else:
+        elif self.cur_figurename is not None:
             return self.cur_figure().find_elements(name, raise_error)
+        else:
+            return []
 
 
 class FigObject:
@@ -236,7 +245,7 @@ class Subfigure(FigObject):
         self.texts = []
 
         self.dataline_template = []
-        self.update_template_palatte()
+        self.update_template_palette()
 
         self.is_changed = True
         self.backend = None
@@ -314,7 +323,7 @@ class Subfigure(FigObject):
             try:
                 self.datalines[-1].set_style(s, v)
             except KeyError as e:
-                warn(e)
+                print_as_warning(e)
         
 
     def add_drawline(self, start_pos, end_pos, style_dict:dict):
@@ -326,7 +335,7 @@ class Subfigure(FigObject):
             try:
                 self.drawlines[-1].set_style(s, v)
             except KeyError as e:
-                warn(e)
+                print_as_warning(e)
 
     def add_text(self, text, pos, style_dict:dict):
         new_style = self.style['default-text'].copy()
@@ -337,7 +346,7 @@ class Subfigure(FigObject):
             try:
                 self.texts[-1].set_style(s, v)
             except KeyError as e:
-                warn(e)
+                print_as_warning(e)
     
     def clear(self):
         """ Clear lines and texts but keep style.
@@ -356,9 +365,9 @@ class Subfigure(FigObject):
         else:
             return 0 if side == 'left' else 1.0
 
-    def update_template_palatte(self):
+    def update_template_palette(self):
 
-        colors = PALETTES[self.style['palatte']]
+        colors = PALETTES[self.style['palette']]
         if not self.dataline_template:
             self.dataline_template = [self.style['default-dataline'].copy() for i in range(len(colors)-1)]
 

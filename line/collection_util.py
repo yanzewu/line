@@ -17,10 +17,10 @@ class RestrictDict:
 
     def __setitem__(self, name, value):
         if name not in self.data:
-            raise KeyError
+            raise KeyError(name)
 
         if not self.is_valid(name, value):
-            raise ValueError
+            raise ValueError(value)
 
         self.data[name] = value
 

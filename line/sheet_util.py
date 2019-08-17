@@ -15,6 +15,7 @@ class SheetFile:
         self.data = None
 
         self._used_indices = []
+        self._replaced_str = []
 
     def cols(self):
         return self.data.shape[1]
@@ -119,10 +120,28 @@ class SheetFile:
         return self.data.iloc[:,idx]
 
     def get_label(self, idx):
-        return self.data.columns[idx]
+        try:
+            return self.data.columns[idx]
+        except IndexError:
+            raise IndexError('Index is out of bounds')
 
     def get_column(self, idx):
-        return self.data.iloc[:,idx]
+        try:
+            return self.data.iloc[:,idx]
+        except IndexError:
+            raise IndexError('Index is out of bounds')
+
+    def get_column_by_label(self, label):
+        try:
+            return self.data.loc[:,label]
+        except KeyError:
+            raise KeyError(label)        
+
+    def get_index_by_label(self, label):
+        try:
+            self.data.columns.get_loc[label]
+        except KeyError:
+            raise KeyError(label)
 
     def get_sequence(self):
         return np.arange(self.data.shape[0])
@@ -131,25 +150,25 @@ class SheetFile:
         return label in self.data.columns
 
     def eval_column_expr(self, col_expr):
+
+        # fast return
         if not col_expr[0] in '$(':
             try:
                 idx = int(col_expr)
             except ValueError:
-                return self.data.loc[:, col_expr]
+                return self.get_column_by_label(col_expr)
             else:
-                return self.data.iloc[:, idx-1]
+                return self.get_column(idx-1)
+                
+
         elif col_expr[0] == '(':
             col_expr = col_expr[1:-1]   # removing bracket
         
         self._used_indices.clear()
         col_expr = self.COLUMN_MATCHER.sub(lambda m:self._replace_column(m), col_expr)
-        try:
-            arg_table = dict((('column%d' % (i+1), self.get_column(i)) for i in self._used_indices))
-        except IndexError as e:
-            print(e)
-            return None
-        else:
-            arg_table['column0'] = self.get_sequence()
+        
+        arg_table = dict((('column%d' % (i+1), self.get_column(i)) for i in self._used_indices))
+        arg_table['column0'] = self.get_sequence()
 
         arg_table.update({
             'sin':np.sin,
@@ -174,15 +193,21 @@ class SheetFile:
     def _replace_column(self, match):
         if match.group('a'):    # integer
             idx = int(match.group('a')[1:])
-            if idx > 0:
+            if idx != 0:
+                self._replaced_str.append(match.group('a')[1:])
                 self._used_indices.append(idx-1)
+            elif idx-1 >= self.cols():
+                raise IndexError('Index out of bounds: %d' % idx)
+
             return 'column%d' % idx
         elif match.group('b'):
-            idx = self.data.columns.get_loc(match.group('b')[1:])
+            idx = self.get_index_by_label(match.group('b')[1:])
+            self._replaced_str.append(match.group('b')[1:])
             self._used_indices.append(idx)
             return 'column%d' % (idx+1)
         elif match.group('c'):
-            idx = self.data.columns.get_loc(match.group('c')[4:-1])
+            idx = self.get_index_by_label(match.group('c')[4:-1])
+            self._replaced_str.append(match.group('c')[4:-1])
             self._used_indices.append(idx)
             return 'column%d' % (idx+1)
 

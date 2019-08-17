@@ -114,7 +114,7 @@ Usage:
 
     set (default) (element1,element2,...) style1=val1 style2=val2 ...
     set (default) (element1,element2,...) clear
-    set palatte (palattename)
+    set palette (palettename)
     set option opt=arg
 
 - element: [Name of element](#list-of-element-name-and-applicable-styles) in current context.
@@ -122,7 +122,7 @@ Usage:
     - To select data line, use `line@label` or `line`+number like `line1`. To select draw line, use `line`+number. A prompt will appear when multiple lines have same label.
     - To select text, use `text@label` or `text`+number. The label of text is text itself. A prompt will appear when multiple texts have same label.
     - If no element is set, the style is first applied to current subfigure (and broadcasted to lines, if possible), then current figure.
-- `set palatte` changes palatte for current subfigure.
+- `set palette` changes palette for current subfigure.
 - `set option` changes default options, e.g. `set option ignore-data-comment=true`.
 
 Related options:
@@ -317,7 +317,7 @@ Related options:
  Element Name | Style 
  --- | --- | ---
  figure | size, margin, (h/v)spacing, dpi | 
- subfigure | rsize, rpos, palatte, padding, title  | 
+ subfigure | rsize, rpos, palette, padding, title  | 
  subfigure (redirect) | xlabel, ylabel, xrange, yrange, xtick, ytick
  axis | linewidth, color, range, visible, zindex |
  label | font, fontfamily, fontsize, text |
@@ -380,5 +380,5 @@ By default, styles except `linecolor`, `edgecolor`, `skippoint` and `zindex` in 
 
 Line itself keeps a global default style sheet, which can be changed by `set default` or `.linerc` file. When a figure is created, its style and default subfigure style is copied from global style.
 
-Each subfigure keeps a template of line styles, which is created from global default style and default palatte. The template is updated by group specification each time `plot` is called. When a new line is plotted, its style is looked up from line template style. The template style is also updated if style is set in `plot` command.
+Each subfigure keeps a template of line styles, which is created from global default style and default palette. The template is updated by group specification each time `plot` is called. When a new line is plotted, its style is looked up from line template style. The template style is also updated if style is set in `plot` command.
 

@@ -38,7 +38,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     logger.debug('Tokens are: %s' % tokens)
 
-    m_tokens = deque(tokens)
+    m_tokens = tokens
     command = get_token(m_tokens)
     command = keywords.command_alias.get(command, command)   # expand short commands
 
@@ -62,7 +62,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_subfigure().set_style('group', parse_group(group_descriptor))
         logger.debug('Group is: %s' % str(m_state.cur_subfigure().attr['group']))
 
-        m_state.cur_subfigure().update_template_palatte()
+        m_state.cur_subfigure().update_template_palette()
         m_state.cur_subfigure().is_changed = True
 
     elif command == 'set':
@@ -95,7 +95,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'text':
         text = get_token(m_tokens)
         token1 = get_token(m_tokens)
-        if len(m_tokens) > 0 and m_tokens[0] == ',':
+        if lookup(m_tokens) == ',':
             get_token(m_tokens)
             pos = (stof(token1), stof(get_token(m_tokens)))
             m_state.cur_subfigure().add_text(text, pos, parse_style(m_tokens))
@@ -210,16 +210,18 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         assert_no_token(m_tokens)
         handler = cmd_handle.CMDHandler(m_state)
         is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
+        plot.finalize(m_state)
         try:
-            plot.finalize(m_state)
             handler.proc_file(filename)
         except IOError:
-            raise LineProcessError('Cannot open file: %s' % filename)
+            m_state.is_interactive = is_interactive
+            plot.initialize(m_state)
+            raise LineProcessError('Cannot open file "%s"' % filename)
         m_state.is_interactive = is_interactive
         plot.initialize(m_state)
 
     else:
-        raise LineParseError('No command named %s' % command)
+        raise LineParseError('No command named "%s"' % command)
 
     if not m_state.is_interactive or m_state.cur_figurename is None:
         return 0
@@ -307,8 +309,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
         # no column expr 
         if not m_state.options['force-column-selection'] and (
-            len(m_tokens) == 0 or m_tokens[0] == ',' or
-            (len(m_tokens) > 1 and m_tokens[1] == '=')):
+            len(m_tokens) == 0 or lookup(m_tokens, 0) == ',' or lookup(m_tokens, 1) == '='):
             if m_file.cols() == 0:
                 raise RuntimeError('File has no valid column')
             elif m_file.cols() == 1:
@@ -334,7 +335,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 skip_tokens(m_tokens, ',')
                 continue
 
-            if len(m_tokens) > 0 and m_tokens[0] == ':':
+            if lookup(m_tokens) == ':':
                 # when a x data appears, the following y data is based on this x.
                 cur_xdata = column
                 cur_xlabel = label
@@ -361,7 +362,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         while len(style_list) < len(data_list): # this is for a file containing multiple columns
             style_list.append(styles)
 
-        if len(m_tokens) > 0 and m_tokens[0] == ',':
+        if lookup(m_tokens) == ',':
             get_token(m_tokens)
             continue
 
@@ -429,7 +430,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     while len(m_tokens) > 0:
         elements = []
 
-        if len(m_tokens) > 1 and m_tokens[1] == '=':
+        if lookup(m_tokens, 1) == '=':
             style_name, style_val = parse_single_style(m_tokens)
 
             dataline_sel.update((
@@ -527,7 +528,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             elif element_name == 'text':
                 elements = [m_state.cur_subfigure().style['default-text']]
             else:
-                raise LineProcessError('Element %s cannot be used in `set future`' % element_name)
+                raise LineProcessError('Element "%s" cannot be set in `set future`' % element_name)
             
         if len(elements) == 0:
             warn('No element is selected')
@@ -547,7 +548,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             if arg == '=':
                 arg = get_token(m_tokens)
             if opt not in m_state.options:
-                warn('Skipping option %s' % opt)
+                warn('Skipping option "%s"' % opt)
             else:
                 if opt not in m_state.options:
                     raise LineParseError('Invalid option: %s' % opt)
@@ -566,7 +567,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
         else:
             element_names = parse_token_with_comma(m_tokens)
-            if m_tokens[0] == 'clear':
+            if lookup(m_tokens) == 'clear':
                 get_token(m_tokens)
                 assert_no_token(m_tokens)
                 style_dict = None
@@ -602,7 +603,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
     else:   # show style
         elements = m_state.find_elements(element_name)
         if not elements:
-            print('No elements selected')
+            warn('No element is selected')
             return
 
         # show all styles
@@ -658,7 +659,7 @@ def process_set_style(m_state, element_names, style_dict, scope):
                 try:
                     e.set_style(s, v)
                 except (KeyError, ValueError):
-                    raise LineProcessError('Cannot set %s to style %s for %s' % (
+                    raise LineProcessError('Cannot set style "%s" => "%s" of "%s"' % (
                         v, s, e.name
                     ))
                 else:
@@ -670,8 +671,10 @@ def process_set_style(m_state, element_names, style_dict, scope):
                      [m_state.cur_subfigure().style['default-dataline']]:
                 try:
                     line_style.update(style_dict)
-                except (KeyError, ValueError):
-                    raise LineProcessError('Error in updating style')
+                except KeyError as e:
+                    raise LineProcessError('Invalid style name: %s' % e.args[0])
+                except ValueError as e:
+                    raise LineProcessError('Invalid style value: %s' % e.args[0])
 
     else:
         # also clear only works on style, not attr.
@@ -703,7 +706,7 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
     """
 
     if hsplitnum < 1 or vsplitnum < 1:
-        raise LineProcessError('Split number must be greater or equal than 1')
+        raise LineProcessError('Split number should be greater than 1, got %d' % max(hsplitnum, vsplitnum))
 
     m_fig = m_state.cur_figure()
     hsplit, vsplit = m_fig.get_attr('split')
