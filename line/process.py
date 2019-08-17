@@ -20,7 +20,6 @@ from .errors import LineParseError, LineProcessError, warn
 
 logger = logging.getLogger('line')
 
-# TODO MID FEATURE add cd support and cwd system
 
 def parse_and_process_command(tokens, m_state:state.GlobalState):
     """ Parse and execute sequence of tokens.
@@ -179,7 +178,6 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'print':
         print(' '.join(m_tokens))
-        #TODO FEATURE variable system
 
     elif command == 'quit':
         if m_state.options['display-when-quit'] and not m_state.is_interactive:
@@ -379,8 +377,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             for i in range(1, len(style_list)):
                 style_list[i].setdefault(bc_style, style_list[0][bc_style])
 
-    # TODO LOW FEATURE automatically determine skip points (or can be done later)
-    # TODO FEATURE automatic select styles to avoid covering
+
 
     logger.debug('Processing plot')
     if len(data_list) > 0:
@@ -576,8 +573,6 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             else:
                 style_dict = parse_style(m_tokens)
             has_updated = process_set_style(m_state, element_names, style_dict, m_state)
-
-        # TODO FEATURE? apply clear to other sub-commands
 
         if has_updated:
             m_state.cur_figure().is_changed = True

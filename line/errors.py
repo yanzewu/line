@@ -1,7 +1,6 @@
 
 import sys
 
-# TODO MID error management
 
 class LineParseError(Exception):
 

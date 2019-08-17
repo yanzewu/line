@@ -30,7 +30,7 @@ default_figure_style = RestrictDict({
     'margin': [0.05, 0.05, 0.05, 0.05],
     'spacing': [0.05, 0.05]
 })
-# TODO LOW FEATURE dpi aware of high-resolution 
+
 default_figure_size_inches = [6,4]
 default_figure_style['size'] = [
     default_figure_size_inches[0]*default_figure_style['dpi'],
@@ -158,7 +158,7 @@ default_legend_attr = RestrictDict({
 
 default_subfigure_style = RestrictDict({
     'padding': [0.1, 0.1, 0.0, 0.0],
-    'palatte': 'mpl.Spectral',   # TODO: CHANGE BACK AFTER DEBUGGING!
+    'palatte': 'mpl.Spectral',
     'default-dataline': default_dataline_style,
     'default-drawline': default_drawline_style,
     'default-text': default_text_style,

@@ -1,0 +1,19 @@
+
+Fixes
+---
+[HIGH] Error management.
+[HIGH] Error line number and token position.
+[LOW] setting 'default' as a style option for dataline as a indicator of whether style is managed by custom or template.
+[MID] Faster startup.
+
+Features
+---
+[LOW] Smarter completion (need a library other than readline).
+[LOW] System DPI aware. 
+[MID] Add self-created palattes for line.
+[HIGH] Add cd support and cwd system.
+[MID] Group changes point color and style - assign different color series or line type for data with same group marker.
+[LOW] Add Style class inhereit RestrictDict, with necessary features.
+[LOW] `set clear` applies to future and default.
+[LOW] Automatically determine skip points in scatter.
+[MID] Variable system.

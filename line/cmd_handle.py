@@ -114,8 +114,6 @@ class CMDHandler:
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
         line = input(ps)
-        # if 'readline' in sys.modules and self.HISTORY_NAME:
-        #     readline.write_history_file(self.HISTORY_NAME)
 
         try:
             ret = self.handle_line(line, self.token_buffer, True)
@@ -125,8 +123,7 @@ class CMDHandler:
                 raise
             else:
                 print(e)
-                return 0
-            # TODO MID FIX error line number and token position
+                return 0            
         else:
             if ret == 0:
                 self.token_buffer.clear()
@@ -197,7 +194,7 @@ class CMDHandler:
         """
 
         if state == 0:
-            self.completion_buffer = completion.get_all_completions()
+            self.completion_buffer = completion.get_keywords() + completion.get_filelist(text)
             # tokens = self.token_buffer.copy()
             # try:
             #     ret = self.handle_line(text, tokens, execute=False)

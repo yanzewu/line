@@ -2,8 +2,6 @@
 import enum
 from . import palette
 
-#TODO LOW Add style class inhereit RestrictDict
-
 PositionStyle = enum.Enum('PositionStyle', 'TOPLEFT TOPMID TOPRIGHT BOTTOMLEFT BOTTOMMID BOTTOMRIGHT')
 
 class LineType(enum.Enum):

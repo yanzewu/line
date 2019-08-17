@@ -358,14 +358,10 @@ class Subfigure(FigObject):
 
     def update_template_palatte(self):
 
-        # TODO LOW FIX setting 'default' as a style option for dataline as a 
-        # indicator whether style is managed by custom or template.
-
         colors = PALETTES[self.style['palatte']]
         if not self.dataline_template:
             self.dataline_template = [self.style['default-dataline'].copy() for i in range(len(colors)-1)]
 
-        # TODO FEATURE point color and style support
         for idx in range(len(colors)-1):
             self.dataline_template[idx]['linecolor'] = colors[idx+1]
 
