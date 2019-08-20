@@ -212,8 +212,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.is_interactive = True
 
     elif command == 'display':
-        if not m_state.is_interactive:
-            plot.show(m_state)
+        process_display(m_state)
 
     elif command == 'load':
         filename = get_token(m_tokens)
@@ -324,16 +323,16 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 raise RuntimeError('File has no valid column')
             elif m_file.cols() == 1:
                 data_list.append((m_file.get_sequence(), m_file.get_column(0),
-                    m_file.get_label(0), ''))
+                    m_file.get_label(0), '', m_file.filename))
             elif m_file.cols() == 2:
                 data_list.append((m_file.get_column(0), m_file.get_column(1), 
-                    m_file.get_label(1), m_file.get_label(0)))
+                    m_file.get_label(1), m_file.get_label(0), m_file.filename))
             else:
                 if m_file.cols() > 10:
                     warn('Load all %d columns to plot' % m_file.cols())
                 for j in range(1, m_file.cols()):
                     data_list.append((m_file.get_column(0), m_file.get_column(j),
-                        m_file.get_label(j), m_file.get_label(0)))
+                        m_file.get_label(j), m_file.get_label(0), m_file.filename))
             logger.debug('All column in file loaded: Total %d datasets' % m_file.cols())
         
         else:
@@ -356,7 +355,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 column2 = m_file.eval_column_expr(column_expr2)
                 label2 = m_file.get_label(int(column_expr2)-1) if column_expr2.isdigit() else column_expr2
                 if column2 is not None:
-                    data_list.append((column, column2, label2, label))
+                    data_list.append((column, column2, label2, label, m_file.filename))
                 else:
                     skip_tokens(m_tokens, ',')
                     warn('Skip column "%s" with no valid data' % column_expr2)
@@ -365,7 +364,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 if cur_xdata is None:
                     cur_xdata = m_file.get_sequence()
                     cur_xlabel = ''
-                data_list.append((cur_xdata, column, label, cur_xlabel))
+                data_list.append((cur_xdata, column, label, cur_xlabel, m_file.filename))
 
         # style parameters
         styles = parse_style(m_tokens, ',', recog_comma=False)
@@ -401,8 +400,12 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         if not keep_existed:
             m_state.cur_subfigure().datalines.clear()
 
-        for (x, y, label, xlabel), style in zip(data_list, style_list):
-            m_state.cur_subfigure().add_dataline((x, y), label, xlabel, style)
+        # add filename to data label?
+        filename_prefix = len(set((d[4] for d in data_list))) != 1
+
+        for (x, y, label, xlabel, filename), style in zip(data_list, style_list):
+            ylabel = filename + ':' + label if filename_prefix else label
+            m_state.cur_subfigure().add_dataline((x, y), ylabel, xlabel, style)
         
         # Set labels
         xlabels = set((d.attr['xlabel'] for d in m_state.cur_subfigure().datalines))
@@ -774,3 +777,6 @@ def process_save(m_state:state.GlobalState, filename:str):
     plot.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
 
+def process_display(m_state:state.GlobalState):
+    if not m_state.is_interactive:
+        plot.show(m_state)

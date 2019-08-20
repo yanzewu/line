@@ -13,6 +13,7 @@ class SheetFile:
 
     def __init__(self):
         self.data = None
+        self.filename = None
 
         self._used_indices = []
         self._replaced_str = []
@@ -31,6 +32,7 @@ class SheetFile:
             f = open(filename, 'r')
         except IOError:
             return False
+        self.filename = filename
 
         # pandas's python engine is slow, so I use a 'sample' to
         # detect basic information before actual reading

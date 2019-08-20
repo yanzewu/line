@@ -5,7 +5,7 @@ import warnings
 
 from . import cmd_handle
 from .parse import translate_option_val
-
+from .process import process_display
 
 def main():
 
@@ -57,7 +57,10 @@ Additional options can be shown by `line -e 'show option'`'''
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
         cmd_handler.read_source()
-        cmd_handler.proc_lines(['plot ' + ' '.join(args)])
+        line0 = 'plot ' + ' '.join(args)
+        line0 = line0.replace('\\', '/')
+        cmd_handler.proc_lines([line0])
+        process_display(cmd_handler.m_state)
 
 
 if __name__ == '__main__':

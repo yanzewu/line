@@ -27,8 +27,9 @@ def get_filelist(filename):
             return [filename]
     else:
         files = os.listdir()
+        slash = '/'
 
-    return ['%s%s%s' % (quote, f, quote) for f in files]
+    return ['%s%s%s' % (quote, f, quote if not os.path.isdir(f) else slash) for f in files]
 
 
 def get_completions(m_state:state.GlobalState, tokens):

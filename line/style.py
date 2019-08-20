@@ -47,6 +47,7 @@ class Color(tuple):
     MAGENTA = (1, 0, 1)
     WHITE = (1, 1, 1)
     BLACK = (0, 0, 0)
+    GREY = (0.5, 0.5, 0.5)
 
     def __init__(self, r, g, b):
         super().__init__((r, g, b))
@@ -93,17 +94,19 @@ Str2Pos = {
 
 PALETTES = {
     'default':[
-        Color.BLACK,
-        Color.RED,
-        Color.BLUE,
-        Color.GREEN,
-        Color.CYAN,
-        Color.MAGENTA
+        (0,0,0),
+        (0.89, 0.1, 0.1),
+        (0.12, 0.47, 0.71),
+        (0.2, 0.63, 0.17),
+        (1, 0.5, 0),
+        (0.42, 0.24, 0.61)
     ]
 }
 
-palette._load_palette_mpl()
-palette._load_palette_seaborn()
-palette._load_palette_line()
+def init():
+    palette._load_palette_mpl()
+    #palette._load_palette_seaborn()
+    palette._load_palette_line()
+    palette._load_colors_mpl()
 
-palette._load_colors_mpl()
+init()

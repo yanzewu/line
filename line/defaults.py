@@ -1,6 +1,4 @@
 
-import argparse
-
 from . import state
 from . import errors
 from .style import Color, LineType, PointType
@@ -161,7 +159,7 @@ default_legend_attr = RestrictDict({
 
 default_subfigure_style = RestrictDict({
     'padding': [0.1, 0.1, 0.0, 0.0],
-    'palette': 'mpl.Spectral',
+    'palette': 'default',
     'default-dataline': default_dataline_style,
     'default-drawline': default_drawline_style,
     'default-text': default_text_style,
