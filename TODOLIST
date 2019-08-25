@@ -5,7 +5,7 @@ Fixes
 [LOW] setting 'default' as a style option for dataline as a indicator of whether style is managed by custom or template.
 [MID] Faster startup.
 [MID] Add font fallback sequence.
-[HIGH] Fix conflict of alias and value (using LR parsing)
+[LOW] Fix conflict of alias and value (using LR parsing)
 
 Features
 ---

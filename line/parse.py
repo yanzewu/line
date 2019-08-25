@@ -45,10 +45,14 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
     m_styles = {}
 
     while lookup_rev(m_tokens) not in termflag:
-        style_name, style_val_real = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon)
-        if not style_name:
-            continue
-        m_styles[style_name] = style_val_real
+        ret = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon)
+        if isinstance(ret, dict):
+            m_styles.update(ret)
+        else:
+            style_name, style_val_real = ret
+            if not style_name:
+                continue
+            m_styles[style_name] = style_val_real
 
     logger.debug('Style parsed: %s' % m_styles)
     return m_styles
@@ -67,6 +71,33 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         return 'visible', True
     elif style_name == 'off':
         return 'visible', False
+
+    style_name = keywords.style_alias.get(style_name, style_name)
+    if style_name not in keywords.style_keywords:
+        try:
+            lc, lt, pt = parse_style_descriptor(style_name)
+        except (IndexError, KeyError):
+            raise LineParseError('Invalid style descriptor: "%s"' % style_name)
+            return None, None
+        except LineParseError:
+            warn('Skip invalid style "%s"' % style_name)
+            is_invalid = True
+        else:
+            ret = {}
+            if lc is not None:
+                ret['linecolor'] = lc
+            if lt is not None:
+                ret['linetype'] = lt
+            if pt is not None:
+                ret['pointtype'] = pt
+                if lc is not None:
+                    ret['edgecolor'] = lc
+                if lt is None:
+                    ret['linetype'] = style.LineType.NONE
+            return ret
+
+    else:
+        is_invalid = False
         
     style_val = get_token(m_tokens)
     if style_val == '=':
@@ -85,9 +116,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
             break
     
     # validity of style
-    style_name = keywords.style_alias.get(style_name, style_name)
-    if style_name not in keywords.style_keywords:
-        warn('Skip invalid style "%s"' % style_name)
+    if is_invalid:
         return None, None
 
     try:
@@ -98,6 +127,39 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         return None, None
     else:
         return style_name, style_val_real
+
+
+def parse_style_descriptor(text:str):
+    """ Parse matlab-style descriptor (e.g. "rx-") into
+    (color, linestyle, pointstyle) tuple.
+    """
+
+    if len(text) > 4:
+        raise LineParseError('Invalid style descriptor: "%s"' % text)
+
+    color = None
+    linestyle = None
+    pointstyle = None
+
+    while len(text) > 0:
+
+        if text[0] in style.ShortColorStr:
+            color = style.str2color(text[0])
+            text = text[1:]
+        elif text[0] in style.PointTypeStr:
+            pointstyle = style.PointType(style.PointTypeStr.index(text[0]))
+            text = text[1:]
+        elif text[0] == '-':
+            if lookup(text, 1) in ('-', '.'):
+                linestyle = style.LineType(style.LineTypeStr.index(text[0] + text[1]))
+                text = text[2:]
+            else:
+                linestyle = style.LineType(style.LineTypeStr.index(text[0]))
+                text = text[1:]
+        else:
+            raise LineParseError('Invalid style descriptor: "%s"' % text[0])
+
+    return color, linestyle, pointstyle
 
 
 def parse_group(group:str):

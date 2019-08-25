@@ -352,7 +352,10 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
         # no column expr 
         if not m_state.options['force-column-selection'] and (
-            len(m_tokens) == 0 or lookup(m_tokens, 0) == ',' or lookup(m_tokens, 1) == '='):
+            len(m_tokens) == 0 or lookup(m_tokens, 0) == ',' or lookup(m_tokens, 1) == '=' or 
+            keywords.is_style_keyword(m_tokens[0])):
+            # you need to specify column name like $t if it coincides with style name
+
             if m_file.cols() == 0:
                 raise RuntimeError('File has no valid column')
             elif m_file.cols() == 1:
@@ -606,7 +609,12 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         has_updated = False
 
         # Setting cur_subfigure, recursively
-        if keywords.is_style_keyword(m_tokens[0]) and not keywords.is_style_keyword(m_tokens[1]):
+        if keywords.is_style_keyword(m_tokens[0]) and (
+            not keywords.is_style_keyword(m_tokens[1]) or 
+            (m_tokens[1] not in ('on', 'off') and len(m_tokens) <= 2)):
+            # the nasty cases... either not a style keyword or not enough style parameters
+            # that treated as value
+
             elements = [m_state.cur_subfigure()]
             style_list = parse_style(m_tokens)
             for s, v in style_list.items():

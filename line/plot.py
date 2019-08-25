@@ -13,13 +13,14 @@ import matplotlib.font_manager as font_manager
 
 from . import state
 from . import style
+from .defaults import default_math_font
 
 logger = logging.getLogger('line')
 
 # things between initialize() and finalize() can be viewed as a show() process
 # so everything need to be redraw once closed.
 
-matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['mathtext.fontset'] = default_math_font
 
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:
@@ -292,18 +293,18 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         legend = ax.legend(
             fancybox=False,
+            facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
             fontsize=m_style['fontsize'],
             loc=m_subfig.legend.attr['pos'],
+            frameon=True,
+            framealpha=m_style['alpha']
         )
 
         lt = m_style['linetype'].to_str()
         frame = legend.get_frame()
-        frame.set_alpha(m_style['alpha'])
-        frame.set_color(m_style['color'])
         frame.set_linewidth(m_style['linewidth'])
         frame.set_linestyle(lt if lt else 'None')
-        frame.set_visible(m_style['visible'])
         frame.set_zorder(m_style['zindex'])
 
         for t in legend.get_texts():

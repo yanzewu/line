@@ -33,7 +33,7 @@ To plot a figure from file:
 
     line> plot test-data.txt 2 t='second column'  # plot second column as y, data index as x
     line> plot test-data.txt $0:2 lw=2 lc=red     # plot second column as y, data index as x
-    line> plot test-data.txt 1:2        # plot second column as y, first column as x
+    line> plot test-data.txt 1:2 rx-        # plot second column as y, first column as x
     line> plot test-data.txt 1:2,3      # plot second and third column as y, first column as x
     line> plot test-data.txt        # plot all columns (using first column as x)
 

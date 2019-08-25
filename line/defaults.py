@@ -39,6 +39,9 @@ default_figure_attr = RestrictDict({
     'split': [1,1]
 })
 
+default_font = 'Times New Roman'
+default_math_font = 'cm'
+
 default_major_axis_style = RestrictDict({
     'linewidth':0.5,
     'linetype':LineType.SOLID,
@@ -46,14 +49,14 @@ default_major_axis_style = RestrictDict({
     'visible':True,
     'zindex':-1,
     'label':RestrictDict({
-        'fontfamily':'Times New Roman',
-        'fontsize':14,
+        'fontfamily':default_font,
+        'fontsize':16,
         'color':Color.BLACK,
         'visible':True,
     }),
     'tick':RestrictDict({
-        'fontfamily':'Times New Roman',
-        'fontsize':12,
+        'fontfamily':default_font,
+        'fontsize':14,
         'format':'%.4G',
         'color':Color.BLACK,
         'orient':'in',
@@ -76,14 +79,14 @@ default_minor_axis_style = RestrictDict({
     'visible':True,
     'zindex':-1,
     'label':RestrictDict({
-        'fontfamily':'Times New Roman',
-        'fontsize':14,
+        'fontfamily':default_font,
+        'fontsize':16,
         'color':Color.BLACK,
         'visible':False
     }),
     'tick':RestrictDict({
-        'fontfamily':'Times New Roman',
-        'fontsize':12,
+        'fontfamily':default_font,
+        'fontsize':14,
         'format':'%.4G',
         'color':Color.BLACK,
         'orient':'in',
@@ -104,26 +107,26 @@ default_axis_attr = RestrictDict({
 })
 
 default_dataline_style = RestrictDict({
-    'linewidth':1,
+    'linewidth':2,
     'linetype':LineType.SOLID,
     'linecolor':Color.BLACK,    # 'color' sets both line and point
-    'pointsize':0,
-    'pointtype':PointType.CIRCLE,
-    'edgewidth':1,
+    'pointsize':4,
+    'pointtype':PointType.NONE,
+    'edgewidth':0.8,
     'edgecolor':Color.BLACK,
-    'fillcolor':Color.BLACK,
+    'fillcolor':Color.WHITE,
     'visible':True,
     'zindex':0
 })
 
 # Global default drawline style
 default_drawline_style = RestrictDict({
-    'linewidth':1,
+    'linewidth':2,
     'linetype':LineType.SOLID,
     'linecolor':Color.BLACK,
-    'pointsize':0,
-    'pointtype':PointType.CIRCLE,
-    'edgewidth':1,
+    'pointsize':4,
+    'pointtype':PointType.NONE,
+    'edgewidth':0.8,
     'edgecolor':Color.BLACK,
     'fillcolor':Color.BLACK,
     'visible':True,
@@ -132,8 +135,8 @@ default_drawline_style = RestrictDict({
 })
 
 default_text_style = RestrictDict({
-    'fontfamily':'Times New Roman',     # 'font' set both family and size
-    'fontsize':14,
+    'fontfamily':default_font,     # 'font' set both family and size
+    'fontsize':16,
     'color':Color.BLACK,
     'visible':True,
     'coord': 'axis',
@@ -142,12 +145,12 @@ default_text_style = RestrictDict({
 
 default_legend_style = RestrictDict({
     'alpha':0,
-    'linewidth':0,
+    'linewidth':0.5,
     'linecolor':Color.BLACK,
-    'linetype':LineType.NONE,
-    'fontfamily':'Times New Roman',
-    'fontsize':14,
-    'color':Color.BLACK,
+    'linetype':LineType.SOLID,
+    'fontfamily':default_font,
+    'fontsize':16,
+    'color':Color.WHITE,
     'visible':True,
     'pos':'best',       # both str and (a,b) is valid
     'zindex':0
