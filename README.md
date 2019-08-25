@@ -1,6 +1,6 @@
-# line
+# LINE
 
-Creating nice line plot with least typing.
+Creating nice line and scatter plot with least typing.
 
 ![](doc/plot1.png)
 
@@ -28,7 +28,7 @@ which will enter interactive mode. To run a script, type
 
     line [scriptname]
 
-The basic plotting logic of Line is similar as gnuplot, with a slightly looser grammar. No quote is required (unless necessary) for filename and column identifier is also not required.
+The basic plotting logic of Line is similar as gnuplot, with a slightly looser grammar. No quote is required (unless necessary) for filename and column identifier is also not required. Filename could also be wildcard string.
 To plot a figure from file:
 
     line> plot test-data.txt 2 t='second column'  # plot second column as y, data index as x

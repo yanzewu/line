@@ -3,6 +3,7 @@ import sys
 import itertools
 import logging
 from collections import deque
+import os
 
 import numpy as np
 
@@ -214,18 +215,32 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'display':
         process_display(m_state)
 
+    elif command == 'cd':
+        dest = get_token(m_tokens)
+        assert_no_token(m_tokens)
+        
+        if io_util.dir_exist(dest):
+            os.chdir(dest)
+        else:
+            raise LineProcessError('Directory "%s" does not exist' % dest)
+
     elif command == 'load':
         filename = get_token(m_tokens)
         assert_no_token(m_tokens)
         handler = cmd_handle.CMDHandler(m_state)
         is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
         plot.finalize(m_state)
+        
+        cwd = os.getcwd()
+
         try:
             handler.proc_file(filename)
         except IOError:
             m_state.is_interactive = is_interactive
             plot.initialize(m_state)
             raise LineProcessError('Cannot open file "%s"' % filename)
+        else:
+            os.chdir(cwd)
         m_state.is_interactive = is_interactive
         plot.initialize(m_state)
 
@@ -288,9 +303,28 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             elif m_tokens[0][0] not in '$(' and not m_tokens[0].isdigit():    # maybe a column title?
                 m_file_test = file_loaded.get(m_state.cur_open_filename, None)
                 if not m_file_test or not m_file_test.has_label(m_tokens[0]):
-                    warn('File "%s" not found' % m_tokens[0])
-                    skip_tokens(m_tokens, ',')
-                    continue
+
+                    # wildcard?
+                    if '*' in m_tokens[0] or '?' in m_tokens[0]:
+                        import fnmatch
+                        files = fnmatch.filter([f for f in os.listdir() if os.path.isfile(f)], m_tokens[0])
+                        if files:
+                            print('Matched files:', ' '.join(files))
+                            get_token(m_tokens)
+                            filename = files[0]
+                            is_newfile = True
+                            for f in files[1:]:
+                                m_tokens.appendleft(',')
+                                m_tokens.appendleft(f)
+                        else:
+                            warn('No matching files by "%s"' % m_tokens[0])
+                            skip_tokens(m_tokens, ',')
+                            continue
+                        
+                    else:
+                        warn('File "%s" not found' % m_tokens[0])
+                        skip_tokens(m_tokens, ',')
+                        continue
                 
         if not is_newfile:
             filename = m_state.cur_open_filename
@@ -301,7 +335,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         elif filename in file_loaded:
             logger.debug('Exist file found: %s' % filename)
             m_file = file_loaded[filename]
-        else:              
+        else: 
             m_file = sheet_util.load_file(filename,
                 m_state.options['data-title'],
                 m_state.options['data-delimiter'],
@@ -604,6 +638,9 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         print('File opened:', m_state.cur_open_filename)
         print('File saved:', m_state.cur_save_filename)
 
+    elif element_name == 'pwd':
+        print(os.getcwd())
+
     elif element_name in ('option',  'options'):
         if len(m_tokens) == 0:
             print('OPTION                          VALUE')
@@ -662,8 +699,9 @@ def process_set_style(m_state, element_names, style_dict, scope):
     gca for lines and texts, default figure style for other components)
     """
 
+    elements = []
     for element_name in element_names:
-        elements = scope.find_elements(element_name, not m_state.options['set-skip-invalid-selection'])
+        elements += scope.find_elements(element_name, not m_state.options['set-skip-invalid-selection'])
     if not elements:
         warn('No element is selected by "%s"' % element_name)
         return False

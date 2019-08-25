@@ -81,9 +81,9 @@ def parse_range(token):
     ssplit = token.split(':')
     start = stof(ssplit[0]) if ssplit[0] else None
     if len(ssplit) == 3:
-        step = stof(ssplit[1]) if ssplit[1] else 1
+        step = stof(ssplit[1]) if ssplit[1] else None
     else:
-        step = 1
+        step = None
     stop = stof(ssplit[-1]) if ssplit[-1] else None
 
     return start, stop, step

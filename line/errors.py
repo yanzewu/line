@@ -27,7 +27,7 @@ class LineProcessError(Exception):
 
 
 def warn(message):
-    print('WARNING:', message, file=sys.stderr)
+    print('Warning:', message, file=sys.stderr)
 
 
 def print_sys_error(e):

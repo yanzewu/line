@@ -193,7 +193,18 @@ class Figure(FigObject):
             return self.subfigures[self.cur_subfigure].find_elements(name, raise_error)
 
     def set_style(self, name, value):
-        if name == 'hspacing':
+        if name == 'dpi' and value in ('high', 'mid', 'low'):
+            if value == 'high': # 4k resolution
+                self.style['dpi'] = 200
+            elif value == 'mid':    # 2k resolution
+                self.style['dpi'] = 150
+            elif value == 'low':    # <= 1k
+                self.style['dpi'] = 100
+            self.style['size'] = [
+                defaults.default_figure_size_inches[0]*self.style['dpi'],
+                defaults.default_figure_size_inches[1]*self.style['dpi']]
+            
+        elif name == 'hspacing':
             self.style['spacing'][0] = value
         elif name == 'vspacing':
             self.style['spacing'][1] = value
@@ -433,6 +444,10 @@ class Axis(FigObject):
             self.attr['range'] = (value[0], value[1])
             if value[2] is not None:
                 self.attr['interval'] = value[2]
+            else:
+                from . import scale
+                t = scale.get_ticks(value[0], value[1])
+                self.attr['interval'] = t[1] - t[0]
         else:
             super().set_style(name, value)
 

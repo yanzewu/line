@@ -170,6 +170,12 @@ def translate_style_val(style_name:str, style_val:str):
         v1, v2 = style_val.split(',')
         return stod(v1), stod(v2)
 
+    elif style_name == 'dpi':
+        if style_val in ('high', 'mid', 'low'):
+            return style_val
+        else:
+            return stod(style_val)
+
     # require multiple num value
     elif style_name in ('rsize', 'rpos', 'spacing'):
         v1, v2 = style_val.split(',')
@@ -188,7 +194,7 @@ def translate_style_val(style_name:str, style_val:str):
         return stob(style_val)
 
     # int
-    elif style_name in ('fontsize', 'skippoint', 'zindex', 'dpi'):
+    elif style_name in ('fontsize', 'skippoint', 'zindex'):
         return stod(style_val)
 
     # float

@@ -29,7 +29,7 @@ default_figure_style = RestrictDict({
     'spacing': [0.05, 0.05]
 })
 
-default_figure_size_inches = [6,4]
+default_figure_size_inches = [7.2, 4.8]
 default_figure_style['size'] = [
     default_figure_size_inches[0]*default_figure_style['dpi'],
     default_figure_size_inches[1]*default_figure_style['dpi'],
@@ -54,7 +54,7 @@ default_major_axis_style = RestrictDict({
     'tick':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':12,
-        'format':'%.2f',
+        'format':'%.4G',
         'color':Color.BLACK,
         'orient':'in',
         'linewidth':0.5,
@@ -84,7 +84,7 @@ default_minor_axis_style = RestrictDict({
     'tick':RestrictDict({
         'fontfamily':'Times New Roman',
         'fontsize':12,
-        'format':'%.1f',
+        'format':'%.4G',
         'color':Color.BLACK,
         'orient':'in',
         'linewidth':0.5,

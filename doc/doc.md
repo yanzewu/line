@@ -178,6 +178,7 @@ Usage:
 
     show (default) [element] (stylename)
     show currentfile
+    show pwd
     show option [optionname]
 
 Args:
@@ -185,6 +186,7 @@ Args:
     - In-figure elements (like lines, texts, axes) are searched in current figure and subfigure only. `line`+number or `text`+number also applies here.
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
 - `show currentfile` shows current open and save filename;
+- `show pwd` shows current directory;
 - `show option` shows current global option.
     
 
@@ -322,6 +324,13 @@ Usage:
 
     load filename
 
+### cd
+---
+Change directory.
+
+Usage:
+
+    cd path
 
 ### quit
 ---
@@ -380,7 +389,7 @@ Style Name | Value Description
 alpha | float
 color |  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
 coord | 'data'/'axis'/'figure'
-dpi | int
+dpi | int / 'high'/'mid'/'low'
 edgewidth | int
 font | string,int (font name, size) or string (font name)
 fontfamily | string (font name)

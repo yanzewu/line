@@ -5,6 +5,7 @@ import numpy as np
 import logging
 import os
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.ticker as ticker
@@ -18,6 +19,7 @@ logger = logging.getLogger('line')
 # things between initialize() and finalize() can be viewed as a show() process
 # so everything need to be redraw once closed.
 
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
 
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:
@@ -262,13 +264,13 @@ def _update_subfigure(m_subfig:state.Subfigure):
     x_interval = m_subfig.axes[0].attr['interval']
     if x_range[0] is not None and x_range[1] is not None:
         ax.set_xbound(x_range[0], x_range[1])
-        ax.set_xticks(np.arange(x_range[0], x_range[1]+x_interval, x_interval))
+        ax.set_xticks(np.arange(x_range[0], x_range[1]+x_interval/10, x_interval))
 
     y_range = m_subfig.axes[1].attr['range']
     y_interval = m_subfig.axes[1].attr['interval']
     if y_range[0] is not None and y_range[1] is not None:
         ax.set_ybound(y_range[0], y_range[1])
-        ax.set_yticks(np.arange(y_range[0], y_range[1]+y_interval, y_interval))
+        ax.set_yticks(np.arange(y_range[0], y_range[1]+y_interval/10, y_interval))
 
     # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))

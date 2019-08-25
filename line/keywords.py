@@ -45,6 +45,7 @@ style_alias = {
 
 command_keywords = {
     'append',
+    'cd',
     'clear',
     'display',
     'figure',

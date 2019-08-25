@@ -6,6 +6,10 @@ def file_exist(filename):
     """
     return os.path.exists(filename) and os.path.isfile(filename)
     
+def dir_exist(filename):
+
+    return os.path.exists(filename) and os.path.isdir(filename)
+    
 
 def query_cond(question, cond, default, set_true=True):
     """ If cond is True, ask question and get answer, otherwise use default.
