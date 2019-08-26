@@ -13,7 +13,7 @@ import matplotlib.font_manager as font_manager
 
 from . import state
 from . import style
-from .defaults import default_math_font
+from .defaults import default_math_font, default_fonts
 
 logger = logging.getLogger('line')
 
@@ -21,6 +21,7 @@ logger = logging.getLogger('line')
 # so everything need to be redraw once closed.
 
 matplotlib.rcParams['mathtext.fontset'] = default_math_font
+matplotlib.rcParams['font.family'] = default_fonts
 
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:
@@ -296,7 +297,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
             fontsize=m_style['fontsize'],
-            loc=m_subfig.legend.attr['pos'],
+            loc=m_subfig.legend.style['pos'],
             frameon=True,
             framealpha=m_style['alpha']
         )

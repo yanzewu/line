@@ -1,5 +1,6 @@
 
 import enum
+from collections import namedtuple
 from . import palette
 
 PositionStyle = enum.Enum('PositionStyle', 'TOPLEFT TOPMID TOPRIGHT BOTTOMLEFT BOTTOMMID BOTTOMRIGHT')
@@ -49,8 +50,9 @@ class Color(tuple):
     BLACK = (0, 0, 0)
     GREY = (0.5, 0.5, 0.5)
 
-    def __init__(self, r, g, b):
-        super().__init__((r, g, b))
+    def __new__(cls, r, g, b):
+        self = super(Color, cls).__new__(cls, (r, g, b))
+        return self
 
     def __str__(self):
         rawstr = hex(int(self[0]*256)*65536+int(self[1]*256)*256+int(self[2]*256))[2:]
@@ -69,6 +71,25 @@ ShortColorAlias = {
     'k':'BLACK'
 }
 
+# mapping color to nice-looking colors
+VisualColors = {
+    'RED':'e71a1a',
+    'YELLOW':'DARKORANGE',
+    'GREEN':'GREEN',
+    'BLUE':'ROYALBLUE',
+    'CYAN':'DARKTURQUOISE',
+    'MAGENTA':'d740c7'
+}
+
+LighterColor = {
+    'RED':'LIGHTCORAL',
+    'YELLOW':'GOLD',
+    'GREEN':'LIGHTGREEN',
+    'BLUE':'LIGHTBLUE',
+    'MAGENTA':'VIOLET',
+    'BLACK':'GREY'
+}
+
 def str2color(s):
 
     if len(s) == 1:
@@ -79,7 +100,7 @@ def str2color(s):
     except ValueError:
         return Color.__dict__[s.upper()]
     else:
-        return Color(v//0x1000, (v % 0x1000)//0x10, v % 0x10)
+        return Color( (v//0x10000)/256, ((v % 0x10000)//0x100)/256, (v % 0x100)/256)
 
 # A good way to implement pos is considering the size of object
 # but here I just use fixed coordinates
@@ -96,7 +117,7 @@ PALETTES = {
     'default':[
         (0,0,0),
         (0.89, 0.1, 0.1),
-        (0.12, 0.47, 0.71),
+        (0.12, 0.47, 0.9),
         (0.2, 0.63, 0.17),
         (1, 0.5, 0),
         (0.42, 0.24, 0.61)

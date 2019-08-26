@@ -8,6 +8,7 @@ Creating nice line and scatter plot with least typing.
 
 Prerequesties:
 
+- Python >= 3.5 (Necessary)
 - Matplotlib >= 3.1 (Necessary)
 - Numpy >= 0.11 (Necessary)
 - Pandas >= 0.22 (Necessary)

@@ -77,7 +77,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         try:
             lc, lt, pt = parse_style_descriptor(style_name)
         except (IndexError, KeyError):
-            raise LineParseError('Invalid style descriptor: "%s"' % style_name)
+            warn('Skip invalid style descriptor: "%s"' % style_name)
             return None, None
         except LineParseError:
             warn('Skip invalid style "%s"' % style_name)
@@ -85,15 +85,20 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         else:
             ret = {}
             if lc is not None:
-                ret['linecolor'] = lc
+                ret['linecolor'] = style.str2color(style.VisualColors[lc])
             if lt is not None:
                 ret['linetype'] = lt
+                if pt is None:
+                    ret['pointtype'] = style.PointType.NONE
             if pt is not None:
                 ret['pointtype'] = pt
                 if lc is not None:
-                    ret['edgecolor'] = lc
+                    ret['edgecolor'] = style.str2color(style.VisualColors[lc])
+                    ret['fillcolor'] = style.str2color(style.LighterColor[lc])
                 if lt is None:
                     ret['linetype'] = style.LineType.NONE
+                else:
+                    ret['linewidth'] = 1
             return ret
 
     else:
@@ -144,7 +149,7 @@ def parse_style_descriptor(text:str):
     while len(text) > 0:
 
         if text[0] in style.ShortColorStr:
-            color = style.str2color(text[0])
+            color = style.ShortColorAlias[text[0]]
             text = text[1:]
         elif text[0] in style.PointTypeStr:
             pointstyle = style.PointType(style.PointTypeStr.index(text[0]))

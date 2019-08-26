@@ -1,5 +1,4 @@
-plot test-data.txt 1:2,3,(2-$3) t='y3'
-set palette mpl.Set1
+plot test-data.txt 1:2,3, (sin($1*3.141*2)+1) bo- t='sin(2$\pi$t)'
 group 0ab
 set ylabel y
 set yrange -2:3

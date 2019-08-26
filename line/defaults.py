@@ -39,8 +39,9 @@ default_figure_attr = RestrictDict({
     'split': [1,1]
 })
 
-default_font = 'Times New Roman'
+default_font = 'CMU Serif'
 default_math_font = 'cm'
+default_fonts = ['CMU Serif', 'Times New Roman', 'Arial', 'serif']  # font fallback
 
 default_major_axis_style = RestrictDict({
     'linewidth':0.5,
@@ -110,7 +111,7 @@ default_dataline_style = RestrictDict({
     'linewidth':2,
     'linetype':LineType.SOLID,
     'linecolor':Color.BLACK,    # 'color' sets both line and point
-    'pointsize':4,
+    'pointsize':6,
     'pointtype':PointType.NONE,
     'edgewidth':0.8,
     'edgecolor':Color.BLACK,

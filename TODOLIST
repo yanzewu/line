@@ -6,6 +6,7 @@ Fixes
 [MID] Faster startup.
 [MID] Add font fallback sequence.
 [LOW] Fix conflict of alias and value (using LR parsing)
+[HIGH] Legend position.
 
 Features
 ---
