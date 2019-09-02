@@ -93,7 +93,8 @@ LighterColor = {
 def str2color(s):
 
     if len(s) == 1:
-        return Color.__dict__[ShortColorAlias[s]]
+        c = ShortColorAlias[s]
+        return Color.__dict__[VisualColors.get(c,c)]
 
     try:
         v = int(s, 16)

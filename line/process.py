@@ -233,14 +233,19 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         
         cwd = os.getcwd()
 
-        try:
-            handler.proc_file(filename)
-        except IOError:
-            m_state.is_interactive = is_interactive
-            plot.initialize(m_state)
+        loadpaths = ['.', os.path.expanduser('~/.line/')]
+
+        full_filename = None
+        for path in loadpaths:
+            if io_util.file_exist(os.path.join(path, filename)):
+                full_filename = os.path.join(path, filename)
+                break
+        
+        if not full_filename:
             raise LineProcessError('Cannot open file "%s"' % filename)
-        else:
-            os.chdir(cwd)
+
+        handler.proc_file(full_filename)
+        os.chdir(cwd)
         m_state.is_interactive = is_interactive
         plot.initialize(m_state)
 

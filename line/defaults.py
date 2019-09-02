@@ -7,7 +7,7 @@ from .collection_util import RestrictDict, extract_single
 default_options = {
     'auto-adjust-range':True,
     'data-title':'auto',
-    'broadcast-style':['linewidth', 'linetype', 'pointsize', 'edgewidth'],
+    'broadcast-style':['linewidth', 'pointsize', 'edgewidth'],
     'data-delimiter':'auto',
     'display-when-quit':False,
     'force-column-selection':False,

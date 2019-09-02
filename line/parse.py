@@ -85,7 +85,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         else:
             ret = {}
             if lc is not None:
-                ret['linecolor'] = style.str2color(style.VisualColors[lc])
+                ret['linecolor'] = style.str2color(lc)
             if lt is not None:
                 ret['linetype'] = lt
                 if pt is None:
@@ -93,8 +93,8 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
             if pt is not None:
                 ret['pointtype'] = pt
                 if lc is not None:
-                    ret['edgecolor'] = style.str2color(style.VisualColors[lc])
-                    ret['fillcolor'] = style.str2color(style.LighterColor[lc])
+                    ret['edgecolor'] = style.str2color(lc)
+                    ret['fillcolor'] = style.str2color(style.LighterColor.get(lc,lc))
                 if lt is None:
                     ret['linetype'] = style.LineType.NONE
                 else:
