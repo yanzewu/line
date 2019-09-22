@@ -10,6 +10,7 @@ logger = logging.getLogger('line')
 class SheetFile:
     
     COLUMN_MATCHER = re.compile(r'(?P<a>\$\d+)|(?P<b>\$\D\w*)|(?P<c>col\([^\)]+\))')
+    SNIFF_NUM = 5   # number of lines used in sniff
 
     def __init__(self):
         self.data = None
@@ -47,13 +48,16 @@ class SheetFile:
             data_info['delimiter'] = data_delimer
         
         if data_info['delimiter'] == 'white':
-            data_info['delimiter'] = '\s+'
+            data_info['delimiter'] = r'\s+'
 
+        print(data_info)
         self.data = pandas.read_csv(f,
             sep=data_info['delimiter'],
-            header=0 if data_info['title'] else None,
+            header=data_info['first_row'] if data_info['title'] else None,
             index_col=False,
-            skipinitialspace=data_info['initial_space'],
+            skiprows=data_info['add_blank_rows'],
+            skip_blank_lines=True,
+            skipinitialspace=data_info['initial_space']>0,
             comment='#' if ignore_data_comment else None
             )
 
@@ -65,18 +69,41 @@ class SheetFile:
 
     def sniff(self, f, ignore_data_comment=True):
         lines = []
+        data_info = {}
 
         line = f.readline()
-        while line and len(lines) < 5:
-            if not ignore_data_comment or not line.strip().startswith('#'):
-                lines.append(line)
+        rowcount = 0 
+        add_blank_rows = [] # additional blank rows by comment
+
+        while line and len(lines) < SheetFile.SNIFF_NUM:
+            if ignore_data_comment:
+                if line.startswith('#'):
+                    rowcount += 1
+                elif '#' in line and line[:line.index('#')].isspace():
+                    add_blank_rows.append(rowcount)
+                    rowcount += 1
+                elif len(line) == 0 or line.isspace():
+                    add_blank_rows.append(rowcount)
+                else:
+                    lines.append(line)
+                    if len(lines) == 1:
+                        data_info['first_row'] = rowcount
+            else:
+                if len(line) == 0 or line.isspace():
+                    add_blank_rows.append(rowcount)
+                    rowcount += 1
+                else:
+                    lines.append(line)
+                    data_info['first_row'] = rowcount
             line = f.readline()
+
+        data_info['add_blank_rows'] = add_blank_rows
 
         s = csv.Sniffer()
         s.preferred = ['\t',' ',',',';',':']
 
         sample = ''.join(lines)
-        data_info = {}
+        
         
         try:
             dialect = s.sniff(sample)
@@ -98,11 +125,20 @@ class SheetFile:
 
             if len(spaces) > len(commas):
                 sep = spaces[0][0]
+                if len([s for s in spaces if len(s) > 0]) > 0:  # if most separators has more than one whites then treat as white
+                    sep = 'white'
             else:
                 sep = ','
-            dialect = s.sniff(sample, sep)
+
+            data_info['delimiter'] = sep
+            m = re.match(r'\s+', lines[-1])
+            data_info['initial_space'] = m.span()[1] if m else 0
+
             try:
-                float(lines[0].strip().split(sep)[0])
+                if sep != 'white':
+                    float(lines[0].strip().split(sep)[0])
+                else:
+                    float(re.split(r'\s+', lines[0].strip())[0])
             except ValueError:
                 data_info['title'] = True
             else:
@@ -112,9 +148,8 @@ class SheetFile:
             if not data_info['title']:
                 if re.match(r'[a-zA-Z_]', lines[0]):
                     data_info['title'] = True   # anything not number is regarded as title.
-
-        data_info['delimiter'] = dialect.delimiter
-        data_info['initial_space'] = dialect.skipinitialspace
+            data_info['delimiter'] = dialect.delimiter
+            data_info['initial_space'] = dialect.skipinitialspace
 
         return data_info
 

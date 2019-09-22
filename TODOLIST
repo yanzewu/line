@@ -20,3 +20,4 @@ Features
 [LOW] 'a-b' like selection of column title or index.
 [MID] Histogram support.
 [LOW] Heatmap support.
+[MID] As an importable library.
