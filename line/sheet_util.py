@@ -50,7 +50,7 @@ class SheetFile:
         if data_info['delimiter'] == 'white':
             data_info['delimiter'] = r'\s+'
 
-        print(data_info)
+        logger.debug(data_info)
         self.data = pandas.read_csv(f,
             sep=data_info['delimiter'],
             header=data_info['first_row'] if data_info['title'] else None,

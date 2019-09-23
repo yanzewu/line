@@ -446,7 +446,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         filename_prefix = len(set((d[4] for d in data_list))) != 1
 
         for (x, y, label, xlabel, filename), style in zip(data_list, style_list):
-            ylabel = filename + ':' + label if filename_prefix else label
+            ylabel = filename + ':' + str(label) if filename_prefix else str(label)
             m_state.cur_subfigure().add_dataline((x, y), ylabel, xlabel, style)
         
         # Set labels

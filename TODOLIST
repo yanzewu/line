@@ -21,3 +21,4 @@ Features
 [MID] Histogram support.
 [LOW] Heatmap support.
 [MID] As an importable library.
+[HIGH] Extend the palette
