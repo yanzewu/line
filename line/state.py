@@ -9,6 +9,8 @@ from .style import *
 from .errors import warn, LineProcessError, print_as_warning
 from .collection_util import RestrictDict, extract_single
 
+from .style_man import *
+
 class GlobalState:
     """ State of program.
     """
@@ -17,8 +19,9 @@ class GlobalState:
         
         self.figures = OrderedDict()        # name:Figure
         self.cur_figurename = None          # Name of current figure
-
-        self.default_figure = None      # figure template
+        self.default_stylesheet = StyleSheet()
+        self.custom_stylesheet = StyleSheet()
+        self.class_stylesheet = StyleSheet()
 
         self.cur_open_filename = None
         self.cur_save_filename = None
@@ -51,41 +54,23 @@ class GlobalState:
         Used at the beginning or `figure` command.
         """
 
-        # beginning
         if self.cur_figurename is None:
             self.cur_figurename = '1'
+        self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
 
-        self.figures[self.cur_figurename] = self.default_figure.copy()
-        self.cur_figure().name = 'figure%s' % self.cur_figurename
-        self.cur_figure().subfigures[0].dataline_template = copy.deepcopy(
-            self.default_figure.subfigures[0].dataline_template)
-
-    def find_elements(self, name, raise_error=False):
-        """ Find elements by name recursively.
-        Returns iterable of elements.
+    def refresh_style(self):
+        """ Recompute style of children
         """
-        if name == 'figure':
-            return [self.cur_figure()]
-        elif name.startswith('figure@'):
-            try:
-                return self.figures[name[7:]]
-            except KeyError:
-                if raise_error:
-                    raise
-                else:
-                    return []
-        elif self.cur_figurename is not None:
-            return self.cur_figure().find_elements(name, raise_error)
-        else:
-            return []
+        if len(self.figures) > 0:
+            compute_style(self.cur_figure(), self.default_stylesheet)
 
 
 class FigObject:
     """ Style-modifiable object in the figure.
     """
 
-    def __init__(self, name, style:RestrictDict, attr:RestrictDict):
-        """ name -> object idenfier;
+    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}):
+        """ typename -> object idenfier;
             style -> exportable style;
             attr -> unexportable style;
 
@@ -93,63 +78,80 @@ class FigObject:
         export_style() will export style only;
         """
 
+        self.typename = typename
         self.name = name
-        self.style = style.copy()
-        self.attr = attr.copy()
+        self.classnames = set()
+        self.style = Style() #defaults.get_default_style_entries(name)
+        self.computed_style = None
+        self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
+        self.custom_style_getter = custom_style_getter
+
+    def update_style(self, style_dict):
+        """ Update style from style_dict.
+        If a name is in custom_style_setter, it will be called to get real value;
+        Otherwise will call default setter.
+
+        Will not raise expression if a style is not found.
+        """
+
+        has_updated = False
+
+        for d, v in style_dict.items():
+            if d in self.custom_style_setter:
+                self.custom_style_setter[d](self.style, v)
+                has_updated = True
+            else:
+                self.style[d] = v
+                has_updated = True
+            
+                # TODO smarter recognition of invalid style name
+
+        return has_updated
 
     def get_style(self, name):
-        try:
-            return self.style[name]
-        except KeyError:
-            return self.attr[name]
-
-    def set_style(self, name, value):
-        """ Set style name=value.
-        Raise `KeyError` if name is not found, `ValueError` if value is not valid.
+        """ Get value of style
         """
-        try:
-            self.style[name] = value
-        except KeyError:
-            self.attr[name] = value
-
-    def get_attr(self, name):
-        return self.attr[name]
-
-    def set_attr(self, name, value):
-        self.attr[name] = value
-
-    def set_style_recur(self, name, value):
-        """ If self has the style, set it;
-        Otherwise pass the style to children.
-        """
-        try:
-            self.set_style(name, value)
-        except (KeyError, ValueError):
-            has_style = False
-            for e in self.get_children():
-                has_style = e.set_style_recur(name, value) or has_style
-            return has_style
+        if name in self.custom_style_getter:
+            return self.custom_style_getter[name](self.style)
         else:
-            return True
-  
+            return self.style[name]
+
+    def attr(self, name):
+        """ Alias for get_computed_style
+        """
+        return self.computed_style[name]
 
     def export_style(self):
-        """ Export style to dict {stylename:value}
+        """ Export style to Style object
         """
         return self.style.export()
 
-    def export_style_recur(self):
+    def get_computed_style(self, name):
+        """ Lower level get style for backend.
+        """
+        return self.computed_style[name]
 
-        style_exp = self.export_style()
-        for e in self.get_children():
-            style_exp[e.name] = e.export_style_recur()
-        return style_exp
+    def add_class(self, name):
+        """ Add a name to class
+        """
+        self.classnames.add(name)
+
+    def remove_class(self, name):
+        """ Remove style class without error
+        """
+        try:
+            self.classnames.remove(name)
+        except KeyError:
+            pass
+
+    def has_name(self, name):
+        return name == self.name
 
     def get_children(self):
         return []
 
-    def find_elements(self, name, raise_error):
-        if self.name == name:
+    def find_elements(self, name):
+        if self.has_name(name):
             return [self]
         else:
             return list(chain.from_iterable((c.find_elements() for c in self.get_children())))
@@ -157,73 +159,55 @@ class FigObject:
     def copy(self, copy_attr=False):
         """ Copies only style if copy_attr is not set.
         """
-        new_obj = type(self)(self.name, self.export_style_recur())
+        new_obj = type(self)(self.typename)
         if copy_attr:
-            new_obj.attr = self.attr.copy()
-        return new_obj
+            new_obj.style = self.style.copy()
+        else:
+            new_obj.style.copy_from(self.style)
 
 
 class Figure(FigObject):
 
-    def __init__(self, name, style):
+
+    def __init__(self, figure_name):
         
-        self.subfigures = [Subfigure('subfigure0', style['subfigure0'])]        # list of subfigures
+        self.subfigures = [Subfigure('subfigure0')]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
         self.backend = None         # object for plotting
 
-        super().__init__(name, RestrictDict(extract_single(style)), defaults.default_figure_attr)
+        super().__init__('figure', figure_name, {
+            'dpi':self._set_dpi,
+            'hspacing':lambda x:   _assign_list(x[0]['spacing'], 0, x[1]),
+            'vspacing': lambda x:   _assign_list(x[0]['spacing'], 1,  x[1]),
+            'margin-bottom': lambda x: _assign_list(x[0]['margin'], 0, x[1]),
+            'margin-left': lambda x: _assign_list(x[0]['margin'], 1, x[1]),
+            'margin-right': lambda x:_assign_list(x[0]['margin'], 2, x[1]),
+            'margin-top': lambda x:  _assign_list(x[0]['margin'], 3, x[1]),
+        }, {
+            'hspacing': lambda x: x['spacing'][0],
+            'vspacing': lambda x: x['spacing'][1]
+        })
 
-    def find_elements(self, name, raise_error=False):
-        if name == 'figure':
-            return [self]
-        elif name == 'subfigure' or name == 'gca':
+    def _set_dpi(self, m_style, value):
+        if value == 'high': # 4k resolution
+            m_style['dpi'] = 200
+        elif value == 'mid':    # 2k resolution
+            m_style['dpi'] = 150
+        elif value == 'low':    # <= 1k
+            m_style['dpi'] = 100
+        m_style['size'] = [
+            defaults.default_figure_size_inches[0]*m_style['dpi'],
+            defaults.default_figure_size_inches[1]*m_style['dpi']]
+
+    def has_name(self, name):
+        return name == 'gcf' or name == self.name
+
+    def get_children(self, dynamical=True):
+        if dynamical:
+            return [self.subfigures[self.cur_subfigure]]
+        else:
             return self.subfigures
-        elif name.startswith('subfigure'):
-            try:
-                return [self.subfigures[int(name[9:])]]
-            except (ValueError, IndexError):
-                if raise_error:
-                    raise
-                else:
-                    warn('Skip invalid selection "%s"' % name)
-                    return []
-
-        else:
-            return self.subfigures[self.cur_subfigure].find_elements(name, raise_error)
-
-    def set_style(self, name, value):
-        if name == 'dpi' and value in ('high', 'mid', 'low'):
-            if value == 'high': # 4k resolution
-                self.style['dpi'] = 200
-            elif value == 'mid':    # 2k resolution
-                self.style['dpi'] = 150
-            elif value == 'low':    # <= 1k
-                self.style['dpi'] = 100
-            self.style['size'] = [
-                defaults.default_figure_size_inches[0]*self.style['dpi'],
-                defaults.default_figure_size_inches[1]*self.style['dpi']]
-            
-        elif name == 'hspacing':
-            self.style['spacing'][0] = value
-        elif name == 'vspacing':
-            self.style['spacing'][1] = value
-        elif name.startswith('margin-'):
-            axis_index = {'bottom':0, 'left':1, 'right':2, 'top':3}
-            self.style['margin'][axis_index[name[7:]]] = value
-        else:
-            super().set_style(name, value)
-
-    def get_style(self, name):
-        if name == 'hspacing':
-            return self.style['spacing'][0]
-        elif name == 'vspacing':
-            return self.style['spacing'][1]
-        else:
-            return super().get_style(name)
-
-    def get_children(self):
-        return self.subfigures
 
     def clear_backend(self):
         self.backend = None
@@ -233,135 +217,68 @@ class Figure(FigObject):
 
 class Subfigure(FigObject):
 
-    def __init__(self, name, style_dict={}):
+    def __init__(self, subfigure_name):
 
-        style = extract_single(style_dict)
-        style.update((('default-dataline', style_dict['default-dataline']),
-        ('default-drawline', style_dict['default-drawline']),
-        ('default-text', style_dict['default-text'])))
+        super().__init__('subfigure', subfigure_name, {
+            'padding-bottom': lambda x:_assign_list(x[0]['padding'], 0, x[1]),
+            'padding-left': lambda x: _assign_list(x[0]['padding'], 1, x[1]),
+            'padding-right': lambda x:_assign_list(x[0]['padding'], 2, x[1]),
+            'padding-top': lambda x:  _assign_list(x[0]['padding'], 3, x[1]),
+            'xlabel': lambda x:self.axes[0].update_style('text', x[1]),
+            'ylabel': lambda x:self.axes[1].update_style('text', x[1]),
+            'rlabel': lambda x:self.axes[2].update_style('text', x[1]),
+            'tlabel': lambda x:self.axes[3].update_style('text', x[1]),
+            'xrange': lambda x:self.axes[0].update_style('range', x[1]),
+            'yrange': lambda x:self.axes[1].update_style('range', x[1]),
+            'rrange': lambda x:self.axes[2].update_style('range', x[1]),
+            'trange': lambda x:self.axes[3].update_style('range', x[1]),
+        }, {
+            'xlabel': lambda x:self.axes[0].get_style('text'),
+            'ylabel': lambda x:self.axes[1].get_style('text'),
+            'rlabel': lambda x:self.axes[2].get_style('text'),
+            'tlabel': lambda x:self.axes[3].get_style('text'),
+            'xrange': lambda x:self.axes[0].get_style('range'),
+            'yrange': lambda x:self.axes[1].get_style('range'),
+            'rrange': lambda x:self.axes[2].get_style('range'),
+            'trange': lambda x:self.axes[3].get_style('range'),
+        })
 
-        super().__init__(name, RestrictDict(style), defaults.default_subfigure_attr)
-
-        self.axes = [
-            Axis('xaxis', style_dict['xaxis']),
-            Axis('yaxis', style_dict['yaxis']),
-            Axis('raxis', style_dict['raxis']),
-            Axis('taxis', style_dict['taxis']),
-            ]
-
-        self.legend = Legend('legend', RestrictDict(style_dict['legend']))
+        self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]
+        self.legend = Legend('legend')
 
         self.datalines = [] # datalines
         self.drawlines = [] # drawlines
         self.texts = []
 
-        self.dataline_template = []
-        self.update_template_palette()
-
         self.is_changed = True
         self.backend = None
 
-    
-    def find_elements(self, name, raise_error):
-        
-        if name == 'line':
-            return self.datalines
-
-        elif name == 'text':
-            return self.texts
-
-        elif name.startswith('line@'):
-            return list(filter(lambda x:x.label == name[5:], self.datalines))
-
-        elif name.startswith('text@'):
-            return list(filter(lambda x:x.text == name[5:], self.texts))
-
-        else:
-            _mychildren = self.get_children()
-            _ret = list(filter(lambda x:x.name == name, _mychildren))
-            if len(_ret) == 0:
-                for c in _mychildren:
-                    _ret += c.find_elements(name, raise_error)
-            return _ret
+    def has_name(self, name):
+        return name == 'gca' or self.name == name
 
     def get_children(self):
         return self.axes + [self.legend] + self.datalines + self.drawlines + self.texts 
 
-    def set_style(self, name, value):
-        if name.startswith('padding-'):
-            axis_index = {'left':0, 'bottom':1, 'right':2, 'top':3}
-            self.style['padding'][axis_index[name[8:]]] = value
+    def add_dataline(self, data, label, xlabel, style_dict):
 
-        elif name.endswith('label'):
-            axis_index = {'x':0, 'y':1, 'r':2, 't':3}
-            self.axes[axis_index[name[:-5]]].label.set_style('text', value)
-
-        elif name.endswith('range'):
-            axis_index = {'x':0, 'y':1, 'r':2, 't':3}
-            self.axes[axis_index[name[:-5]]].set_style('range', value)
-
-        elif name == 'palette':
-            super().set_style(name, value)
-            self.update_template_palette()
-
-        else:
-            super().set_style(name, value)
-
-    def get_style(self, name):
-        if name.startswith('padding-'):
-            axis_index = {'left':0, 'bottom':1, 'right':2, 'top':3}
-            return self.style['padding'][axis_index[name[8:]]]
-
-        elif name.endswith('label'):
-            axis_index = {'x':0, 'y':1, 'r':2, 't':3}
-            return self.axes[axis_index[name[:-5]]].label.get_style('text')
-
-        elif name.endswith('range'):
-            axis_index = {'x':0, 'y':1, 'r':2, 't':3}
-            return self.axes[axis_index[name[:-5]]].get_style('range')
-
-        else:
-            return super().get_style(name)
-
-    def add_dataline(self, data, label, xlabel, style_dict:dict):
-
-        if len(self.datalines) == len(self.dataline_template):
-            self.dataline_template.append(self.style['default-dataline'].copy())
-
-        idx = len(self.datalines)
         self.datalines.append(
-            DataLine(data, label, xlabel, 'line%d'%len(self.datalines), RestrictDict({}))
+            DataLine(data, label, xlabel, 'line%d'%len(self.datalines))
         )
-        # reset style
-        self.datalines[-1].style = self.dataline_template[len(self.datalines)-1]
-        for s, v in style_dict.items():
-            try:
-                self.datalines[-1].set_style(s, v)
-            except KeyError as e:
-                print_as_warning(e)
+        self.datalines[-1].update_style(style_dict)
+
+    def add_drawline(self, start_pos, end_pos, style_dict):
         
-
-    def add_drawline(self, start_pos, end_pos, style_dict:dict):
-        new_style = self.style['default-drawline'].copy()
         self.drawlines.append(
-            DrawLine(start_pos, end_pos, 'drawline%d'%len(self.drawlines), new_style)
+            DrawLine(start_pos, end_pos, 'drawline%d'%len(self.drawlines))
         )
-        for s, v in style_dict.items():
-            try:
-                self.drawlines[-1].set_style(s, v)
-            except KeyError as e:
-                print_as_warning(e)
+        self.drawlines[-1].update_style(style_dict)
 
-    def add_text(self, text, pos, style_dict:dict):
-        new_style = self.style['default-text'].copy()
+    def add_text(self, text, pos, style_dict):
+        
         self.texts.append(
             Text(text, pos, 'text%d'%len(self.texts), new_style)
         )
-        for s, v in style_dict.items():
-            try:
-                self.texts[-1].set_style(s, v)
-            except KeyError as e:
-                print_as_warning(e)
+        self.texts[-1].update_style(style_dict)
     
     def clear(self):
         """ Clear lines and texts but keep style.
@@ -370,7 +287,7 @@ class Subfigure(FigObject):
         self.drawlines.clear()
         self.texts.clear()
         for i in range(4):
-            self.axes[i].label.set_attr('text', '')
+            self.axes[i].label.update_style({'text': ''})
 
     def get_axes_coord(self, d, axis=0, side='left'):
 
@@ -380,146 +297,133 @@ class Subfigure(FigObject):
         else:
             return 0 if side == 'left' else 1.0
 
-    def update_template_palette(self):
+    def set_group(self, group, old_ss, palette_name=None):
+        """ group: group generated by parse.parse_group();
+            old_ss: GlobalState.class_stylesheet;
+            palette_name: the current palette using, by default load the first class.
+        """
 
-        colors = PALETTES[self.style['palette']]
-        if not self.dataline_template:
-            self.dataline_template = []
-            
-        while len(self.dataline_template) < len(colors) - 1:
-            self.dataline_template.append(self.style['default-dataline'].copy())
+        if palette_name is None:
+            palette_name = self.classnames[0]
 
-        for idx in range(len(colors)-1):
-            self.dataline_template[idx]['linecolor'] = colors[idx+1]
+        prefix, repeator, suffix = group
+        ss = StyleSheet()
 
-        if not self.attr['group']:
-            return
-        
-        prefix, repeator, suffix = self.attr['group']
+        # TODO fix possible errors
 
         for idx, cidx in enumerate(prefix):
-            self.dataline_template[idx]['linecolor'] = colors[cidx]
+            ss.data[NameSelector('line%d' %idx)] = old_ss.get_style_by_name('.%s #line%d' % (palette_name, cidx))
 
         if suffix:
             for idx in range(max(len(prefix), len(self.datalines)-len(suffix)), len(self.datalines)):
                 cidx = suffix[idx - len(self.datalines) + len(suffix)]
-                self.dataline_template[idx]['linecolor'] = colors[cidx] 
+                ss.data[NameSelector('line%d' %idx)] = old_ss.get_style_by_name('.%s #line%d' % (palette_name, cidx))
 
         if repeator and len(self.datalines) > len(prefix) + len(suffix):
             for idx in range(len(prefix), len(self.datalines) - len(suffix)):
-                self.dataline_template[idx]['linecolor'] = colors[repeator[(idx - len(prefix))%len(repeator)]]
+                ss.data[NameSelector('line%d' %idx)] = old_ss.get_style_by_name(
+                    '.%s #line%d' % (palette_name, repeator[(idx - len(prefix))%len(repeator)]))
+
+        ss.apply_to(self)
 
 
 class Axis(FigObject):
 
-    def __init__(self, name, style):
+    def __init__(self, axis_name):
 
-        self.label = Text('', None, 'label', RestrictDict(style['label']))
-        self.tick = Tick('tick', RestrictDict(style['tick']), RestrictDict({}))
-        self.grid = Grid('grid', RestrictDict(style['grid']), RestrictDict({}))
+        self.label = Label(axis_name[0] + 'label')
+        self.tick = Tick(axis_name[0] + 'tick')
+        self.grid = Grid(axis_name[0] + 'grid')
 
-        super().__init__(name, RestrictDict(extract_single(style)), defaults.default_axis_attr)
-
-    def find_elements(self, name, raise_error):
-        
-        c = self.name[0]
-        if name in ('axis' , c+'axis'):
-            return [self]
-        elif name in ('label', c+'label'):
-            return [self.label]
-        elif name in ('tick', c+'tick'):
-            return [self.tick]
-        elif name in ('grid', c+'grid'):
-            return [self.grid]
-        elif raise_error:
-            raise KeyError(name)
-        else:
-            return []
+        super().__init__('axis', axis_name, {
+            'range':self._set_range
+        })
 
     def get_children(self):
         return [self.label, self.tick, self.grid]
 
-    def set_style(self, name, value):
-        if name == 'range':
-            self.attr['range'] = (value[0], value[1])
-            if value[2] is not None:
-                self.attr['interval'] = value[2]
-            else:
-                from . import scale
-                t = scale.get_ticks(value[0], value[1])
-                self.attr['interval'] = t[1] - t[0]
+    def _set_range(self, m_style, value):
+        m_style['range'] = (value[0], value[1])
+        if value[2] is not None:
+            m_style['interval'] = value[2]
         else:
-            super().set_style(name, value)
+            from . import scale
+            t = scale.get_ticks(value[0], value[1])
+            m_style['interval'] = t[1] - t[0]
 
 class Tick(FigObject):
-    pass
+    def __init__(self, name):
+        super().__init__('tick', name)
 
 class Grid(FigObject):
-    pass
+    def __init__(self, name):
+        super().__init__('grid', name)
 
 class Legend(FigObject):
-
-    def __init__(self, name, style):
-
-        super().__init__(name, style, defaults.default_legend_attr)
-
+    def __init__(self, name):
+        super().__init__('legend', name)
 
 class DataLine(FigObject):
 
-    def __init__(self, data, label, xlabel, name, style:RestrictDict):
+    def __init__(self, data, label, xlabel, name):
         self.x = data[0]
         self.y = data[1]
-        attr = RestrictDict({
-            'label':label,
-            'xlabel':xlabel,
-            'skippoint':1,
+
+        super().__init__('line', name, {
+            'color':self._set_color
+        })
+        self.update_style({
+            'label':label, 'xlabel':xlabel, 'skippoint':1
         })
 
-        super().__init__(name, style, attr)
-
-    def set_style(self, name, value):
-
-        if name == 'color':
-            super().set_style('linecolor', value)
-            super().set_style('edgecolor', value)
-        else:
-            super().set_style(name, value)
+    def _set_color(self, m_style, value):
+        m_style['linecolor'] = value
+        m_style['edgecolor'] = value
 
 
 class DrawLine(FigObject):
 
-    def __init__(self, start_pos, end_pos, name, style:RestrictDict):
+    def __init__(self, start_pos, end_pos, name):
 
-        attr = RestrictDict({
-            'startpos':start_pos,
-            'endpos':end_pos,
+        super().__init__('drawline', name, {
+            'color':self._set_color
         })
+        self.update_style({'startpos':start_pos, 'endpos':end_pos})
 
-        super().__init__(name, style, attr)
-
-    def set_style(self, name, value):
-
-        if name == 'color':
-            super().set_style('linecolor', value)
-            super().set_style('edgecolor', value)
-        else:
-            super().set_style(name, value)
+    def _set_color(self, m_style, value):
+        m_style['linecolor'] = value
+        m_style['edgecolor'] = value
     
 
 class Text(FigObject):
 
-    def __init__(self, text, pos, name, style:RestrictDict):
-        attr = RestrictDict({
-            'text':text,
-            'pos':pos,
+    def __init__(self, text, pos, name):
+
+        super().__init__('text', name, {
+            'font':self._set_font
+        }, {
+            'font':lambda x:x['fontfamily']
+        })
+        self.update_style({'text':text, 'pos':pos})
+
+    def _set_font(self, m_style, value):
+        m_style['fontfamily'] = value[0]
+        m_style['fontsize'] = value[1]
+
+
+class Label(FigObject):
+    def __init__(self, name):
+
+        super().__init__('label', name, {
+            'font':self._set_font
+        }, {
+            'font':lambda x:x['fontfamily']
         })
 
-        super().__init__(name, style, attr)
+    def _set_font(self, m_style, value):
+        m_style['fontfamily'] = value[0]
+        m_style['fontsize'] = value[1]
 
-    def set_style(self, name, value):
-        if name == 'font':
-            super().set_style('fontfamily', value[0])
-            super().set_style('fontsize', value[1])
-        else:
-            super().set_style(name, value)
-
+    
+def _assign_list(a, idx, v):
+    a[idx] = v

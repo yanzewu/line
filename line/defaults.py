@@ -3,6 +3,8 @@ from . import state
 from . import errors
 from .style import Color, LineType, PointType
 from .collection_util import RestrictDict, extract_single
+from . import style_man
+
 
 default_options = {
     'auto-adjust-range':True,
@@ -184,17 +186,22 @@ default_subfigure_attr = RestrictDict({
 
 default_figure_style.data['subfigure0'] = default_subfigure_style
 
+
+default_style_entries = {}
+
+def get_default_style_entries(typename):
+    pass
+
 def init_global_state(m_state):
 
-    m_state.default_figure = state.Figure(
-        'default-figure',
-        RestrictDict(default_figure_style)
-    )
+    import os.path
+
     m_state.options = default_options
-    m_subfig = m_state.default_figure.subfigures[0]
-    m_subfig.datalines = [
-        state.FigObject('line%d'%i, RestrictDict({}), RestrictDict({}))
-         for i in range(len(m_subfig.dataline_template))
-    ]
-    for i in range(len(m_subfig.datalines)):
-        m_subfig.datalines[i].style = m_subfig.dataline_template[i]
+    with open(os.path.join(__file__ , '../styles/defaults.css'), 'r') as f:
+        m_state.default_stylesheet = style_man.load_css(f)
+    with open(os.path.join(__file__, '../styles/defaults.d.css')) as f:
+        m_state.class_stylesheet = style_man.load_css(f)
+
+    # for selector, style in m_state.default_stylesheet:
+    #     default_style_entries[selector.typename] = list(style)
+

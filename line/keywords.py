@@ -43,6 +43,11 @@ style_alias = {
     'ytics':'ytick'
 }
 
+element_keywords = {
+    'figure', 'subfigure', 'axis', 'label', 'tick',
+    'grid', 'title', 'line', 'dataline', 'text'
+}
+
 command_keywords = {
     'append',
     'cd',

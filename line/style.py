@@ -111,7 +111,8 @@ Str2Pos = {
     'bottomleft':(0.1,0.2),
     'topright':(0.7,0.9),
     'centerright':(0.7,0.6),
-    'bottomright':(0.7,0.2)
+    'bottomright':(0.7,0.2),
+    'best': 'best'
 }
 
 PALETTES = {

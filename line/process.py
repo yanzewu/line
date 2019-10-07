@@ -16,6 +16,8 @@ from . import defaults
 from . import scale
 from . import cmd_handle
 
+from . import style_man
+
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
 from .collection_util import extract_single
@@ -59,13 +61,14 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_remove(m_state, m_tokens)
 
     elif command == 'group':
+        # TODO: Fix this
         group_descriptor = get_token(m_tokens)
         assert_no_token(m_tokens)
         if group_descriptor == 'clear':
             m_state.cur_subfigure().set_style('group', None)
         else:
             m_state.cur_subfigure().set_style('group', parse_group(group_descriptor))
-            logger.debug('Group is: %s' % str(m_state.cur_subfigure().attr['group']))
+            logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
 
         m_state.cur_subfigure().update_template_palette()
         m_state.cur_subfigure().is_changed = True
@@ -75,6 +78,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'show':
         parse_and_process_show(m_state, m_tokens)
+
+    elif command == 'style':
+        parse_and_process_style(m_state, m_tokens)
 
     elif command == 'line':
         x1 = stof(get_token(m_tokens))
@@ -257,6 +263,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # update figure
     if m_state.cur_figure().is_changed:
+        m_state.refresh_style()
         plot.update_figure(m_state)
         m_state.cur_figure().is_changed = False
         for m_subfig in m_state.cur_figure().subfigures:
@@ -450,19 +457,19 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             m_state.cur_subfigure().add_dataline((x, y), ylabel, xlabel, style)
         
         # Set labels
-        xlabels = set((d.attr['xlabel'] for d in m_state.cur_subfigure().datalines))
-        ylabels = set((d.attr['label'] for d in m_state.cur_subfigure().datalines))
+        xlabels = set((d.get_style('xlabel') for d in m_state.cur_subfigure().datalines))
+        ylabels = set((d.get_style('label') for d in m_state.cur_subfigure().datalines))
         if len(xlabels) == 1:
-            m_state.cur_subfigure().axes[0].label.set_style('text', xlabels.pop())
+            m_state.cur_subfigure().axes[0].label.update_style({'text': xlabels.pop()})
         if len(ylabels) == 1:
-            m_state.cur_subfigure().axes[1].label.set_style('text', ylabels.pop())
+            m_state.cur_subfigure().axes[1].label.update_style({'text': ylabels.pop()})
 
         # Set range
         if m_state.options['auto-adjust-range'] or (
-            m_state.cur_subfigure().axes[0].attr['range'][0] is None or
-            m_state.cur_subfigure().axes[0].attr['range'][1] is None or
-            m_state.cur_subfigure().axes[1].attr['range'][0] is None or
-            m_state.cur_subfigure().axes[1].attr['range'][1] is None
+            m_state.cur_subfigure().axes[0].get_style('range')[0] is None or
+            m_state.cur_subfigure().axes[0].get_style('range')[1] is None or
+            m_state.cur_subfigure().axes[1].get_style('range')[0] is None or
+            m_state.cur_subfigure().axes[1].get_style('range')[1] is None
         ):
             logger.debug('Setting automatic range')
             process_autorange(m_state)
@@ -482,36 +489,21 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
 
     m_subfig = m_state.cur_subfigure()
 
-    while len(m_tokens) > 0:
-        elements = []
+    selection = parse_style_selector(m_tokens)
+    ss = style_man.StyleSheet(selection)
+    elements = ss.select(m_state.cur_subfigure())
 
-        if lookup(m_tokens, 1) == '=':
-            style_name, style_val = parse_single_style(m_tokens)
+    if not elements:
+        warn('No element is selected by "%s"' % element_name)
+        return
 
-            dataline_sel.update((
-                int(d.name[4:]) for d in filter(lambda x:x.style[style_name] == style_val, m_subfig.datalines)))
-            if m_state.options['remove-element-by-style']:
-                try:
-                    drawline_sel.update((
-                        int(d.name[8:]) for d in filter(lambda x:x.style[style_name] == style_val, m_subfig.drawlines)))
-                    text_sel.update((
-                        int(d.name[4:]) for d in filter(lambda x:x.style[style_name] == style_val, m_subfig.texts)))
-                except KeyError:
-                    pass
-
-        else:
-            element_name = get_token(m_tokens)
-            elements = m_subfig.find_elements(element_name, False)
-            if not elements:
-                warn('No element is selected by "%s"' % element_name)
-
-            for element in elements:
-                if isinstance(element, state.DataLine):
-                    dataline_sel.add(int(element.name[4:]))
-                elif isinstance(element, state.DrawLine):
-                    drawline_sel.add(int(element.name[8:]))
-                elif isinstance(element, state.Text):
-                    text_sel.add(int(element.name[4:]))
+    for element in elements:
+        if isinstance(element, state.DataLine):
+            dataline_sel.add(int(element.name[4:]))
+        elif isinstance(element, state.DrawLine):
+            drawline_sel.add(int(element.name[8:]))
+        elif isinstance(element, state.Text):
+            text_sel.add(int(element.name[4:]))
 
     if len(dataline_sel) > 1:
         if io_util.query_cond('Remove data %s?' % (' '.join((str(d) for d in dataline_sel))), 
@@ -547,54 +539,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     """
     # LL(2)
     
-    if m_tokens[0] == 'default':
-        get_token(m_tokens)
-
-        has_updated = False
-        if keywords.is_style_keyword(m_tokens[0]) and not keywords.is_style_keyword(m_tokens[1]):
-            elements = [m_state.default_figure.subfigures[0]]
-            style_list = parse_style(m_tokens)
-            for s, v in style_list.items():
-                has_updated = m_state.default_figure.set_style_recur(s, v) or has_updated
-
-        else:
-            element_names = parse_token_with_comma(m_tokens)
-            style_dict = parse_style(m_tokens)
-            has_updated = process_set_style(m_state, element_names, style_dict, m_state.default_figure)
-
-        if not has_updated:
-            warn('No style is set')
-
-    elif m_tokens[0] == 'future':
-        get_token(m_tokens)
-
-        # `set future` only applies to line/drawline/text
-        element_names = parse_token_with_comma(m_tokens)
-        style_dict = parse_style(m_tokens)
-
-        for element_name in element_names:
-            if element_name == 'line':
-                elements = m_state.cur_subfigure().dataline_template + \
-                     [m_state.cur_subfigure().style['default-dataline']]
-            elif element_name.startswith('line'):
-                elements = [m_state.cur_subfigure().dataline_template[int(element_name[4:])]]
-            elif element_name == 'drawline':
-                elements = [m_state.cur_subfigure().style['default-drawline']]
-            elif element_name == 'text':
-                elements = [m_state.cur_subfigure().style['default-text']]
-            else:
-                raise LineProcessError('Element "%s" cannot be set in `set future`' % element_name)
-            
-        if len(elements) == 0:
-            warn('No element to set')
-            return
-
-        for element in elements:
-            for s, v in style_dict.items():
-                element[s] = v
-        
-
-    elif m_tokens[0] == 'option':
+    if m_tokens[0] == 'option':
         get_token(m_tokens)
 
         while len(m_tokens) > 0:
@@ -609,6 +554,29 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
                     raise LineParseError('Invalid option: "%s"' % opt)
                 m_state.options[opt] = translate_option_val(opt, arg)
 
+    # TODO auto generate ss when set palette (either here or in subfigure)
+
+    elif m_tokens[0] == 'default':
+        get_token(m_tokens)
+
+        has_updated = False
+        if keywords.is_style_keyword(m_tokens[0]) and not keywords.is_style_keyword(m_tokens[1]):
+            style_list = parse_style(m_tokens)
+            selection = style_man.NameSelector('subfigure')
+            # TODO automatically select candidate
+        else:
+            selection = parse_style_selector(m_tokens)
+            for s in selection:
+                if not isinstance(s, style_man.TypeSelector):
+                    raise LineParseError('Only element names (e.g. figure, subfigure) are allowed')
+            style_list = parse_style(m_tokens)
+
+        ss = style_man.StyleSheet(selection, style_list)
+        has_updated = m_state.default_stylesheet.update(ss)
+
+        if not has_updated:
+            warn('No style is set')
+
     else:
 
         has_updated = False
@@ -620,20 +588,21 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             # the nasty cases... either not a style keyword or not enough style parameters
             # that treated as value
 
-            elements = [m_state.cur_subfigure()]
-            style_list = parse_style(m_tokens)
-            for s, v in style_list.items():
-                has_updated = m_state.cur_figure().set_style_recur(s, v) or has_updated
+            selection = style_man.NameSelector('gca')
+            style_list, add_class, remove_class = parse_style_with_classes(m_tokens)
 
         else:
-            element_names = parse_token_with_comma(m_tokens)
+            selection = parse_style_selector(m_tokens)
             if lookup(m_tokens) == 'clear':
                 get_token(m_tokens)
                 assert_no_token(m_tokens)
-                style_dict = None
+                style_list = style_man.ResetStyle()
+                class_list = None
             else:
-                style_dict = parse_style(m_tokens)
-            has_updated = process_set_style(m_state, element_names, style_dict, m_state)
+                style_list, add_class, remove_class = parse_style_with_classes(m_tokens)
+            
+        ss = style_man.StyleSheet(selection, style_list)
+        has_updated = process_set_style(m_state, ss, add_class, remove_class)
 
         if has_updated:
             m_state.cur_figure().is_changed = True
@@ -665,20 +634,19 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             assert_no_token(m_tokens)
 
     else:
-        if element_name == 'default':
-            elements = m_state.default_figure.find_elements(get_token(m_tokens))
-        else:
-            elements = m_state.find_elements(element_name)
-
-        if not elements:
-            warn('No element to set')
+        selection = parse_style_selector(m_tokens)
+        ss = style_man.StyleSheet(selection, None)
+        elements = ss.select(selection)
+        
+        if len(elements) == 0:
+            warn('No element to show')
             return
 
         # show all styles
         if len(m_tokens) == 0:
             for e in elements:
                 print(e.name + ':')
-                print('\n'.join(('%s =\t%s' % item for item in extract_single(e.export_style()).items())))
+                print('\n'.join(('%s =\t%s' % item for item in e.export_style())))
 
         # show specified style
         else:
@@ -687,9 +655,18 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
                 if style_name not in keywords.style_keywords:
                     warn('Skip invalid style "%s"' % style_name)
                 print('%s:' % style_name)
-                print('\n'.join(('%s\t%s' % (e.name, e.get_style(style_name)) 
+                print('\n'.join(('%s\t%s' % (e.name, e.computed_style.get(style_name, '<None>')) 
                     for e in elements)))
         
+
+def parse_and_process_style(m_state:state.GlobalState, m_tokens):
+    
+    classname = get_token(m_tokens)
+    style_list = parse_style(m_tokens)
+
+    ss = style_man.StyleSheet(style_man.ClassSelector(classname), style_list)
+    m_state.class_stylesheet.update(ss)
+
 
 def process_autorange(m_state:state.GlobalState):
     max_x = max([np.max(d.x) for d in m_state.cur_subfigure().datalines])
@@ -700,73 +677,29 @@ def process_autorange(m_state:state.GlobalState):
     x_ticks = scale.get_ticks(min_x, max_x)
     y_ticks = scale.get_ticks(min_y, max_y)
 
-    m_state.cur_subfigure().axes[0].set_style('range', (x_ticks[0], x_ticks[-1], x_ticks[1]-x_ticks[0]))
-    m_state.cur_subfigure().axes[1].set_style('range', (y_ticks[0], y_ticks[-1], y_ticks[1]-y_ticks[0]))
+    m_state.cur_subfigure().axes[0].update_style({'range': (x_ticks[0], x_ticks[-1], x_ticks[1]-x_ticks[0])})
+    m_state.cur_subfigure().axes[1].update_style({'range': (y_ticks[0], y_ticks[-1], y_ticks[1]-y_ticks[0])})
     logger.debug('xrange set: %g:%g' % (x_ticks[0], x_ticks[-1]))
     logger.debug('yrange set: %g:%g' % (y_ticks[0], y_ticks[-1]))
 
 
-def process_set_style(m_state, element_names, style_dict, scope):
-    """ Find elements in `scope` and applies styles in `style_dict`.
-    If style_dict is `None`, apply default style (which is default style in
-    gca for lines and texts, default figure style for other components)
-    """
+def process_set_style(m_state, style_sheet, add_class_list, remove_class_list):
+    
+    has_updated = style_sheet.apply_to(m_state.cur_figure())
 
-    elements = []
-    for element_name in element_names:
-        elements += scope.find_elements(element_name, not m_state.options['set-skip-invalid-selection'])
-    if not elements:
-        warn('No element is selected by "%s"' % element_name)
-        return False
+    if len(add_class_list) > 0 or len(remove_class_list) > 0:
 
-    has_updated = False
+        selection = style_sheet.select(m_state.cur_figure())
+        if selection is not None:
+            for s in selection:
+                for c in add_class_list:
+                    s.add_class(c)
+                for c in remove_class_list:
+                    s.remove_class(c)
 
-    if style_dict is not None:
-        for e in elements:
-            for s, v in style_dict.items():
-                # By default, failure to set style will cause error.
-                try:
-                    e.set_style(s, v)
-                except (KeyError, ValueError):
-                    raise LineProcessError('Cannot set style "%s" => "%s" of "%s"' % (
-                        v, s, e.name
-                    ))
-                else:
-                    has_updated = True
+        has_updated = m_state.class_stylesheet.apply_to(m_state.cur_figure()) or has_updated
 
-        # dataline is special - style might also be applied to futures
-        if m_state.options['set-future-line-style'] and 'line' in element_names:
-            for line_style in m_state.cur_subfigure().dataline_template + \
-                     [m_state.cur_subfigure().style['default-dataline']]:
-                try:
-                    line_style.update(style_dict, True)
-                except KeyError as e:
-                    raise LineProcessError('Invalid style name: "%s"' % e.args[0])
-                except ValueError as e:
-                    raise LineProcessError('Invalid style value: "%s"' % e.args[0])
-
-    else:
-        # also clear only works on style, not attr.
-        for e in elements:
-            if isinstance(e, state.Figure):
-                src_style = m_state.default_figure.style
-            elif isinstance(e, state.Subfigure):
-                src_style = m_state.default_figure.subfigures[0].style
-            elif isinstance(e, (state.Axis, state.Legend, state.Tick, state.Grid)):
-                src_style = m_state.default_figure.subfigures[0].find_elements(e.name)[0].style
-            elif isinstance(e, state.DataLine):
-                src_style = m_state.cur_subfigure().style['default-dataline']
-            elif isinstance(e, state.DrawLine):
-                src_style = m_state.cur_subfigure().style['default-drawline']
-            elif isinstance(e, state.Text):
-                src_style = m_state.cur_subfigure().style['default-text']
-            else:
-                raise RuntimeError('Cannot clear style of %s' % e)
-
-            e.style.update(src_style, False)
-            has_updated = True
-
-    return has_updated
+    return True
 
 
 def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
@@ -788,21 +721,20 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
             if i < vsplit and j < hsplit:
                 subfig_state_2d[i].append(m_fig.subfigures[i*hsplit + j])
             else:
-                subfig_state_2d[i].append(m_state.default_figure.subfigures[0].copy())
+                subfig_state_2d[i].append(state.Subfigure('subfigure%d' % (i*hsplitnum + j)))
 
-            subfig_state_2d[i][j].name = 'subfigure%d' % (i*hsplitnum + j)
-            subfig_state_2d[i][j].set_attr('rpos', (
+            subfig_state_2d[i][j].update_style({'rpos': (
                 j / hsplitnum + hspacing / 2,
                 (vsplitnum - 1 - i) / vsplitnum + vspacing / 2
-            ))
-            subfig_state_2d[i][j].set_attr('rsize', (
+                ), 
+                'rsize': (
                 1 / hsplitnum -  hspacing,
                 1 / vsplitnum - vspacing
-            ))
+            )})
     
     m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
     m_fig.is_changed = True
-    m_fig.set_style('split', [hsplitnum, vsplitnum])
+    m_fig.update_style({'split': [hsplitnum, vsplitnum]})
 
 
 def process_save(m_state:state.GlobalState, filename:str):

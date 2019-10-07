@@ -4,6 +4,7 @@
 import logging
 
 from . import style
+from . import style_man
 from . import keywords
 
 from .errors import LineParseError, LineProcessError, warn, print_as_warning
@@ -34,6 +35,37 @@ def parse_column(m_tokens):
     logger.debug('Column string parsed: %s' % column_expr)
     return column_expr
 
+
+def parse_style_selector(m_tokens):
+    tokenlist = parse_token_with_comma(m_tokens)
+    return [parse_single_style_selector(t) for t in tokenlist]
+    
+
+def parse_single_style_selector(t):
+
+    if ':' in t:
+        typename, attr = t.split(':', 1)
+        name, val = attr.split('=')
+        return style_man.TypeStyleSelector(t, name, translate_style_val(name, val))
+    elif '=' in t:
+        name, val = attr.split('=')
+        return style_man.StyleSelector(name, translate_style_val(name, val))
+    elif '.' in t[1:]:
+        if t[0] != '.':
+            raise LineParseError('Line does not support type-type selection')
+        _first, _second = t[1:].split('.', 1)
+        if _second in keywords.element_keywords:
+            return style_man.ClassTypeSelector(_first, _second)
+        else:
+            return style_man.ClassNameSelector(_first, _second)
+    elif t[0] == '.':
+        return style_man.ClassSelector(t[1:])
+    else:
+        if t in keywords.element_keywords:
+            return style_man.TypeSelector(t)
+        else:
+            return style_man.NameSelector(t)
+        
 
 def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True):
     """ Parse style tokens.

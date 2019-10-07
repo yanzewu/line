@@ -1,0 +1,109 @@
+
+/* Do not modify this; Modify defaults.d.css instead. */
+
+
+figure {
+    size: 1440, 960;
+    dpi: 200;
+    margin: 0.05,0.05,0.05,0.05;
+    spacing: 0.05,0.05;
+    split: 1,1;
+}
+
+subfigure {
+    padding: 0.1,0.1,0.0,0.0;
+    palette: 'default';
+    title: '';
+    visible: true;
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: black;
+    linecolor: black;
+    rsize: 1.0,1.0;
+    rpos: 0.0,0.0;
+}
+
+axis {
+    linewidth: 0.5;
+    linetype: 'solid';
+    interval: 0.1;
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: black;
+    range: '0:1';
+    visible: true;
+    zindex: -1;
+}
+
+label {
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: black;
+    visible: true;
+}
+
+tick {
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    format: '%.4G';
+    color: black;
+    orient: 'in';
+    linewidth: 0.5;
+    visible: true;
+}
+
+grid {
+    linewidth: 0.2;
+    linetype: 'dot';
+    linecolor: grey;
+    visible: false;
+    zindex: -2;
+}
+
+line {
+    linewidth: 2;
+    linetype: 'solid';
+    linecolor: black;
+    pointsize: 6;
+    pointtype: none;
+    edgewidth: 0.8;
+    edgecolor: black;
+    fillcolor: white;
+    visible: true;
+    zindex: 0;
+}
+
+drawline {
+    linewidth: 2;
+    linetype: 'solid';
+    linecolor: black;
+    pointsize: 4;
+    edgewidth: 0.8;
+    edgecolor: black;
+    fillcolor: black;
+    visible: true;
+    coord: 'data';
+    zindex: 0;
+}
+
+text {
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: black;
+    visible: true;
+    coord: 'axis';
+    zindex: 0;
+}
+
+legend {
+    alpha: 0;
+    linewidth: 0.5;
+    linecolor: black;
+    linetype: 'solid';
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: white;
+    visible: true;
+    pos: 'best';
+    zindex: 0;
+}

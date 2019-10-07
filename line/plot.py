@@ -51,8 +51,8 @@ def update_figure(m_state:state.GlobalState, redraw_subfigures=True):
 
 def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
-    dpi = m_fig.style['dpi']
-    size = m_fig.style['size']
+    dpi = m_fig.attr('dpi')
+    size = m_fig.attr('size')
     size_inches = (size[0]/dpi, size[1]/dpi)
 
     if m_fig.backend == None or not plt.fignum_exists(m_fig.backend.number):
@@ -67,7 +67,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
     m_plt_fig = m_fig.backend
     m_plt_fig.clear()
-    margin = m_fig.style['margin']
+    margin = m_fig.attr('margin')
 
     def scale(x):
         return x[0]*(1-margin[3]-margin[0])+margin[0], x[1]*(1-margin[2]-margin[1])+margin[1], \
@@ -75,9 +75,9 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
     for subfig in m_fig.subfigures:
         
-        pos = subfig.attr['rpos']
-        rsize = subfig.attr['rsize']
-        padding = subfig.style['padding']
+        pos = subfig.attr('rpos')
+        rsize = subfig.attr('rsize')
+        padding = subfig.attr('padding')
 
         ax = subfig.backend
         if ax is None:
@@ -121,35 +121,35 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
     ax = m_subfig.backend
     ax.cla()
-    ax.set_visible(m_subfig.style['visible'])
+    ax.set_visible(m_subfig.attr('visible'))
     ax.set_frame_on(True)
 
-    # ax.set_title(m_subfig.attr['title']) TITLE has fonts...
+    # ax.set_title(m_subfig.attr('title')) TITLE has fonts...
     # axis
     for i, d in enumerate(('bottom', 'left', 'right', 'top')):
-        ax.spines[d].set_visible(m_subfig.axes[i].style['visible'])
-        ax.spines[d].set_linewidth(m_subfig.axes[i].style['linewidth'])
-        ax.spines[d].set_linestyle(m_subfig.axes[i].style['linetype'].to_str())
-        ax.spines[d].set_color(m_subfig.axes[i].style['color'])
+        ax.spines[d].set_visible(m_subfig.axes[i].attr('visible'))
+        ax.spines[d].set_linewidth(m_subfig.axes[i].attr('linewidth'))
+        ax.spines[d].set_linestyle(m_subfig.axes[i].attr('linetype').to_str())
+        ax.spines[d].set_color(m_subfig.axes[i].attr('color'))
 
     label_styles = []
     tick_styles = []
     grid_styles = []
 
     for i in range(4):
-        label_styles.append(m_subfig.axes[i].label.export_style())
-        tick_styles.append(m_subfig.axes[i].tick.export_style())
-        grid_styles.append(m_subfig.axes[i].grid.export_style())
+        label_styles.append(m_subfig.axes[i].label.computed_style)
+        tick_styles.append(m_subfig.axes[i].tick.computed_style)
+        grid_styles.append(m_subfig.axes[i].grid.computed_style)
 
     # labels
     ax.set_xlabel(
-        m_subfig.axes[0].label.attr['text'],
+        m_subfig.axes[0].label.attr('text'),
         color=label_styles[0]['color'],
         fontfamily=label_styles[0]['fontfamily'],
         fontsize=label_styles[0]['fontsize'],
     )
     ax.set_ylabel(
-        m_subfig.axes[1].label.attr['text'],
+        m_subfig.axes[1].label.attr('text'),
         color=label_styles[1]['color'],
         fontfamily=label_styles[1]['fontfamily'],
         fontsize=label_styles[1]['fontsize'],
@@ -178,10 +178,10 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
     # tick format
     ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(
-        m_subfig.axes[0].tick.style['format']
+        m_subfig.axes[0].tick.attr('format')
     ))
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(
-        m_subfig.axes[1].tick.style['format']
+        m_subfig.axes[1].tick.attr('format')
     ))
     
     logger.debug('Total %d datalines, %d drawlines, %d texts' % (
@@ -189,13 +189,13 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
     # lines
     for dataline in m_subfig.datalines:
-        m_style = dataline.export_style()
+        m_style = dataline.computed_style
 
         ax.plot( 
             dataline.x,
             dataline.y,
             color=m_style['linecolor'],
-            label=dataline.attr['label'],
+            label=m_style['label'],
             linestyle=m_style['linetype'].to_str(),
             linewidth=m_style['linewidth'],
             marker=m_style['pointtype'].to_str(),
@@ -203,16 +203,16 @@ def _update_subfigure(m_subfig:state.Subfigure):
             mew=m_style['edgewidth'],
             mfc=m_style['fillcolor'],
             ms=m_style['pointsize'],
-            markevery=dataline.attr['skippoint'],
+            markevery=m_style['skippoint'],
             visible=m_style['visible'],
             zorder=m_style['zindex']
         )
 
     for drawline in m_subfig.drawlines:
-        m_style = drawline.export_style()
+        m_style = drawline.computed_style
 
-        xlo, ylo = drawline.attr['startpos']
-        xhi, yhi = drawline.attr['endpos']
+        xlo, ylo = drawline.attr('startpos')
+        xhi, yhi = drawline.attr('endpos')
 
         if m_style['coord'] == 'data' and (xlo is None or xhi is None or ylo is None or yhi is None):
             if xlo is None or xhi is None:
@@ -244,14 +244,14 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
     for text in m_subfig.texts:
 
-        m_style = text.export_style()
+        m_style = text.computed_style
 
-        x, y = text.attr['pos']
+        x, y = text.attr('pos')
 
         ax.text(
             x,
             y,
-            text.attr['text'],
+            text.attr('text'),
             color=m_style['color'],
             fontfamily=m_style['fontfamily'],
             fontsize=m_style['fontsize'],
@@ -262,14 +262,14 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
     
 
-    x_range = m_subfig.axes[0].attr['range']
-    x_interval = m_subfig.axes[0].attr['interval']
+    x_range = m_subfig.axes[0].attr('range')
+    x_interval = m_subfig.axes[0].attr('interval')
     if x_range[0] is not None and x_range[1] is not None:
         ax.set_xbound(x_range[0], x_range[1])
         ax.set_xticks(np.arange(x_range[0], x_range[1]+x_interval/10, x_interval))
 
-    y_range = m_subfig.axes[1].attr['range']
-    y_interval = m_subfig.axes[1].attr['interval']
+    y_range = m_subfig.axes[1].attr('range')
+    y_interval = m_subfig.axes[1].attr('interval')
     if y_range[0] is not None and y_range[1] is not None:
         ax.set_ybound(y_range[0], y_range[1])
         ax.set_yticks(np.arange(y_range[0], y_range[1]+y_interval/10, y_interval))
@@ -288,16 +288,16 @@ def _update_subfigure(m_subfig:state.Subfigure):
         )
 
     # legend
-    if m_subfig.legend.style['visible'] and m_subfig.datalines:
+    if m_subfig.legend.attr('visible') and m_subfig.datalines:
 
-        m_style = m_subfig.legend.export_style()
+        m_style = m_subfig.legend.computed_style
 
         legend = ax.legend(
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
             fontsize=m_style['fontsize'],
-            loc=m_subfig.legend.style['pos'],
+            loc=m_subfig.legend.attr('pos'),
             frameon=True,
             framealpha=m_style['alpha']
         )

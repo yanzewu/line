@@ -1,0 +1,67 @@
+
+/* Inheritance */
+
+label {
+    fontfamily: inherit;
+    fontsize: inherit;
+    color: inherit;
+    linecolor: inherit;
+    visible: inherit;
+}
+
+tick {
+    fontfamily: inherit;
+    color: inherit;
+    visible: inherit;
+}
+
+axis {
+    fontfamily: inherit;
+    fontsize: inherit;
+    visible: inherit;
+}
+
+grid {
+    visible: inherit;
+}
+
+
+line {
+    visible: inherit;
+}
+
+drawline {
+    visible: inherit;
+}
+
+text {
+    fontfamily: inherit;
+    fontsize: inherit;
+    color: inherit;
+    visible: inherit;
+}
+
+legend {
+    linecolor: inherit;
+    fontfamily: inherit;
+    fontsize: inherit;
+    visible: inherit;
+}
+
+/* Minor axis */
+
+#rlabel {
+    visible: false;
+}
+
+#rtick {
+    visible: false;
+}
+
+#tlabel {
+    visible: false;
+}
+
+#ttick {
+    visible: false;
+}
