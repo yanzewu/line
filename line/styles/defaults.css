@@ -40,6 +40,7 @@ label {
     fontsize: 16;
     color: black;
     visible: true;
+    text: '';
 }
 
 tick {
@@ -71,6 +72,9 @@ line {
     fillcolor: white;
     visible: true;
     zindex: 0;
+    label: '';
+    xlabel: '';
+    skippoint: 1;
 }
 
 drawline {
@@ -78,12 +82,15 @@ drawline {
     linetype: 'solid';
     linecolor: black;
     pointsize: 4;
+    pointtype: none;
     edgewidth: 0.8;
     edgecolor: black;
     fillcolor: black;
     visible: true;
     coord: 'data';
     zindex: 0;
+    startpos: none;
+    endpos: none;
 }
 
 text {
@@ -93,6 +100,8 @@ text {
     visible: true;
     coord: 'axis';
     zindex: 0;
+    text: 'Text';
+    pos: 'topleft';
 }
 
 legend {

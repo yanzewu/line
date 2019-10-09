@@ -176,7 +176,7 @@ class SheetFile:
 
     def get_index_by_label(self, label):
         try:
-            self.data.columns.get_loc[label]
+            return self.data.columns.get_loc(label)
         except KeyError:
             raise KeyError(label)
 

@@ -2,6 +2,7 @@
 import enum
 import re
 
+from .keywords import is_inheritable, is_copyable
 from .collection_util import RestrictDict
 from .errors import LineProcessError, LineParseError
 from .parse import translate_style_val
@@ -36,6 +37,10 @@ class Style(dict):
             elif is_copyable(d):
                 d = SpecialStyleValue.DEFAULT
 
+    def export(self):
+        return self.copy()
+        
+
 class ResetStyle:
     pass
 
@@ -50,6 +55,12 @@ class Selector:
         self._select(stylable, ret)
         return ret
 
+    def __hash__(self):
+        return hash(self.__str__())
+
+    def __eq__(self, other):
+        return isinstance(other, Selector) and self.__str__() == other.__str__()
+        
 
 class TypeSelector(Selector):
     """ Select element by element.typename
@@ -217,8 +228,8 @@ class StyleSheet:
                 apply_queue[element].append((priority, style))
 
         for element, data in apply_queue.items():
-            data.sort(lambda x:x[0])
-            for style in data.values():
+            data.sort(key=lambda x:x[0])
+            for priority, style in data:
                 if isinstance(style, ResetStyle):
                     has_updated = True
                     element.style.clear()
@@ -237,7 +248,7 @@ class StyleSheet:
         for selector, style in self.data.items():
             if isinstance(selector, TypeSelector):
                 for element, priority in selector.select(stylable):
-                    element.computed_style = style
+                    element.computed_style = style.copy()
 
     def select(self, stylable):
         """ Selecting element
@@ -266,24 +277,27 @@ class StyleSheet:
         return has_updated
 
 
-def compute_inheritance(stylable):
+def compute_inheritance(stylable, parent_style={}):
     """ Compute inheritance and write into computed_style
     """
 
-    for c in stylable.get_children():
-        for d, v in c.style.items():
-            if v == SpecialStyleValue.INHERIT:
-                if is_inheritable(d):
-                    c.computed_style[d] = stylable.style[d]
-                else:
-                    raise LineProcessError('Style %s is not inheritable' % d)
-            elif v ==  SpecialStyleValue.DEFAULT:
-                if not is_copyable(d):
-                    raise LineProcessError('There is no default value for %s' % d)
+    for d, v in stylable.style.items():
+        if v == SpecialStyleValue.INHERIT:
+            if is_inheritable(d):
+                try:
+                    stylable.computed_style[d] = parent_style[d]
+                except KeyError:
+                    raise LineProcessError('Cannot inherit style: "%s"' % d)
             else:
-                c.computed_style[d] = c.style[d]
+                raise LineProcessError('Style %s is not inheritable' % d)
+        elif v ==  SpecialStyleValue.DEFAULT:
+            if not is_copyable(d):
+                raise LineProcessError('There is no default value for %s' % d)
+        else:
+            stylable.computed_style[d] = stylable.style[d]
 
-        compute_inheritance(c)
+    for c in stylable.get_children():
+        compute_inheritance(c, stylable.computed_style)
         
 
 def compute_style(stylable, default_stylesheet):
@@ -313,9 +327,9 @@ def _parse_selector_with_match(seletor_match):
             _token2 = seletor_match.group('b')
             assert _token1[0] == '.'
             if _token2[0] == '#':
-                return ClassNameSelector(_token1[1:], _token2)
+                return ClassNameSelector(_token1[1:], _token2[1:])
             else:
-                return ClassTypeSelector(_token1, _token2)
+                return ClassTypeSelector(_token1[1:], _token2[1:])
 
         elif seletor_match.group('c'):
             assert _token1[0] not in '.#'
@@ -343,7 +357,7 @@ def _parse_selector_with_match(seletor_match):
 def load_css(fp):
     text = (''.join((line.strip('\n') for line in fp.readlines()))).rstrip()
 
-    comment_matcher = re.compile(r'\/\*.*\*\/')
+    comment_matcher = re.compile(r'\/([^\/]|\/[^\*])*\*\/')
     selector_matcher = _selector_matcher
     parentheses_matcher = re.compile(r'\{([^\}]*)\}')
     value_matcher = re.compile(r'([^:;]+)\:([^;]+)\;\s*')

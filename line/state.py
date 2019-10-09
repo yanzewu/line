@@ -58,11 +58,15 @@ class GlobalState:
             self.cur_figurename = '1'
         self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
 
-    def refresh_style(self):
+    def refresh_style(self, refresh_all_subfigure=False):
         """ Recompute style of children
         """
         if len(self.figures) > 0:
+            self.cur_figure().set_dynamical = not refresh_all_subfigure
+            self.custom_stylesheet.apply_to(self.cur_figure())
+            self.class_stylesheet.apply_to(self.cur_figure())
             compute_style(self.cur_figure(), self.default_stylesheet)
+            self.cur_figure().set_dynamical = True
 
 
 class FigObject:
@@ -71,17 +75,15 @@ class FigObject:
 
     def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}):
         """ typename -> object idenfier;
-            style -> exportable style;
-            attr -> unexportable style;
-
-        get_style() and set_style() will modify both attr and style;
-        export_style() will export style only;
+            name -> object name;
+            custom_style_setter: lambda accepts style, value;
+            custom_style_getter: lambda accepts name;
         """
 
         self.typename = typename
         self.name = name
-        self.classnames = set()
-        self.style = Style() #defaults.get_default_style_entries(name)
+        self.classnames = []
+        self.style = Style()
         self.computed_style = None
         self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
         self.custom_style_getter = custom_style_getter
@@ -100,11 +102,11 @@ class FigObject:
             if d in self.custom_style_setter:
                 self.custom_style_setter[d](self.style, v)
                 has_updated = True
-            else:
+            elif d in defaults.default_style_entries[self.typename]:
                 self.style[d] = v
                 has_updated = True
-            
-                # TODO smarter recognition of invalid style name
+            else:
+                warn('Skipping invalid style: "%s"' % d)
 
         return has_updated
 
@@ -134,14 +136,15 @@ class FigObject:
     def add_class(self, name):
         """ Add a name to class
         """
-        self.classnames.add(name)
+        if name not in self.classnames:
+            self.classnames.append(name)
 
     def remove_class(self, name):
         """ Remove style class without error
         """
         try:
-            self.classnames.remove(name)
-        except KeyError:
+            self.classnames.pop(self.classnames.index(name))
+        except ValueError:
             pass
 
     def has_name(self, name):
@@ -174,16 +177,17 @@ class Figure(FigObject):
         self.subfigures = [Subfigure('subfigure0')]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
+        self.set_dynamical = True
         self.backend = None         # object for plotting
 
         super().__init__('figure', figure_name, {
             'dpi':self._set_dpi,
-            'hspacing':lambda x:   _assign_list(x[0]['spacing'], 0, x[1]),
-            'vspacing': lambda x:   _assign_list(x[0]['spacing'], 1,  x[1]),
-            'margin-bottom': lambda x: _assign_list(x[0]['margin'], 0, x[1]),
-            'margin-left': lambda x: _assign_list(x[0]['margin'], 1, x[1]),
-            'margin-right': lambda x:_assign_list(x[0]['margin'], 2, x[1]),
-            'margin-top': lambda x:  _assign_list(x[0]['margin'], 3, x[1]),
+            'hspacing':lambda s, v:   _assign_list(s['spacing'], 0, v),
+            'vspacing': lambda s, v:   _assign_list(s['spacing'], 1,  v),
+            'margin-bottom': lambda s,v: _assign_list(s['margin'], 0, v),
+            'margin-left': lambda s,v: _assign_list(s['margin'], 1, v),
+            'margin-right': lambda s,v:_assign_list(s['margin'], 2, v),
+            'margin-top': lambda s,v:  _assign_list(s['margin'], 3, v),
         }, {
             'hspacing': lambda x: x['spacing'][0],
             'vspacing': lambda x: x['spacing'][1]
@@ -203,8 +207,8 @@ class Figure(FigObject):
     def has_name(self, name):
         return name == 'gcf' or name == self.name
 
-    def get_children(self, dynamical=True):
-        if dynamical:
+    def get_children(self):
+        if self.set_dynamical:
             return [self.subfigures[self.cur_subfigure]]
         else:
             return self.subfigures
@@ -220,18 +224,18 @@ class Subfigure(FigObject):
     def __init__(self, subfigure_name):
 
         super().__init__('subfigure', subfigure_name, {
-            'padding-bottom': lambda x:_assign_list(x[0]['padding'], 0, x[1]),
-            'padding-left': lambda x: _assign_list(x[0]['padding'], 1, x[1]),
-            'padding-right': lambda x:_assign_list(x[0]['padding'], 2, x[1]),
-            'padding-top': lambda x:  _assign_list(x[0]['padding'], 3, x[1]),
-            'xlabel': lambda x:self.axes[0].update_style('text', x[1]),
-            'ylabel': lambda x:self.axes[1].update_style('text', x[1]),
-            'rlabel': lambda x:self.axes[2].update_style('text', x[1]),
-            'tlabel': lambda x:self.axes[3].update_style('text', x[1]),
-            'xrange': lambda x:self.axes[0].update_style('range', x[1]),
-            'yrange': lambda x:self.axes[1].update_style('range', x[1]),
-            'rrange': lambda x:self.axes[2].update_style('range', x[1]),
-            'trange': lambda x:self.axes[3].update_style('range', x[1]),
+            'padding-bottom': lambda s,v:_assign_list(s['padding'], 0, v),
+            'padding-left': lambda s,v: _assign_list(s['padding'], 1, v),
+            'padding-right': lambda s,v:_assign_list(s['padding'], 2, v),
+            'padding-top': lambda s,v:  _assign_list(s['padding'], 3, v),
+            'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}),
+            'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}),
+            'rlabel': lambda s,v:self.axes[2].label.update_style({'text': v}),
+            'tlabel': lambda s,v:self.axes[3].label.update_style({'text': v}),
+            'xrange': lambda s,v:self.axes[0].update_style({'range': v}),
+            'yrange': lambda s,v:self.axes[1].update_style({'range': v}),
+            'rrange': lambda s,v:self.axes[2].update_style({'range': v}),
+            'trange': lambda s,v:self.axes[3].update_style({'range': v}),
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -276,7 +280,7 @@ class Subfigure(FigObject):
     def add_text(self, text, pos, style_dict):
         
         self.texts.append(
-            Text(text, pos, 'text%d'%len(self.texts), new_style)
+            Text(text, pos, 'text%d'%len(self.texts))
         )
         self.texts[-1].update_style(style_dict)
     

@@ -67,7 +67,7 @@ def parse_single_style_selector(t):
             return style_man.NameSelector(t)
         
 
-def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True):
+def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True, recog_class=False):
     """ Parse style tokens.
     Args:
         termflag: Terminate parsing by flag.
@@ -76,7 +76,18 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
     """
     m_styles = {}
 
+    class_add = []
+    class_remove = []
+
     while lookup_rev(m_tokens) not in termflag:
+        if recog_class:
+            if m_tokens[0].startswith('+'):
+                class_add.append(get_token(m_tokens)[1:])
+                continue
+            elif m_tokens[0].startswith('-'):
+                class_remove.append(get_token(m_tokens)[1:])
+                continue
+            
         ret = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon)
         if isinstance(ret, dict):
             m_styles.update(ret)
@@ -86,8 +97,12 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
                 continue
             m_styles[style_name] = style_val_real
 
-    logger.debug('Style parsed: %s' % m_styles)
-    return m_styles
+    if recog_class:
+        logger.debug('Style parsed: %s; Class parsed: +%s -%s' % (m_styles, class_add, class_remove))
+        return m_styles, class_add, class_remove
+    else:
+        logger.debug('Style parsed: %s' % m_styles)
+        return m_styles
 
 
 def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_colon=True):
@@ -233,6 +248,11 @@ def translate_style_val(style_name:str, style_val:str):
     """ Parse style value depends on name
     """
     # Already agreed with document.
+
+    if style_val == 'inherit' and keywords.is_inheritable(style_name):
+        return style_man.SpecialStyleValue.INHERIT
+    elif style_val == 'default' and keywords.is_copyable(style_name):
+        return style_man.SpecialStyleValue.DEFAULT
 
     if style_name.endswith('color'):
         return style.str2color(style_val)

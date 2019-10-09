@@ -85,5 +85,11 @@ def is_style_keyword(token):
 
     return token in style_alias or token in style_keywords
 
+def is_inheritable(token):
+    return True
+
+def is_copyable(token):
+    return True
+
 all_style_keywords = style_keywords.union(list(style_alias.keys()))
 all_command_keywords = command_keywords.union(list(command_alias.keys()))

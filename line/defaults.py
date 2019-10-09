@@ -189,8 +189,6 @@ default_figure_style.data['subfigure0'] = default_subfigure_style
 
 default_style_entries = {}
 
-def get_default_style_entries(typename):
-    pass
 
 def init_global_state(m_state):
 
@@ -200,8 +198,8 @@ def init_global_state(m_state):
     with open(os.path.join(__file__ , '../styles/defaults.css'), 'r') as f:
         m_state.default_stylesheet = style_man.load_css(f)
     with open(os.path.join(__file__, '../styles/defaults.d.css')) as f:
-        m_state.class_stylesheet = style_man.load_css(f)
+        m_state.custom_stylesheet = style_man.load_css(f)
 
-    # for selector, style in m_state.default_stylesheet:
-    #     default_style_entries[selector.typename] = list(style)
+    for selector, style in m_state.default_stylesheet.data.items():
+        default_style_entries[selector.typename] = set(style)
 

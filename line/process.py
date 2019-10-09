@@ -128,12 +128,12 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'hsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, splitnum, m_state.cur_figure().attr['split'][1])
+        process_split(m_state, splitnum, m_state.cur_figure().attr('split')[1])
 
     elif command == 'vsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, m_state.cur_figure().attr['split'][0], splitnum)
+        process_split(m_state, m_state.cur_figure().attr('split')[0], splitnum)
 
     # select or create figure
     elif command == 'figure':
@@ -258,18 +258,22 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     else:
         raise LineParseError('No command named "%s"' % command)
 
-    if not m_state.is_interactive or m_state.cur_figurename is None:
+    if m_state.cur_figurename is None:
         return 0
+    if not m_state.is_interactive:
+        if m_state.cur_figure().is_changed:
+            m_state.refresh_style(True)
 
     # update figure
     if m_state.cur_figure().is_changed:
-        m_state.refresh_style()
-        plot.update_figure(m_state)
+        m_state.refresh_style(True)
+        plot.update_figure(m_state, True)
         m_state.cur_figure().is_changed = False
         for m_subfig in m_state.cur_figure().subfigures:
             m_subfig.is_changed = False
 
     elif m_state.cur_subfigure().is_changed:
+        m_state.refresh_style()
         plot.update_subfigure(m_state)
         m_state.cur_subfigure().is_changed = False
 
@@ -494,7 +498,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     elements = ss.select(m_state.cur_subfigure())
 
     if not elements:
-        warn('No element is selected by "%s"' % element_name)
+        warn('No element is selected')
         return
 
     for element in elements:
@@ -589,7 +593,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             # that treated as value
 
             selection = style_man.NameSelector('gca')
-            style_list, add_class, remove_class = parse_style_with_classes(m_tokens)
+            style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
 
         else:
             selection = parse_style_selector(m_tokens)
@@ -599,7 +603,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
                 style_list = style_man.ResetStyle()
                 class_list = None
             else:
-                style_list, add_class, remove_class = parse_style_with_classes(m_tokens)
+                style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
             
         ss = style_man.StyleSheet(selection, style_list)
         has_updated = process_set_style(m_state, ss, add_class, remove_class)
@@ -614,9 +618,10 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `show` command.
     """
 
-    element_name = get_token(m_tokens)
+    element_name = lookup(m_tokens)
 
     if element_name == 'currentfile':
+        get_token(m_tokens)
         print('File opened:', m_state.cur_open_filename)
         print('File saved:', m_state.cur_save_filename)
 
@@ -624,6 +629,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         print(os.getcwd())
 
     elif element_name in ('option',  'options'):
+        get_token(m_tokens)
         if len(m_tokens) == 0:
             print('OPTION                          VALUE')
             print('------                          -----')
@@ -634,9 +640,12 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             assert_no_token(m_tokens)
 
     else:
+        if not m_state.is_interactive:
+            m_state.refresh_style(True)
+
         selection = parse_style_selector(m_tokens)
         ss = style_man.StyleSheet(selection, None)
-        elements = ss.select(selection)
+        elements = ss.select(m_state.cur_figure())
         
         if len(elements) == 0:
             warn('No element to show')
@@ -646,7 +655,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         if len(m_tokens) == 0:
             for e in elements:
                 print(e.name + ':')
-                print('\n'.join(('%s =\t%s' % item for item in e.export_style())))
+                print('\n'.join(('%s =\t%s' % item for item in e.computed_style.items())))
 
         # show specified style
         else:
@@ -711,8 +720,8 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
         raise LineProcessError('Split number should be greater than 1, got %d' % max(hsplitnum, vsplitnum))
 
     m_fig = m_state.cur_figure()
-    hsplit, vsplit = m_fig.get_attr('split')
-    hspacing, vspacing = m_fig.get_style('spacing')
+    hsplit, vsplit = m_fig.attr('split')
+    hspacing, vspacing = m_fig.attr('spacing')
 
     subfig_state_2d = []
     for i in range(vsplitnum):

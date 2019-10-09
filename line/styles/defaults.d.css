@@ -5,7 +5,6 @@ label {
     fontfamily: inherit;
     fontsize: inherit;
     color: inherit;
-    linecolor: inherit;
     visible: inherit;
 }
 
@@ -18,10 +17,6 @@ tick {
 axis {
     fontfamily: inherit;
     fontsize: inherit;
-    visible: inherit;
-}
-
-grid {
     visible: inherit;
 }
 
@@ -64,4 +59,31 @@ legend {
 
 #ttick {
     visible: false;
+}
+
+/* Predefined class */
+
+.pair #line0 {
+    linetype: solid;
+}
+.pair #line1 {
+    linetype: dash;
+}
+.pair #line2 {
+    linetype: solid;
+}
+.pair #line3 {
+    linetype: dash;
+}
+.pair #line4 {
+    linetype: solid;
+}
+.pair #line5 {
+    linetype: dash;
+}
+.pair #line6 {
+    linetype: solid;
+}
+.pair #line7 {
+    linetype: dash;
 }

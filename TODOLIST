@@ -2,7 +2,6 @@
 Fixes
 ---
 [HIGH] Error line number and token position.
-[LOW] setting 'default' as a style option for dataline as a indicator of whether style is managed by custom or template.
 [MID] Faster startup.
 [LOW] Fix conflict of alias and value (using LR parsing)
 [HIGH] Legend position.
@@ -12,13 +11,11 @@ Features
 [LOW] Smarter completion (need a library other than readline).
 [MID] Add self-created palettes for line.
 [MID] Group changes point color and style - assign different color series or line type for data with same group marker.
-[LOW] Add Style class inhereit RestrictDict, with necessary features.
-[LOW] `set clear` applies to future and default.
 [LOW] Automatically determine skip points in scatter.
 [MID] Variable system.
 [LOW] Auto determine tick format (for special cases).
 [LOW] 'a-b' like selection of column title or index.
 [MID] Histogram support.
 [LOW] Heatmap support.
-[MID] As an importable library.
+[LOW] As an importable library.
 [HIGH] Extend the palette
