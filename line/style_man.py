@@ -3,11 +3,10 @@ import enum
 import re
 
 from .keywords import is_inheritable, is_copyable
-from .collection_util import RestrictDict
 from .errors import LineProcessError, LineParseError
 from .parse import translate_style_val
 
-_selector_matcher = re.compile(r'(?P<a>[\.\#\s]?[^\.#{\s\[]+)\s*(?P<b>[\#]?[^\.#{\s\[]+)?|(?P<c>\[\w+\=[\w\,]+\])')
+_selector_matcher = re.compile(r'(?P<a>[\.\#\s]?[^\.#{\s\[]+)\s*((?P<b>[\#]?[^\.#{\s\[]+)|(?P<c>\[\w+\=[\w\,]+\]))?')
 
 
 class SpecialStyleValue(enum.Enum):
@@ -162,9 +161,29 @@ class TypeStyleSelector(Selector):
         return '%s[%s=%s]' % (self.typename, self.stylename, self.styleval)
 
 
+class ClassStyleSelector(Selector):
+
+    WEIGHT = 50
+
+    def __init__(self, classname, stylename, styleval):
+        self.classname = classname
+        self.stylename = stylename
+        self.styleval = styleval
+
+    def _select(self, stylable, ret):
+        if self.classname in stylable.classnames and stylable.style.get(self.stylename, None) == self.styleval:
+            ret.append((stylable, self.WEIGHT))
+
+        for child in stylable.get_children():
+            self._select(child, ret)
+
+    def __str__(self):
+        return '.%s [%s=%s]' % (self.classname, self.stylename, self.styleval)
+
+
 class NameSelector(Selector):
     
-    WEIGHT = 50
+    WEIGHT = 60
 
     def __init__(self, name):
         self.name = name
@@ -182,7 +201,7 @@ class NameSelector(Selector):
 class ClassNameSelector(Selector):
     """ Select child elements by style class
     """
-    WEIGHT = 60
+    WEIGHT = 70
 
     def __init__(self, classname, name):
         self.classname = classname
@@ -332,10 +351,14 @@ def _parse_selector_with_match(seletor_match):
                 return ClassTypeSelector(_token1[1:], _token2[1:])
 
         elif seletor_match.group('c'):
-            assert _token1[0] not in '.#'
-            name, value = seletor_match.group('c').split('=', 1)
-            value = parse_general(value.strip().rstrip())
-            return TypeStyleSelector(_token1, name.strip().rstrip(), value)
+            assert _token1[0] != '#'
+            name, value = seletor_match.group('c')[1:-1].split('=', 1)
+            name = name.strip()
+            value = translate_style_val(name, value)
+            if _token1[0] == '.':
+                return ClassStyleSelector(_token1[1:], name, value)
+            else:
+                return TypeStyleSelector(_token1, name, value)
 
         else:
             if _token1[0] == '.':
@@ -346,9 +369,10 @@ def _parse_selector_with_match(seletor_match):
                 return TypeSelector(_token1)
 
     elif seletor_match.group('c'):
-        name, value = seletor_match.group('c').split('=', 1)
-        value = parse_general(value.strip().rstrip())
-        return StyleSelector(name.strip().rstrip(), value)
+        name, value = seletor_match.group('c')[1:-1].split('=', 1)
+        name = name.strip()
+        value = translate_style_val(name, value)
+        return StyleSelector(name, value)
 
     else:
         raise RuntimeError('Error in parsing selector')

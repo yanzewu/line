@@ -612,7 +612,8 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
                 get_token(m_tokens)
                 assert_no_token(m_tokens)
                 style_list = style_man.ResetStyle()
-                class_list = None
+                add_class = []
+                remove_class = []
             else:
                 style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
             

@@ -222,7 +222,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             else:
                 trans = ax.get_xaxis_transform()
                 ylo = m_subfig.get_axes_coord(ylo, 1, 'left')
-                yhi = m_subfig.get_axes_coord(yhi, 1, 'left')
+                yhi = m_subfig.get_axes_coord(yhi, 1, 'right')
         else:
             trans = ax.transData if m_style['coord'] == 'data' else ax.transAxes
 

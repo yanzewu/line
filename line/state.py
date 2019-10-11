@@ -57,13 +57,13 @@ class GlobalState:
         if self.cur_figurename is None:
             self.cur_figurename = '1'
         self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
+        self.custom_stylesheet.apply_to(self.cur_figure())
 
     def refresh_style(self, refresh_all_subfigure=False):
         """ Recompute style of children
         """
         if len(self.figures) > 0:
             self.cur_figure().set_dynamical = not refresh_all_subfigure
-            self.custom_stylesheet.apply_to(self.cur_figure())
             self.class_stylesheet.apply_to(self.cur_figure())
             compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True

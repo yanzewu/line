@@ -31,7 +31,7 @@ def palette2stylesheet(palette):
     """
     ss = style_man.StyleSheet()
     for idx, color in enumerate(palette):
-        ss.data[style_man.TypeStyleSelector('line', 'colorid', idx)] = style_man.Style(linecolor=color)
+        ss.data[style_man.TypeStyleSelector('line', 'colorid', idx)] = style_man.Style(color=color)
     return ss
 
 

@@ -63,27 +63,30 @@ legend {
 
 /* Predefined class */
 
-.pair #line0 {
+.pairdash [groupid=1]{
     linetype: solid;
 }
-.pair #line1 {
+.pairdash [groupid=2]{
     linetype: dash;
 }
-.pair #line2 {
+
+.pairdot [groupid=1]{
     linetype: solid;
+    pointtype: none;
 }
-.pair #line3 {
-    linetype: dash;
-}
-.pair #line4 {
+
+.pairdot [groupid=2]{
     linetype: solid;
+    pointtype: circle;
 }
-.pair #line5 {
-    linetype: dash;
-}
-.pair #line6 {
+
+.paircross [groupid=2]{
     linetype: solid;
+    pointtype: cross;
 }
-.pair #line7 {
-    linetype: dash;
+
+.prettycircle{
+    pointtype: circle;
+    pointsize: 6;
+    edgewidth: 0.8;
 }

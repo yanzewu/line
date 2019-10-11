@@ -50,7 +50,7 @@ style_alias = {
 
 element_keywords = {
     'figure', 'subfigure', 'axis', 'label', 'tick',
-    'grid', 'title', 'line', 'dataline', 'text'
+    'grid', 'title', 'line', 'drawline', 'text'
 }
 
 command_keywords = {
