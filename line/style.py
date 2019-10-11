@@ -115,21 +115,9 @@ Str2Pos = {
     'best': 'best'
 }
 
-PALETTES = {
-    'default':[
-        (0,0,0),
-        (0.89, 0.1, 0.1),
-        (0.12, 0.47, 0.9),
-        (0.2, 0.63, 0.17),
-        (1, 0.5, 0),
-        (0.42, 0.24, 0.61)
-    ]
-}
-
 def init():
     palette._load_palette_mpl()
     #palette._load_palette_seaborn()
-    palette._load_palette_line()
     palette._load_colors_mpl()
 
 init()

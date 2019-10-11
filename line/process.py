@@ -17,6 +17,7 @@ from . import scale
 from . import cmd_handle
 
 from . import style_man
+from . import palette
 
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
@@ -61,16 +62,15 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_remove(m_state, m_tokens)
 
     elif command == 'group':
-        # TODO: Fix this
         group_descriptor = get_token(m_tokens)
         assert_no_token(m_tokens)
         if group_descriptor == 'clear':
-            m_state.cur_subfigure().set_style('group', None)
+            m_state.cur_subfigure().update_style({'group':None})
         else:
-            m_state.cur_subfigure().set_style('group', parse_group(group_descriptor))
+            m_state.cur_subfigure().update_style({'group': parse_group(group_descriptor)})
             logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
 
-        m_state.cur_subfigure().update_template_palette()
+        m_state.cur_subfigure().update_colorid()
         m_state.cur_subfigure().is_changed = True
 
     elif command == 'set':
@@ -263,6 +263,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     if not m_state.is_interactive:
         if m_state.cur_figure().is_changed:
             m_state.refresh_style(True)
+        return 0
 
     # update figure
     if m_state.cur_figure().is_changed:
@@ -448,6 +449,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         # first time: create figure
         if m_state.cur_figurename is None:
             m_state.create_figure()
+            m_state.refresh_style()
 
         # handle append
         if not keep_existed:
@@ -581,8 +583,18 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         if not has_updated:
             warn('No style is set')
 
-    else:
+    elif m_tokens[0] == 'palette':
+        get_token(m_tokens)
+        palette_name = get_token(m_tokens)
+        assert_no_token(m_tokens)
+        try:
+            m_palette = palette.get_palette(palette_name)
+        except KeyError:
+            raise LineProcessError('Palette "%s" does not exist' % palette_name)
+        palette.palette2stylesheet(m_palette).apply_to(m_state.cur_subfigure())
+        m_state.cur_subfigure().is_changed = True
 
+    else:
         has_updated = False
 
         # Setting cur_subfigure, recursively
@@ -594,7 +606,6 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
             selection = style_man.NameSelector('gca')
             style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
-
         else:
             selection = parse_style_selector(m_tokens)
             if lookup(m_tokens) == 'clear':
@@ -638,6 +649,12 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         else:
             print(m_state.options[get_token(m_tokens)])
             assert_no_token(m_tokens)
+
+    elif element_name == 'palettes':
+        palette_names = list(palette.PALETTES)
+        palette_names.sort()
+        for i in range(8):
+            print(' '.join(('%-15s' % palette_names[n] for n in range(8*i, min(8*i+8, len(palette_names))))))
 
     else:
         if not m_state.is_interactive:

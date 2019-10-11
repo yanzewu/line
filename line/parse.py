@@ -231,7 +231,7 @@ def parse_group(group:str):
         return ([order[t] for t in prefix], [order[t] for t in repeator], [order[t] for t in suffix])
 
     else:
-        return ([order[t] for t in group], None, [])        
+        return ([order[t] for t in group], [], [])
 
 
 def _text_order(text):

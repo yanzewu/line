@@ -152,7 +152,7 @@ class TypeStyleSelector(Selector):
         self.styleval = styleval
 
     def _select(self, stylable, ret):
-        if self.typename == styable.typename and\
+        if self.typename == stylable.typename and\
             stylable.style.get(self.stylename, None) == self.styleval:
             ret.append((stylable, self.WEIGHT))
         for child in stylable.get_children():

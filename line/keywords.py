@@ -3,11 +3,13 @@ style_keywords = {
     'alpha',
     'bgcolor',
     'color',
+    'colorid',
     'coord',
     'dpi',
     'edgecolor', 'edgewidth', 'fillcolor',
     'font', 'fontfamily', 'fontsize',
     'format',
+    'groupid',
     'label', 'xlabel', 'ylabel', 'rlabel', 'tlabel',
     'linewidth', 'linecolor', 'linetype',
     'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
@@ -27,6 +29,9 @@ style_keywords = {
     'zindex'
 }
 
+inheritable_styles = {
+    'visible', 'fontfamily', 'fontsize', 'color', 'linecolor'
+}
 
 style_alias = {
     'w':'linewidth',
@@ -86,10 +91,10 @@ def is_style_keyword(token):
     return token in style_alias or token in style_keywords
 
 def is_inheritable(token):
-    return True
+    return token in inheritable_styles
 
 def is_copyable(token):
-    return True
+    return token in style_keywords
 
 all_style_keywords = style_keywords.union(list(style_alias.keys()))
 all_command_keywords = command_keywords.union(list(command_alias.keys()))

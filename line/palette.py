@@ -4,6 +4,35 @@
 import numpy as np
 
 from . import style
+from . import style_man
+
+
+PALETTES = {}
+
+
+def get_palette(name):
+    """ raise KeyError if palette does not exist.
+    Returns: palette, a list of (r,g,b) values.
+    """
+    return PALETTES[name]
+
+
+def load_palette(fp):
+    """ Load palette from json file descriptor. Will override existing 
+    items with same name.
+    """
+    import json
+    j = json.load(fp)
+    PALETTES.update(j)
+
+
+def palette2stylesheet(palette):
+    """ Return style_man.StyleSheet object from list of colors.
+    """
+    ss = style_man.StyleSheet()
+    for idx, color in enumerate(palette):
+        ss.data[style_man.TypeStyleSelector('line', 'colorid', idx)] = style_man.Style(linecolor=color)
+    return ss
 
 
 def _load_palette_mpl():
@@ -14,9 +43,9 @@ def _load_palette_mpl():
 
     for name, cmap in cm.cmap_d.items():
         try:
-            style.PALETTES['mpl.' + name] = [(0,0,0)] + list(cmap.colors)
+            PALETTES['mpl.' + name] = [(0,0,0)] + list(cmap.colors)
         except AttributeError:
-            style.PALETTES['mpl.' + name] = [(0,0,0)] + [cmap(i) for i in np.arange(0.05, 1.0, 0.15)]
+            PALETTES['mpl.' + name] = [(0,0,0)] + [cmap(i) for i in np.arange(0.05, 1.0, 0.15)]
 
 
 def _load_palette_seaborn():
@@ -27,17 +56,11 @@ def _load_palette_seaborn():
     except ImportError:
         return
 
-    style.PALETTES['sns.default'] = [(0,0,0)] + sns.color_palette()
-    style.PALETTES['sns'] = [(0,0,0)] + sns.color_palette()
+    PALETTES['sns.default'] = [(0,0,0)] + sns.color_palette()
+    PALETTES['sns'] = [(0,0,0)] + sns.color_palette()
 
     for name in ('deep', 'muted', 'bright', 'pastel', 'dark'):
-        style.PALETTES['sns' + name] = [(0,0,0)] + sns.color_palette(name)
-
-
-def _load_palette_line():
-    """ Load palettes defined here.
-    """
-    pass
+        PALETTES['sns' + name] = [(0,0,0)] + sns.color_palette(name)
 
 
 def _load_colors_mpl():

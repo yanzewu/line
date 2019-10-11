@@ -13,6 +13,7 @@ figure {
 subfigure {
     padding: 0.1,0.1,0.0,0.0;
     palette: 'default';
+    group: none;
     title: '';
     visible: true;
     fontfamily: 'Times New Roman';
@@ -75,6 +76,8 @@ line {
     label: '';
     xlabel: '';
     skippoint: 1;
+    colorid: 0;
+    groupid: 0;
 }
 
 drawline {

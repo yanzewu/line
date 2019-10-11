@@ -50,11 +50,12 @@ Plotting data from file to current subfigure.
 
 Usage:
 
-    plot (filename1) (xcol:)(ycol1) (style=val), (filename2) (xcol2:)(ycol2) (style=val), ...
+    plot (filename1) (xcol:)(ycol1) (style=val) (linespec), (filename2) (xcol2:)(ycol2) (style=val), ...
 
 Example:
 
     plot a.txt 1:2 lw=2, lc=red, 3 lc=blue, ($4+1) lc=green
+    plot a.txt t:x,y b-
 
 
 Args:
@@ -68,6 +69,7 @@ Args:
     - If a column selection is not present, by default all columns in the file are added into current figure ($0:$1 if only one column, $1:$2,... if multiple columns). A file will be selected first if its name coincide with column name. Use '$' to select column to avoid such conflict, or set *--force-column-selection=true*.
 - style, val: See [Style name and value](#list-of-valid-style-and-names).
     - If a style is [broadcastable](#broadcasity), it will be applied to other data in this command, unless set explicitly.
+- linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.
 
 Expression:
 
@@ -106,11 +108,11 @@ Remove objects in current subfigure. Can only remove datas, lines and texts.
 
 Usage:
 
-    remove element1 element2 ... style=val ...
+    remove selection1,selection2 ... style=val ...
 
 Args:
 
-- element: Element (data line/draw line/text) name. Input will be asked if a column corresponds to multiple selection.
+- element: Selections of elements, see [set](#set) for details.
 - style, val: Remove all lines with certain style.
 
 Line indices will change if there are lines removed. Use `show line label` to see the indices.
@@ -151,16 +153,29 @@ Set style parameters.
 
 Usage:
 
-    set (default) (element1,element2,...) style1=val1 style2=val2 ...
-    set (default) (element1,element2,...) clear
-    set palette (palettename)
+    set (default) (selection1,selection2,...) style1=val1 style2=val2 +class1 ...
+    set (default) (selection1,selection2,...) clear
     set option opt=arg
 
-- element: [Name of element](#list-of-element-name-and-applicable-styles) in current context.
-    - In-figure elements (like lines, texts, axes) are searched in current figure and subfigure only.
-    - To select data line, use `line@label` or `line`+number like `line1`. To select draw line, use `line`+number. A prompt will appear when multiple lines have same label.
-    - To select text, use `text@label` or `text`+number. The label of text is text itself. A prompt will appear when multiple texts have same label.
-    - If no element is set, the style is first applied to current subfigure (and broadcasted to lines, if possible), then current figure.
+Example:
+
+    set default figure dpi high
+    set line lw=2
+    set gca +pair
+
+- selection: Select elements by name, type, class or attributes.
+
+Selector | Selection
+- | -
+type | [elements with type](#list-of-element-type-and-applicable-styles) 
+.class | elements with class
+.class type | descedants with type of element with class
+style=val | element with certain style value
+type:style=val | element with certain type and style value. e.g. line[color=black]
+name | element with name, e.g. line1
+.class.name | descedants with name of element with class
+
+If no element is set, the style is applied to current subfigure.
 - `set palette` changes palette for current subfigure.
 - `set option` changes default options, e.g. `set option ignore-data-comment=true`.
 
@@ -176,14 +191,14 @@ Show style parameters and options.
 
 Usage:
 
-    show (default) [element] (stylename)
+    show default [element] (stylename)
+    show selection1,selection2, ... (stylename)
     show currentfile
     show pwd
     show option [optionname]
 
 Args:
-- element: [Name of element](#list-of-element-name-and-applicable-styles) in current context. If element is a general selection like "line", style of all lines will be shown.
-    - In-figure elements (like lines, texts, axes) are searched in current figure and subfigure only. `line`+number or `text`+number also applies here.
+- selection: Selections of elements, see [set](#set) for details.
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
 - `show currentfile` shows current open and save filename;
 - `show pwd` shows current directory;
@@ -348,11 +363,21 @@ Related options:
 
 ## Styles
 
+In Line, any modifiable properties (colors, linewidths, ranges, ...) are get/set by style APIs, and eventually by set/show commands. Line use a CSS-like style protocol: each element (see figure model below) has a type, name, a set of independent style and style classes.
+
 ### Figure Model
 
 ![](FigureModel.png)
 
-### Element Inheritance
+### Inheritable Style and Element Hierachy
+
+These styles are inheritable:
+- fontfamily (up to subfigure level)
+- fontsize (up to subfigure level)
+- color (up to axis level)
+- visible (up to subfigure level)
+
+The hierachy of elements:
 
 - figure
     - subfigure
@@ -365,9 +390,9 @@ Related options:
         - texts
         - legend
 
-### List of Element Name and Applicable Styles
+### List of Element Type and Applicable Styles
 
- Element Name | Style 
+ Element Type | Style 
  --- | --- | ---
  figure | size, margin, (h/v)spacing, dpi | 
  subfigure | rsize, rpos, palette, padding, title  | 
@@ -424,9 +449,16 @@ Styles appear in the first plotting data will be broadcasted to all the remainin
 
 By default, styles except `linecolor`, `edgecolor`, `skippoint` and `zindex` in drawline and dataline are broadcastable. This can be set by *--add-boardcast-style=(stylename)* and *--remove-broadcast-style=(stylename)*.
 
-### Style Fallback
+### Set Styles via CSS
 
-Line itself keeps a global default style sheet, which can be changed by `set default` or `.linerc` file. When a figure is created, its style and default subfigure style is copied from global style.
+You can modify the default behavior by modifying styles/defaults.d.css (modifying defaults.css is also possible, but may cause some weird behavior). You can also change the default style using `set default` or modifying `.linerc` file.
 
-Each subfigure keeps a template of line styles, which is created from global default style and default palette. The template is updated by group specification each time `plot` is called. When a new line is plotted, its style is looked up from line template style. The template style is also updated if style is set in `plot` command.
+Note that currently Line only supports part of CSS. The style names must be predefined and the maximum hierachy of descendant is 2. The available selectors are:
 
+- ClassNameSelector: `.class #name`: Select element which inside class;
+- NameSelector `#name`: Select element which return true by has_name();
+- TypeStyleSelector `type[style=val]`: Select type element with style;
+- StyleSelector `[style=val]`: Select element with certain style value;
+- ClassTypeSelector: `.class type`: Select type element within element with class;
+- ClassSelector `.class`: Select element which has name in class_names;
+- TypeSelector `type`: Select element with certain element_type attribute;
