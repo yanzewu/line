@@ -29,13 +29,6 @@ class Style(dict):
             (d, v) for (d, v) in other.items() if is_inheritable(d)
         })
 
-    def clear(self):
-        for d in self.data:
-            if is_inheritable(d):
-                d = SpecialStyleValue.INHERIT
-            elif is_copyable(d):
-                d = SpecialStyleValue.DEFAULT
-
     def export(self):
         return self.copy()
         
@@ -60,6 +53,18 @@ class Selector:
     def __eq__(self, other):
         return isinstance(other, Selector) and self.__str__() == other.__str__()
         
+
+class AllSelector(Selector):
+    """ Select all
+    """
+
+    WEIGHT = -1
+
+    def _select(self, stylable, ret):
+        ret.append((stylable, -1))
+        for child in stylable.get_children():
+            self._select(child, ret)
+
 
 class TypeSelector(Selector):
     """ Select element by element.typename
@@ -132,7 +137,7 @@ class StyleSelector(Selector):
         self.styleval = styleval
 
     def _select(self, stylable, ret):
-        if stylable.style.get(self.stylename, None) == self.styleval:
+        if stylable.get_style(self.stylename, raise_error=False) == self.styleval:
             ret.append((stylable, self.WEIGHT))
         for child in stylable.get_children():
             self._select(child, ret)        
@@ -152,7 +157,7 @@ class TypeStyleSelector(Selector):
 
     def _select(self, stylable, ret):
         if self.typename == stylable.typename and\
-            stylable.style.get(self.stylename, None) == self.styleval:
+            stylable.get_style(self.stylename, raise_error=False) == self.styleval:
             ret.append((stylable, self.WEIGHT))
         for child in stylable.get_children():
             self._select(child, ret)   
@@ -171,7 +176,7 @@ class ClassStyleSelector(Selector):
         self.styleval = styleval
 
     def _select(self, stylable, ret):
-        if self.classname in stylable.classnames and stylable.style.get(self.stylename, None) == self.styleval:
+        if self.classname in stylable.classnames and stylable.get_style(self.stylename, raise_error=False) == self.styleval:
             ret.append((stylable, self.WEIGHT))
 
         for child in stylable.get_children():
@@ -234,7 +239,7 @@ class StyleSheet:
         else:
             self.data = {selectors:style}
 
-    def apply_to(self, stylable):
+    def apply_to(self, stylable, *args):
         """ Calculate used value of stylable (and its children)
         """
         apply_queue = {}
@@ -251,9 +256,9 @@ class StyleSheet:
             for priority, style in data:
                 if isinstance(style, ResetStyle):
                     has_updated = True
-                    element.style.clear()
+                    element.clear_style(*args)
                 else:
-                    has_updated = element.update_style(style) or has_updated
+                    has_updated = element.update_style(style, *args) or has_updated
 
         return has_updated
 
@@ -267,7 +272,11 @@ class StyleSheet:
         for selector, style in self.data.items():
             if isinstance(selector, TypeSelector):
                 for element, priority in selector.select(stylable):
-                    element.computed_style = style.copy()
+                    if element.computed_style is None:
+                        element.computed_style = style.copy()
+                    else:
+                        element.computed_style = dict(((d, v) for d, v in element.computed_style.items() if not is_copyable(d)))
+                        element.computed_style.update(style)
 
     def select(self, stylable):
         """ Selecting element
@@ -300,7 +309,7 @@ def compute_inheritance(stylable, parent_style={}):
     """ Compute inheritance and write into computed_style
     """
 
-    for d, v in stylable.style.items():
+    for d, v in stylable.export_style().items():
         if v == SpecialStyleValue.INHERIT:
             if is_inheritable(d):
                 try:
@@ -313,7 +322,7 @@ def compute_inheritance(stylable, parent_style={}):
             if not is_copyable(d):
                 raise LineProcessError('There is no default value for %s' % d)
         else:
-            stylable.computed_style[d] = stylable.style[d]
+            stylable.computed_style[d] = v
 
     for c in stylable.get_children():
         compute_inheritance(c, stylable.computed_style)

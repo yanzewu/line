@@ -153,7 +153,7 @@ Set style parameters.
 
 Usage:
 
-    set (default) (selection1,selection2,...) style1=val1 style2=val2 +class1 ...
+    set (default) (selection1,selection2,...) style1=val1 style2=val2 +class1 -class2 ...
     set (default) (selection1,selection2,...) clear
     set option opt=arg
 
@@ -161,7 +161,7 @@ Example:
 
     set default figure dpi high
     set line lw=2
-    set gca +pair
+    set line +paircross
 
 - selection: Select elements by name, type, class or attributes.
 

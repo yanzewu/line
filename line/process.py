@@ -748,7 +748,7 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
             if i < vsplit and j < hsplit:
                 subfig_state_2d[i].append(m_fig.subfigures[i*hsplit + j])
             else:
-                subfig_state_2d[i].append(state.Subfigure('subfigure%d' % (i*hsplitnum + j)))
+                subfig_state_2d[i].append(m_state.create_subfigure('subfigure%d' % (i*hsplitnum + j)))
 
             subfig_state_2d[i][j].update_style({'rpos': (
                 j / hsplitnum + hspacing / 2,

@@ -5,7 +5,6 @@ Fixes
 [MID] Faster startup.
 [LOW] Fix conflict of alias and value (using LR parsing)
 [HIGH] Legend position.
-[HIGH] Custom stylesheet per subfigure and figure.
 
 Features
 ---

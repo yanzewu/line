@@ -57,14 +57,27 @@ class GlobalState:
         if self.cur_figurename is None:
             self.cur_figurename = '1'
         self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
-        self.custom_stylesheet.apply_to(self.cur_figure())
+        self.custom_stylesheet.apply_to(self.cur_figure(), 0)
+
+    def create_subfigure(self, name):
+        """ Return a new Subfigure instance with basic setup and default style applied.
+        Will NOT put attach the subfigure to current figure.
+        """
+        subfig = Subfigure(name)
+        self.custom_stylesheet.apply_to(subfig, 0)
+        return subfig
 
     def refresh_style(self, refresh_all_subfigure=False):
         """ Recompute style of children
         """
         if len(self.figures) > 0:
             self.cur_figure().set_dynamical = not refresh_all_subfigure
-            self.class_stylesheet.apply_to(self.cur_figure())
+
+            # clear sys-set styles first, then apply
+            ss = StyleSheet(AllSelector(), ResetStyle())
+            ss.apply_to(self.cur_figure(), 0)
+            self.custom_stylesheet.apply_to(self.cur_figure(), 0)
+            self.class_stylesheet.apply_to(self.cur_figure(), 0)
             compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True
 
@@ -76,19 +89,19 @@ class FigObject:
     def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}):
         """ typename -> object idenfier;
             name -> object name;
-            custom_style_setter: lambda accepts style, value;
+            custom_style_setter: lambda accepts style, value, priority;
             custom_style_getter: lambda accepts name;
         """
 
         self.typename = typename
         self.name = name
         self.classnames = []
-        self.style = Style()
+        self.style = [Style(), Style()]        # style stack
         self.computed_style = None
         self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
         self.custom_style_getter = custom_style_getter
 
-    def update_style(self, style_dict):
+    def update_style(self, style_dict, priority=1):
         """ Update style from style_dict.
         If a name is in custom_style_setter, it will be called to get real value;
         Otherwise will call default setter.
@@ -98,25 +111,52 @@ class FigObject:
 
         has_updated = False
 
+        target = self.style[priority]
+
         for d, v in style_dict.items():
             if d in self.custom_style_setter:
-                self.custom_style_setter[d](self.style, v)
+                self.custom_style_setter[d](target, v)
                 has_updated = True
             elif d in defaults.default_style_entries[self.typename]:
-                self.style[d] = v
+                target[d] = v
                 has_updated = True
             else:
                 warn('Skipping invalid style: "%s"' % d)
 
         return has_updated
 
-    def get_style(self, name):
-        """ Get value of style
+    def clear_style(self, priority=1):
+        """ Remove value in styles
         """
-        if name in self.custom_style_getter:
-            return self.custom_style_getter[name](self.style)
+        if priority == 'all':
+            for s in self.style:
+                s.clear()
         else:
-            return self.style[name]
+            self.style[priority].clear()
+
+    def get_style(self, name, raise_error=True):
+        """ Get value of style.
+        The query is processed by priority - if highest priority style
+        has entry, return the value; otherwise look for lower priority.
+        Finally look at computed_style.
+
+        raise KeyError if value not found.
+        """
+        for s in reversed(self.style):
+            if name in self.custom_style_getter:
+                return self.custom_style_getter[name](s)
+            try:
+                return s[name]
+            except KeyError:
+                pass
+        if self.computed_style is None and raise_error:
+            raise KeyError(name)
+        else:
+            try:
+                return self.computed_style[name]
+            except KeyError:
+                if raise_error:
+                    raise
 
     def attr(self, name):
         """ Alias for get_computed_style
@@ -125,8 +165,11 @@ class FigObject:
 
     def export_style(self):
         """ Export style to Style object
+        Not include computed_style
         """
-        return self.style.export()
+        ret = self.style[0].copy()
+        ret.update(self.style[1])
+        return ret
 
     def get_computed_style(self, name):
         """ Lower level get style for backend.
@@ -152,21 +195,6 @@ class FigObject:
 
     def get_children(self):
         return []
-
-    def find_elements(self, name):
-        if self.has_name(name):
-            return [self]
-        else:
-            return list(chain.from_iterable((c.find_elements() for c in self.get_children())))
-
-    def copy(self, copy_attr=False):
-        """ Copies only style if copy_attr is not set.
-        """
-        new_obj = type(self)(self.typename)
-        if copy_attr:
-            new_obj.style = self.style.copy()
-        else:
-            new_obj.style.copy_from(self.style)
 
 
 class Figure(FigObject):

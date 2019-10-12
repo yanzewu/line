@@ -21,6 +21,8 @@ The package is pure-python and is directly executable. To install it into python
 
 ## Tutorial
 
+The full documentation can be found [here](doc.md), which includes [command-line options](doc.md#command-line-options), [command reference](doc.md#command-reference) and [styles](doc.md#styles).
+
 To get started, type
 
     line
@@ -72,7 +74,6 @@ To modify figure in script mode, add
 
 which will interrupt script running and switch to interactive mode.
 
-The full documentation can be found [here](doc.md), which includes [command-line options](doc.md#command-line-options), [command reference](doc.md#command-reference) and [styles](doc.md#styles).
 
 ## Configuration
 
