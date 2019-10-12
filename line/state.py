@@ -1,15 +1,14 @@
 
 import copy
-
+import numpy as np
 from collections import OrderedDict
-from itertools import chain
 
 from . import defaults
+from . import scale
 from .style import *
-from .errors import warn, LineProcessError, print_as_warning
-from .collection_util import RestrictDict, extract_single
-
 from .style_man import *
+from .errors import warn, LineProcessError, print_as_warning
+
 
 class GlobalState:
     """ State of program.
@@ -264,6 +263,8 @@ class Subfigure(FigObject):
             'yrange': lambda s,v:self.axes[1].update_style({'range': v}),
             'rrange': lambda s,v:self.axes[2].update_style({'range': v}),
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
+            'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
+            'yscale': lambda s,v:self.axes[1].update_style({'scale': v})
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -383,21 +384,48 @@ class Axis(FigObject):
         self.tick = Tick(axis_name[0] + 'tick')
         self.grid = Grid(axis_name[0] + 'grid')
 
+        self.vmin = 0.0
+        self.vmax = 1.0
+
         super().__init__('axis', axis_name, {
-            'range':self._set_range
+            'range':self._set_range,
+            'scale':self._set_scale
         })
 
     def get_children(self):
         return [self.label, self.tick, self.grid]
 
     def _set_range(self, m_style, value):
-        m_style['range'] = (value[0], value[1])
-        if value[2] is not None:
-            m_style['interval'] = value[2]
+        m_style['range'] = value
+        if m_style == self.style[1]:
+            self._refresh_ticks(value, self.get_style('scale'))
+
+    def _set_scale(self, m_style, value):
+        m_style['scale'] = value
+        if m_style == self.style[1]:
+            r = self.get_style('range')
+            r = (r[0], r[1], None)
+            self._refresh_ticks(r, value)
+
+    def _set_datarange(self, vmin, vmax):
+        # just set a cache of data range. Different from _set_range.
+        self.vmin = vmin
+        self.vmax = vmax
+
+    def _refresh_ticks(self, m_range, m_scale):
+        get_ticks = scale.get_ticks_log if m_scale == 'log' else scale.get_ticks
+
+        if m_range[0] is None or m_range[1] is None:
+            self.update_style({'tickpos': get_ticks(self.vmin, self.vmax)})
+        elif m_range[2] is None:
+            self.update_style({'tickpos': get_ticks(m_range[0], m_range[1])})
         else:
-            from . import scale
-            t = scale.get_ticks(value[0], value[1])
-            m_style['interval'] = t[1] - t[0]
+            if m_scale == 'linear':
+                self.update_style({'tickpos': np.arange(m_range[0], m_range[1]+m_range[2]/10, m_range[2])})
+            elif m_scale == 'log':
+                numticks = int(1.0/m_range[2])
+                self.update_style({'tickpos': get_ticks(m_range[0], m_range[1], numticks)})
+
 
 class Tick(FigObject):
     def __init__(self, name):

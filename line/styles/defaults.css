@@ -27,11 +27,12 @@ subfigure {
 axis {
     linewidth: 0.5;
     linetype: 'solid';
-    interval: 0.1;
     fontfamily: 'Times New Roman';
     fontsize: 16;
     color: black;
+    tickpos: 0,0.5,1;
     range: '0:1';
+    scale: linear;
     visible: true;
     zindex: -1;
 }
@@ -81,7 +82,7 @@ line {
 }
 
 drawline {
-    linewidth: 2;
+    linewidth: 1;
     linetype: 'solid';
     linecolor: black;
     pointsize: 4;

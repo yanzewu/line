@@ -18,6 +18,8 @@ axis {
     fontfamily: inherit;
     fontsize: inherit;
     visible: inherit;
+    range: ':';
+    scale: linear;
 }
 
 

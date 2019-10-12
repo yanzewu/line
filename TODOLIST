@@ -16,4 +16,3 @@ Features
 [MID] Histogram support.
 [LOW] Heatmap support.
 [LOW] As an importable library.
-[HIGH] Logscale support.

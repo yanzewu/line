@@ -393,14 +393,14 @@ The hierachy of elements:
 ### List of Element Type and Applicable Styles
 
  Element Type | Style 
- --- | --- | ---
- figure | size, margin, (h/v)spacing, dpi | 
- subfigure | rsize, rpos, palette, padding, title  | 
+ --- | ---
+ figure | size, margin, (h/v)spacing, dpi
+ subfigure | rsize, rpos, palette, padding, title 
  subfigure (redirect) | xlabel, ylabel, xrange, yrange, xtick, ytick
- axis | linewidth, color, range, visible, zindex |
- label | font, fontfamily, fontsize, text |
- tick | orient, color, font, fontfamily, fontsize, format, linewidth, visible |
- grid | linewidth, color, linetype, visible |
+ axis | linewidth, color, range, visible, zindex
+ label | font, fontfamily, fontsize, text
+ tick | orient, color, font, fontfamily, fontsize, format, linewidth, visible
+ grid | linewidth, color, linetype, visible
  dataline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, startpos, endpos, coord, visible, zindex
  text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
@@ -433,6 +433,7 @@ pointtype | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
 pos | float,float or 'topleft'/'topright'/'topcenter'/'bottomleft'/...
 rsize | float,float (x,y)
 range | float:float:float float:float
+scale | 'linear'/'log'
 size | int,int (x,y)
 skippoint | int
 spacing | float,float

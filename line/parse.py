@@ -295,6 +295,11 @@ def translate_style_val(style_name:str, style_val:str):
         else:
             return stod(style_val)
 
+    elif style_name in ('scale', 'xscale', 'yscale'):
+        if style_val not in ('linear', 'log'):
+            raise LineParseError('Invalid scale "%s"' % style_val)
+        return style_val
+
     # require multiple num value
     elif style_name in ('rsize', 'rpos', 'spacing'):
         v1, v2 = style_val.split(',')

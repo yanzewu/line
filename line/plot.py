@@ -155,6 +155,8 @@ def _update_subfigure(m_subfig:state.Subfigure):
         fontsize=label_styles[1]['fontsize'],
     )
     # the right label requires drawing a new axis
+    ax.set_xscale(m_subfig.axes[0].attr('scale'))
+    ax.set_yscale(m_subfig.axes[1].attr('scale'))
 
     #ax.set_autoscale_on(False)
 
@@ -260,23 +262,29 @@ def _update_subfigure(m_subfig:state.Subfigure):
             zorder=m_style['zindex']
         )
 
-    
+    x_interval = m_subfig.axes[0].attr('range')[2]
+    x_ticks = m_subfig.axes[0].attr('tickpos')
+    ax.set_xticks(x_ticks)
+    ax.set_xbound(x_ticks[0], x_ticks[-1])
 
-    x_range = m_subfig.axes[0].attr('range')
-    x_interval = m_subfig.axes[0].attr('interval')
-    if x_range[0] is not None and x_range[1] is not None:
-        ax.set_xbound(x_range[0], x_range[1])
-        ax.set_xticks(np.arange(x_range[0], x_range[1]+x_interval/10, x_interval))
-
-    y_range = m_subfig.axes[1].attr('range')
-    y_interval = m_subfig.axes[1].attr('interval')
-    if y_range[0] is not None and y_range[1] is not None:
-        ax.set_ybound(y_range[0], y_range[1])
-        ax.set_yticks(np.arange(y_range[0], y_range[1]+y_interval/10, y_interval))
+    y_interval = m_subfig.axes[1].attr('range')[2]
+    y_ticks = m_subfig.axes[1].attr('tickpos')
+    ax.set_yticks(y_ticks)
+    ax.set_ybound(y_ticks[0], y_ticks[-1])
 
     # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
-    ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
-    ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
+    if m_subfig.axes[0].attr('scale') == 'linear':
+        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=len(x_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
+    elif m_subfig.axes[0].attr('scale') == 'log':
+        x_subs = [1.0] + np.arange(int(x_interval*10), 10, int(x_interval*10), dtype=int).tolist() if x_interval else (1.0,)
+        ax.xaxis.set_major_locator(ticker.LogLocator(subs=x_subs))
+        ax.xaxis.set_minor_locator(ticker.LogLocator(subs=(1,5,)))
+    if m_subfig.axes[1].attr('scale') == 'linear':
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
+    elif m_subfig.axes[1].attr('scale') == 'log':
+        y_subs = [1.0] + np.arange(int(y_interval*10), 10, int(y_interval*10), dtype=int).tolist() if y_interval else (1.0,)
+        ax.yaxis.set_major_locator(ticker.LogLocator(subs=y_subs))
+        ax.yaxis.set_minor_locator(ticker.LogLocator(subs=(1,5,)))
 
     # grid
     for i, n in enumerate('xy'):

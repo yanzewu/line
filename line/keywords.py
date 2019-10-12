@@ -19,6 +19,7 @@ style_keywords = {
     'pointsize', 'pointcolor', 'pointtype',
     'pos', 'rpos',
     'range', 'xrange', 'yrange',
+    'scale', 'xscale', 'yscale',
     'size', 'rsize',
     'skippoint',
     'hspacing', 'vspacing', 'spacing',

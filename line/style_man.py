@@ -293,16 +293,11 @@ class StyleSheet:
         """ Update style from other stylesheet.
         """
 
-        has_updated = False
-
         for selector, style in other.data.items():
             if selector not in self.data:
                 self.data[selector] = style
-                has_updated = True
             else:
-                has_updated = self.data[selector].update(style) or has_updated
-
-        return has_updated
+                has_updated = self.data[selector].update(style)
 
 
 def compute_inheritance(stylable, parent_style={}):
@@ -310,7 +305,7 @@ def compute_inheritance(stylable, parent_style={}):
     """
 
     for d, v in stylable.export_style().items():
-        if v == SpecialStyleValue.INHERIT:
+        if v is SpecialStyleValue.INHERIT:
             if is_inheritable(d):
                 try:
                     stylable.computed_style[d] = parent_style[d]
@@ -318,7 +313,7 @@ def compute_inheritance(stylable, parent_style={}):
                     raise LineProcessError('Cannot inherit style: "%s"' % d)
             else:
                 raise LineProcessError('Style %s is not inheritable' % d)
-        elif v ==  SpecialStyleValue.DEFAULT:
+        elif v is SpecialStyleValue.DEFAULT:
             if not is_copyable(d):
                 raise LineProcessError('There is no default value for %s' % d)
         else:

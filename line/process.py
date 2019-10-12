@@ -471,14 +471,18 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             m_state.cur_subfigure().axes[1].label.update_style({'text': ylabels.pop()})
 
         # Set range
-        if m_state.options['auto-adjust-range'] or (
-            m_state.cur_subfigure().axes[0].get_style('range')[0] is None or
-            m_state.cur_subfigure().axes[0].get_style('range')[1] is None or
-            m_state.cur_subfigure().axes[1].get_style('range')[0] is None or
-            m_state.cur_subfigure().axes[1].get_style('range')[1] is None
-        ):
-            logger.debug('Setting automatic range')
-            process_autorange(m_state)
+        logger.debug('Setting automatic range')
+        max_x = max([np.max(d.x) for d in m_state.cur_subfigure().datalines])
+        min_x = min([np.min(d.x) for d in m_state.cur_subfigure().datalines])
+        max_y = max([np.max(d.y) for d in m_state.cur_subfigure().datalines])
+        min_y = min([np.min(d.y) for d in m_state.cur_subfigure().datalines])
+
+        m_state.cur_subfigure().axes[0]._set_datarange(min_x, max_x)
+        m_state.cur_subfigure().axes[1]._set_datarange(min_y, max_y)
+
+        if m_state.options['auto-adjust-range']:
+            m_state.cur_subfigure().axes[0].update_style({'range': (None,None,None)})
+            m_state.cur_subfigure().axes[1].update_style({'range': (None,None,None)})
 
         m_state.cur_subfigure().is_changed = True
     else:
@@ -565,7 +569,6 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     elif m_tokens[0] == 'default':
         get_token(m_tokens)
 
-        has_updated = False
         if keywords.is_style_keyword(m_tokens[0]) and not keywords.is_style_keyword(m_tokens[1]):
             style_list = parse_style(m_tokens)
             selection = style_man.NameSelector('subfigure')
@@ -578,10 +581,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             style_list = parse_style(m_tokens)
 
         ss = style_man.StyleSheet(selection, style_list)
-        has_updated = m_state.default_stylesheet.update(ss)
-
-        if not has_updated:
-            warn('No style is set')
+        m_state.default_stylesheet.update(ss)
 
     elif m_tokens[0] == 'palette':
         get_token(m_tokens)
@@ -598,7 +598,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         has_updated = False
 
         # Setting cur_subfigure, recursively
-        if keywords.is_style_keyword(m_tokens[0]) and (
+        if keywords.is_style_keyword(m_tokens[0]) and m_tokens[1] != 'clear' and (
             not keywords.is_style_keyword(m_tokens[1]) or 
             (m_tokens[1] not in ('on', 'off') and len(m_tokens) <= 2)):
             # the nasty cases... either not a style keyword or not enough style parameters
@@ -693,21 +693,6 @@ def parse_and_process_style(m_state:state.GlobalState, m_tokens):
 
     ss = style_man.StyleSheet(style_man.ClassSelector(classname), style_list)
     m_state.class_stylesheet.update(ss)
-
-
-def process_autorange(m_state:state.GlobalState):
-    max_x = max([np.max(d.x) for d in m_state.cur_subfigure().datalines])
-    min_x = min([np.min(d.x) for d in m_state.cur_subfigure().datalines])
-    max_y = max([np.max(d.y) for d in m_state.cur_subfigure().datalines])
-    min_y = min([np.min(d.y) for d in m_state.cur_subfigure().datalines])
-
-    x_ticks = scale.get_ticks(min_x, max_x)
-    y_ticks = scale.get_ticks(min_y, max_y)
-
-    m_state.cur_subfigure().axes[0].update_style({'range': (x_ticks[0], x_ticks[-1], x_ticks[1]-x_ticks[0])})
-    m_state.cur_subfigure().axes[1].update_style({'range': (y_ticks[0], y_ticks[-1], y_ticks[1]-y_ticks[0])})
-    logger.debug('xrange set: %g:%g' % (x_ticks[0], x_ticks[-1]))
-    logger.debug('yrange set: %g:%g' % (y_ticks[0], y_ticks[-1]))
 
 
 def process_set_style(m_state, style_sheet, add_class_list, remove_class_list):
