@@ -317,6 +317,31 @@ class Subfigure(FigObject):
         )
         self.texts[-1].update_style(style_dict)
     
+    def remove_element(self, element):
+        """ Remove an element and recalculate indices
+        raises ValueError if element does not exist in queue
+        """
+        if isinstance(element, DataLine):
+            idx = self.datalines.index(element)
+            self.datalines.pop(idx)
+            for i in range(idx, len(self.datalines)):
+                self.datalines[i].name = 'line%d' % i
+
+        elif isinstance(element, DrawLine):
+            idx = self.drawlines.index(element)
+            self.drawlines.pop(idx)
+            for i in range(idx, len(self.datalines)):
+                self.drawlines[i].name = 'drawline%d' % i
+
+        elif isinstance(element, Text):
+            idx = self.drawlines.index(element)
+            self.texts.pop(idx)
+            for i in range(idx, len(self.texts)):
+                self.texts[i].name = 'text%d' % i
+
+        else:
+            raise LineProcessError('Cannot remove element: "%s"' % element.name)
+
     def clear(self):
         """ Clear lines and texts but keep style.
         """

@@ -492,11 +492,6 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `remove` command.
     """
-
-    dataline_sel = set()
-    drawline_sel = set()
-    text_sel = set()
-
     m_subfig = m_state.cur_subfigure()
 
     selection = parse_style_selector(m_tokens)
@@ -507,39 +502,16 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
         warn('No element is selected')
         return
 
-    for element in elements:
-        if isinstance(element, state.DataLine):
-            dataline_sel.add(int(element.name[4:]))
-        elif isinstance(element, state.DrawLine):
-            drawline_sel.add(int(element.name[8:]))
-        elif isinstance(element, state.Text):
-            text_sel.add(int(element.name[4:]))
-
-    if len(dataline_sel) > 1:
-        if io_util.query_cond('Remove data %s?' % (' '.join((str(d) for d in dataline_sel))), 
+    if len(elements) > 1:
+        if io_util.query_cond('Remove elements %s?' % (' '.join(e.name for e in elements)), 
             m_state.options['prompt-multi-removal'] and (m_state.options['prompt-always'] or 
             m_state.is_interactive), True):
-            for idx in sorted(dataline_sel, reverse=True):
-                m_subfig.datalines.pop(idx)
-            logger.debug('Removed dataline: %s' % dataline_sel)
-    elif len(dataline_sel) == 1:
-        m_subfig.datalines.pop(dataline_sel.pop())
+            pass
+        else:
+            return
 
-    for idx in sorted(drawline_sel, reverse=True):
-        m_subfig.drawlines.pop(idx)
-    logger.debug('Removed drawline: %s' % drawline_sel)
-    
-    for idx in sorted(text_sel, reverse=True):
-        m_subfig.texts.pop(idx)
-    logger.debug('Removed text: %s' % text_sel)
-
-    # rename
-    for i, l in enumerate(m_subfig.datalines):
-        l.name = 'line%d' % i
-    for i, l in enumerate(m_subfig.drawlines):
-        l.name = 'drawline%d' % i        
-    for i, l in enumerate(m_subfig.texts):
-        l.name = 'text%d' % i
+    for e in elements:
+        m_state.cur_subfigure().remove_element(e)
 
     m_state.cur_subfigure().is_changed = True
 

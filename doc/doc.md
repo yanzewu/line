@@ -66,7 +66,7 @@ Args:
     - If the first character is not `$`, it is parsed as column title or column index;
     - If the first character is `$`, it is also parsed as an expression, which ends at the next `:`, `,` or word before `=`, whichever comes first.
     - By default, number is parsed as indices. Using `col()` to select number by title.
-    - If a column selection is not present, by default all columns in the file are added into current figure ($0:$1 if only one column, $1:$2,... if multiple columns). A file will be selected first if its name coincide with column name. Use '$' to select column to avoid such conflict, or set *--force-column-selection=true*.
+    - If a column selection is not present, by default all columns in the file are added into current figure (\$0:\$1 if only one column, \$1:\$2,... if multiple columns). A file will be selected first if its name coincide with column name. Use '$' to select column to avoid such conflict, or set *--force-column-selection=true*.
 - style, val: See [Style name and value](#list-of-valid-style-and-names).
     - If a style is [broadcastable](#broadcasity), it will be applied to other data in this command, unless set explicitly.
 - linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.

@@ -9,8 +9,8 @@ Creating nice line and scatter plot with least typing.
 Prerequesties:
 
 - Python >= 3.5 (Necessary)
-- Matplotlib >= 3.1 (Necessary)
-- Numpy >= 0.11 (Necessary)
+- Matplotlib >= 3.0 (Necessary)
+- Numpy >= 1.13 (Necessary)
 - Pandas >= 0.22 (Necessary)
 - PyQt5 (Optional, for Qt backend)
 - Seaborn (Optional, for its palettes)
@@ -21,7 +21,7 @@ The package is pure-python and is directly executable. To install it into python
 
 ## Tutorial
 
-The full documentation can be found [here](doc.md), which includes [command-line options](doc.md#command-line-options), [command reference](doc.md#command-reference) and [styles](doc.md#styles).
+The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference) and [styles](doc/doc.md#styles).
 
 To get started, type
 
