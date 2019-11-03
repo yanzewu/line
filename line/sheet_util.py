@@ -11,7 +11,7 @@ logger = logging.getLogger('line')
 
 SNIFF_NUM = 5
 
-class SheetFile:
+class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
     """ Store spreadsheet or a series of spreadsheets categorized with same titles and shape.
     """
 
@@ -54,14 +54,7 @@ class SheetFile:
             if isinstance(newidx.step, int): newidx.step -= 1
             return self.get_column(newidx)
         elif isinstance(idx, tuple):
-            
-            newsheet = SheetFile()
-            for d, fn in zip(self.data, self.filename):
-                try:
-                    newsheet.add_file(pandas.DataFrame(d.iloc[idx]), fn)
-                except IndexError:
-                    raise IndexError('Index is out of bounds')
-            return newsheet
+            return self.to_numpy()[idx]
         else:
             raise RuntimeError('Invalid indexing type: "%s"' % type(idx))
 
@@ -89,10 +82,10 @@ class SheetFile:
         m_union = []
         for d in self.data:
             try:
-                m_union.append(d.iloc[:,idx].values)
+                m_union.append(pandas.DataFrame(d.iloc[:,idx]))
             except IndexError:
                 raise IndexError('Index is out of bounds')
-        return np.hstack(m_union)
+        return SheetFile(m_union, self.filename)
 
     def get_column_by_label(self, label:str):
         """ Get column by str
@@ -100,10 +93,10 @@ class SheetFile:
         m_union = []
         for d in self.data:
             try:
-                m_union.append(d.loc[:,label].values)
+                m_union.append(pandas.DataFrame(d[label]))
             except KeyError:
                 raise KeyError(label)
-        return np.hstack(m_union)
+        return SheetFile(m_union, self.filename)
 
     def get_index_by_label(self, label):
         try:
@@ -134,7 +127,7 @@ class SheetFile:
         self.filename = ['']
 
     def to_numpy(self):
-        return np.dstack((d.values for d in self.data))
+        return np.dstack((d.values for d in self.data)) if len(self.data) > 1 else self.data[0].values
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
 
@@ -149,8 +142,8 @@ class SheetFile:
             m_out = []
             
             for d in self.data:
-                m_inputs = [d] + inputs[1:]
-                m_out.append(ufunc(**m_inputs, **kwargs))
+                m_inputs = [d] + list(inputs[1:])
+                m_out.append(ufunc(*m_inputs, **kwargs))
             return SheetFile(m_out, self.filename)
         else:
             m_inputs = []
@@ -367,8 +360,10 @@ def columns(mat, title_sub='%d'):
         return mat.columns
     elif isinstance(mat, SheetFile):
         return mat.columns()
-    else:
+    elif title_sub is not None:
         return [title_sub % (i+1) for i in range(cols(mat))]
+    else:
+        return None
 
 
 def cols(mat):

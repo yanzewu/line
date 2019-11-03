@@ -25,8 +25,8 @@ class PlottingGroup:
         self.ylabel = None
 
     def __str__(self):
-        return ('PlottingGroup(hint1=%s expr1=%s hint2=%s expr2=%s xlabel=%s'
-            'ylabel=%s data1=%s data2=%s style=%s') % (
+        return ('PlottingGroup(hint1=%s expr1=%s hint2=%s expr2=%s xlabel=%s '
+            'ylabel=%s data1=%s data2=%s style=%s)') % (
             self.hint1, self.expr1, self.hint2, self.expr2, 
             self.xlabel, self.ylabel, self._repl_sheet(self.xdata), 
             self._repl_sheet(self.ydata), self.style
@@ -114,9 +114,9 @@ class PlotParser:
             if pg.expr1 is None:
                 # file: take first column as index, unless specified explicitly
                 if self._is_quoted(pg.expr2):
-                    pg.xdata = np.arange(pg.ydata.shape[0]) if sheet_util.cols(pg.ydata) == 1 else pg.ydata[:, 0]
+                    pg.xdata = np.arange(pg.ydata.shape[0]) if sheet_util.cols(pg.ydata) == 1 else pg.ydata.get_column(0)
                     if sheet_util.cols(pg.ydata) > 1:
-                        pg.ydata = pg.ydata[:, 1:]
+                        pg.ydata = pg.ydata.get_column(slice(1,None))
                 # others: use sequence as index
                 else:
                     pg.xdata = np.arange(pg.ydata.shape[0])
@@ -153,28 +153,38 @@ class PlotParser:
         
         xcols = sheet_util.cols(pg.xdata)
         ycols = sheet_util.cols(pg.ydata)
-        xlabels = sheet_util.columns(pg.xdata, (pg.expr1 if pg.expr1 else '') + '[%d]')
-        ylabels = sheet_util.columns(pg.ydata, pg.expr2 + '[%d]')
+        if xcols == 1:
+            xlabels = sheet_util.columns(pg.xdata, None)
+            if xlabels is None:
+                xlabels = [pg.expr1 if pg.expr1 else '']
+        else:
+            xlabels = sheet_util.columns(pg.xdata, (pg.expr1 if pg.expr1 else '') + '[%d]')
+        if ycols == 1:
+            ylabels = sheet_util.columns(pg.ydata, None)
+            if ylabels is None:
+                ylabels = [pg.expr2 if pg.expr2 else '']
+        else:
+            ylabels = sheet_util.columns(pg.ydata, (pg.expr2 if pg.expr2 else '') + '[%d]')
 
         # split columns
         if xcols == 1 and ycols == 1:
             pg.source = pg.source[0]
-            pg.xlabel = xlabels[0][:-3]
-            pg.ylabel = ylabels[0][:-3]
+            pg.xlabel = xlabels[0]
+            pg.ylabel = ylabels[0]
             self.plot_groups.append(pg)
         elif xcols == 1 and ycols > 1:
             assert len(pg.source) == 1 or len(pg.source) == ycols
-            for idx in range(len(pg.source)):
+            for idx in range(ycols):
                 m_pg = PlottingGroup(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
                 m_pg.xdata = pg.xdata
                 m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
-                m_pg.xlabel = xlabels[0][:-3]
+                m_pg.xlabel = xlabels[0]
                 m_pg.ylabel = ylabels[idx]
                 m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
                 self.plot_groups.append(m_pg)
         elif xcols == ycols:
             assert len(pg.source) == 1 or len(pg.source) == ycols
-            for idx in range(len(pg.source)):
+            for idx in range(ycols):
                 m_pg = PlottingGroup(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
                 m_pg.xdata = sheet_util.loc_col(pg.xdata, idx)
                 m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
@@ -254,7 +264,9 @@ def do_plot(m_state:state.GlobalState, plot_groups, keep_existed=False, labelfmt
     has_multiple_files = len(set((pg.source for pg in plot_groups))) != 1
     for pg in plot_groups:
         m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source) if has_multiple_files else str(pg.ylabel)
-        m_state.cur_subfigure().add_dataline((pg.xdata, pg.ydata), m_ylabel, pg.xlabel, pg.style)
+        m_xdata = pg.xdata if not isinstance(pg.xdata, sheet_util.SheetFile) else pg.xdata.to_numpy()
+        m_ydata = pg.ydata if not isinstance(pg.ydata, sheet_util.SheetFile) else pg.ydata.to_numpy()
+        m_state.cur_subfigure().add_dataline((m_xdata, m_ydata), m_ylabel, pg.xlabel, pg.style)
     
     # Set labels
     xlabels = set((d.get_style('xlabel') for d in m_state.cur_subfigure().datalines))
