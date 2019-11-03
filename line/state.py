@@ -151,8 +151,9 @@ class FigObject:
                 return s[name]
             except KeyError:
                 pass
-        if self.computed_style is None and raise_error:
-            raise KeyError(name)
+        if self.computed_style is None:
+            if raise_error:
+                raise KeyError(name)
         else:
             try:
                 return self.computed_style[name]
@@ -284,6 +285,7 @@ class Subfigure(FigObject):
 
         self.datalines = [] # datalines
         self.drawlines = [] # drawlines
+        self.polygons = []
         self.texts = []
 
         self.is_changed = True
@@ -293,7 +295,7 @@ class Subfigure(FigObject):
         return name == 'gca' or self.name == name
 
     def get_children(self):
-        return self.axes + [self.legend] + self.datalines + self.drawlines + self.texts 
+        return self.axes + [self.legend] + self.datalines + self.drawlines + self.polygons + self.texts 
 
     def add_dataline(self, data, label, xlabel, style_dict):
 
@@ -309,9 +311,17 @@ class Subfigure(FigObject):
     def add_drawline(self, start_pos, end_pos, style_dict):
         
         self.drawlines.append(
-            DrawLine(start_pos, end_pos, 'drawline%d'%len(self.drawlines))
+            DrawLine(start_pos, end_pos, 'drawline%d'% len(self.drawlines))
         )
         self.drawlines[-1].update_style(style_dict)
+
+    def add_polygon(self, data, style_dict):
+
+        self.polygons.append(
+            Polygon(data, 'polygon%d'%len(self.polygons))
+        )
+        self.polygons[-1].update_style({'colorid': len(self.polygons)})
+        self.polygons[-1].update_style(style_dict)
 
     def add_text(self, text, pos, style_dict):
         
@@ -333,15 +343,15 @@ class Subfigure(FigObject):
         elif isinstance(element, DrawLine):
             idx = self.drawlines.index(element)
             self.drawlines.pop(idx)
-            for i in range(idx, len(self.datalines)):
-                self.drawlines[i].name = 'drawline%d' % i
 
+        elif isinstance(element, Polygon):
+            idx = self.polygons.index(element)
+            self.polygons.pop(idx)
+            
         elif isinstance(element, Text):
             idx = self.drawlines.index(element)
             self.texts.pop(idx)
-            for i in range(idx, len(self.texts)):
-                self.texts[i].name = 'text%d' % i
-
+            
         else:
             raise LineProcessError('Cannot remove element: "%s"' % element.name)
 
@@ -474,30 +484,50 @@ class DataLine(FigObject):
         self.y = data[1]
 
         super().__init__('line', name, {
-            'color':self._set_color
+            'color':_set_color
         })
         self.update_style({
             'label':label, 'xlabel':xlabel, 'skippoint':1
         })
 
-    def _set_color(self, m_style, value):
-        m_style['linecolor'] = value
-        m_style['edgecolor'] = value
 
+class BarChart(FigObject):
+
+    def __init__(self, data, label, xlabel, dynamic_bin, name):
+        self.x = data[0]
+        self.y = data[1]
+        self.dynamic_bin = dynamic_bin
+
+        super().__init__('barchart', name, {
+            'color':_set_color
+        })
+        self.update_style({
+            'label':label, 'xlabel':xlabel
+        })
 
 class DrawLine(FigObject):
 
     def __init__(self, start_pos, end_pos, name):
 
         super().__init__('drawline', name, {
-            'color':self._set_color
+            'color':_set_color
         })
         self.update_style({'startpos':start_pos, 'endpos':end_pos})
+    
+
+class Polygon(FigObject):
+
+    def __init__(self, data, name):
+        self.x = data[0]
+        self.y = data[1]
+        super().__init__('polygon', name, {
+            'color':self._set_color
+        })
 
     def _set_color(self, m_style, value):
+        m_style['fillcolor'] = value
         m_style['linecolor'] = value
-        m_style['edgecolor'] = value
-    
+
 
 class Text(FigObject):
 
@@ -531,3 +561,7 @@ class Label(FigObject):
     
 def _assign_list(a, idx, v):
     a[idx] = v
+
+def _set_color(m_style, value):
+    m_style['linecolor'] = value
+    m_style['edgecolor'] = value

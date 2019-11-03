@@ -26,12 +26,15 @@ def load_palette(fp):
     PALETTES.update(j)
 
 
-def palette2stylesheet(palette):
+def palette2stylesheet(palette, target=None):
     """ Return style_man.StyleSheet object from list of colors.
     """
     ss = style_man.StyleSheet()
     for idx, color in enumerate(palette):
-        ss.data[style_man.TypeStyleSelector('line', 'colorid', idx)] = style_man.Style(color=color)
+        if target:
+            ss.data[style_man.TypeStyleSelector(target, 'colorid', idx)] = style_man.Style(color=color)
+        else:
+            ss.data[style_man.StyleSelector('colorid', idx)] = style_man.Style(color=color)
     return ss
 
 

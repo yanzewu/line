@@ -97,6 +97,18 @@ drawline {
     endpos: none;
 }
 
+polygon {
+    alpha: 1;
+    linewidth: 1;
+    linetype: none;
+    linecolor: black;
+    fillcolor: white;
+    visible: true;
+    coord: 'data';
+    zindex: 0; 
+    colorid: 0;
+}
+
 text {
     fontfamily: 'Times New Roman';
     fontsize: 16;

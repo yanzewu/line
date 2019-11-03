@@ -117,6 +117,38 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_subfigure().add_drawline((x,None), (x,None), parse_style(m_tokens))
         m_state.cur_subfigure().is_changed = True
 
+    elif command == 'fill':
+        fill_between = []
+        fill_x = []
+        while len(m_tokens) > 0:
+            if keywords.is_style_keyword(lookup(m_tokens)):
+                break
+            token = get_token(m_tokens)
+            try:
+                if '-' in token:
+                    line1, line2 = token.split('-', 1)
+                    fill_between.append((
+                        [d for d in m_state.cur_subfigure().datalines if d.name == line1][0],
+                        [d for d in m_state.cur_subfigure().datalines if d.name == line2][0]
+                    ))
+                else:
+                    fill_x.append([d for d in m_state.cur_subfigure().datalines if d.name == token][0])
+            except IndexError:
+                warn('Skip line "%s" as it does not exist' % token)
+
+        style_dict = parse_style(m_tokens)
+        if not fill_between and not fill_x:
+            warn('No line to fill')
+        else:
+            for line1, line2 in fill_between:
+                m_state.cur_subfigure().add_polygon(((
+                    np.concatenate((line1.x, np.flip(line2.x)))), np.concatenate((line1.y, np.flip(line2.y)))), style_dict)
+            for line1 in fill_x:
+                m_state.cur_subfigure().add_polygon((
+                    np.concatenate((line1.x, np.flip(line1.x))), np.concatenate((line1.y,
+                        np.ones_like(line1.x) * m_state.cur_subfigure().axes[1].get_style('tickpos')[0]))), style_dict)
+            m_state.cur_subfigure().is_changed = True
+        
     elif command == 'text':
         text = get_token(m_tokens)
         token1 = get_token(m_tokens)
@@ -387,13 +419,17 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif lookup(m_tokens) == 'palette':
         get_token(m_tokens)
+        if len(m_tokens) == 2:
+            target = get_token(m_tokens)
+        else:
+            target = 'line'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
         try:
             m_palette = palette.get_palette(palette_name)
         except KeyError:
             raise LineProcessError('Palette "%s" does not exist' % palette_name)
-        palette.palette2stylesheet(m_palette).apply_to(m_state.cur_subfigure())
+        palette.palette2stylesheet(m_palette, target).apply_to(m_state.cur_subfigure())
         m_state.cur_subfigure().is_changed = True
 
     else:

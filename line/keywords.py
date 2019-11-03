@@ -51,7 +51,7 @@ style_alias = {
 
 element_keywords = {
     'figure', 'subfigure', 'axis', 'label', 'tick',
-    'grid', 'title', 'line', 'drawline', 'text'
+    'grid', 'title', 'line', 'drawline', 'polygon', 'text'
 }
 
 command_keywords = {
@@ -60,6 +60,7 @@ command_keywords = {
     'clear',
     'display',
     'figure',
+    'fill',
     'group',
     'input',
     'load',

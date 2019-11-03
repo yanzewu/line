@@ -244,6 +244,21 @@ def _update_subfigure(m_subfig:state.Subfigure):
             zorder=m_style['zindex']
         ))
 
+    for polygon in m_subfig.polygons:
+        m_style = polygon.computed_style
+
+        ax.fill(
+            polygon.x,
+            polygon.y,
+            alpha=m_style['alpha'],
+            color=m_style['fillcolor'],
+            edgecolor=m_style['linecolor'],
+            linestyle=m_style['linetype'].to_str() if m_style['linetype'] != style.LineType.NONE else None,
+            linewidth=m_style['linewidth'],
+            visible=m_style['visible'],
+            zorder=m_style['zindex']
+        )
+
     for text in m_subfig.texts:
 
         m_style = text.computed_style
