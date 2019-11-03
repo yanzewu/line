@@ -26,6 +26,9 @@ class GlobalState:
         self.cur_save_filename = None
         self.is_interactive = None
 
+        self.variables = {'__varx': np.arange(-5, 5, 1)}
+        self.file_caches = {}
+
         self.options = {}   # Additional program options
 
     def cur_figure(self):

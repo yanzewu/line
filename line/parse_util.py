@@ -7,10 +7,20 @@ STOB = {'true':True, 'false':False, 'none':None}
 
 def get_token(m_tokens):
     try:
+        x = m_tokens.popleft()
+    except IndexError:
+        raise LineParseError("Incomplete command")
+    else:
+        return strip_quote(x)
+
+def get_token_raw(m_tokens):
+    try:
         return m_tokens.popleft()
     except IndexError:
         raise LineParseError("Incomplete command")
 
+def strip_quote(token):
+    return token[1:-1] if token[0] in '\'\"' else token
 
 def assert_no_token(m_tokens):
     if len(m_tokens) != 0:
@@ -20,13 +30,16 @@ def assert_token(token, expected):
     if token != expected:
         raise LineParseError('"%s" expected' % expected)
 
-def lookup(m_tokens, idx=0):
+def lookup(m_tokens, idx=0, ret_string=False):
+    """ Exception-free look up the next token in advance.
+    idx: number of token ahead;
+    ret_string: Return empty string if out of bound; By default returns None.
+    """
+    return strip_quote(m_tokens[idx]) if len(m_tokens) > idx else ('' if ret_string else None)
 
-    return m_tokens[idx] if len(m_tokens) > idx else None
+def lookup_raw(m_tokens, idx=0, ret_string=False):
 
-def lookup_rev(m_tokens, idx=0):
-    return m_tokens[idx] if len(m_tokens) > idx else ''
-
+    return m_tokens[idx] if len(m_tokens) > idx else ('' if ret_string else None)
 
 def skip_tokens(m_tokens, termflag):
     """ Skip tokens until the end or termflag is meet (included)

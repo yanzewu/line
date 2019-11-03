@@ -3,16 +3,19 @@ Fixes
 ---
 [HIGH] Error line number and token position.
 [MID] Faster startup.
-[LOW] Fix conflict of alias and value (using LR parsing)
 [HIGH] Legend position.
+[MID] Dataline index start from 1.
+[MID] Subfigure store all elements together.
 
 Features
 ---
 [LOW] Smarter completion (need a library other than readline).
 [LOW] Automatically determine skip points in scatter.
-[MID] Variable system.
 [LOW] Auto determine tick format (for special cases).
-[LOW] 'a-b' like selection of column title or index.
 [MID] Histogram support.
 [LOW] Heatmap support.
 [LOW] As an importable library.
+[MID] Polygon and fill function.
+[MID] Shorthand for "set xxx" commands.
+[LOW] "$(" style file loader.
+[LOW] Smart distinguish between filename and expression.

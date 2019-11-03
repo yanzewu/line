@@ -162,7 +162,7 @@ class CMDHandler:
                 string = cur_token.group('a')
                 if string[-1] != string[0]:
                     raise LineParseError("Quote not match")
-                token_buffer.append(string[1:-1])
+                token_buffer.append(string)
 
             elif cur_token.group('b'):  # variable or others
                 token_buffer.append(cur_token.group('b'))

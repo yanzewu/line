@@ -91,6 +91,13 @@ def is_style_keyword(token):
 
     return token in style_alias or token in style_keywords
 
+def is_style_desc(token):
+
+    return len(token) <= 4 and all((
+        t in 'o+*.xsd^v><ph-:.rgbcmwk' and (t == '-' or token.count(t) == 1)
+        for t in token
+        ))
+
 def is_inheritable(token):
     return token in inheritable_styles
 

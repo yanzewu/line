@@ -10,6 +10,8 @@ import numpy as np
 from . import state
 from . import plot
 from . import sheet_util
+from . import expr_proc
+from . import plot_proc
 from . import io_util
 from . import keywords
 from . import defaults
@@ -44,6 +46,18 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     logger.debug('Tokens are: %s' % tokens)
 
     m_tokens = tokens
+
+    m_state.file_caches.clear()
+    if m_tokens[0].startswith('$'):
+        try:
+            asnidx = m_tokens.index('=')
+        except ValueError:
+            print(process_expr(m_state, ''.join(m_tokens)))
+        else:
+            varname = expr_proc.canonicalize(''.join(list(m_tokens)[:asnidx]))
+            m_state.variables[varname] = process_expr(m_state, ''.join(list(m_tokens)[asnidx+1:]))
+        return 0
+
     command = get_token(m_tokens)
     command = keywords.command_alias.get(command, command)   # expand short commands
 
@@ -194,7 +208,16 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             m_state.cur_subfigure().is_changed = True
 
     elif command == 'print':
-        print(' '.join(m_tokens))
+        outstr = ''
+        while len(m_tokens) > 0:
+            if m_tokens[0].startswith('$'):
+                outstr += process_expr(m_state, parse_column(m_tokens))
+            else:
+                outstr += m_tokens[0]
+                m_tokens.popleft()
+            if len(m_tokens) > 0:
+                outstr += ' '
+        print(outstr)
 
     elif command == 'quit':
         if m_state.options['display-when-quit'] and not m_state.is_interactive:
@@ -283,210 +306,19 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     return 0
 
+
 def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed):
     """ Parsing and processing `plot` and `append` commands.
 
     Args:
         keep_existed: Keep existed datalines.
     """
-    # LL(2)
-
-    file_loaded = {}
-    
-    data_list = []
-    style_list = []
-
-    # Recording x data and label
-    cur_xdata = None
-    cur_xlabel = None
-
-    while len(m_tokens) > 0:
-
-        # when it could be filename:
-        # force-column-selection is not set
-        # no : at next
-        # not starting with $ or (
-
-        is_newfile = False  # is new filename 
-
-        if m_state.options['force-column-selection'] == False and \
-            (len(m_tokens) == 1 or m_tokens[1] != ':') or \
-            (m_tokens[0] != '' and m_tokens[0][0] not in '$('):
-
-            if io_util.file_exist(m_tokens[0]):
-                filename = get_token(m_tokens)
-                is_newfile = True
-                logger.debug('New file found: %s' % filename)
-            elif m_tokens[0][0] not in '$(' and not m_tokens[0].isdigit():    # maybe a column title?
-                m_file_test = file_loaded.get(m_state.cur_open_filename, None)
-                if not m_file_test or not m_file_test.has_label(m_tokens[0]):
-
-                    # wildcard?
-                    if '*' in m_tokens[0] or '?' in m_tokens[0]:
-                        import fnmatch
-                        files = fnmatch.filter([f for f in os.listdir() if os.path.isfile(f)], m_tokens[0])
-                        if files:
-                            print('Matched files:', ' '.join(files))
-                            get_token(m_tokens)
-                            filename = files[0]
-                            is_newfile = True
-                            for f in files[1:]:
-                                m_tokens.appendleft(',')
-                                m_tokens.appendleft(f)
-                        else:
-                            warn('No matching files by "%s"' % m_tokens[0])
-                            skip_tokens(m_tokens, ',')
-                            continue
-                        
-                    else:
-                        warn('File "%s" not found' % m_tokens[0])
-                        skip_tokens(m_tokens, ',')
-                        continue
-                
-        if not is_newfile:
-            filename = m_state.cur_open_filename
-            warn('Treat "%s" as column label' % m_tokens[0])
-
-        if not filename:
-            raise LineParseError('Filename expected')
-        elif filename in file_loaded:
-            logger.debug('Exist file found: %s' % filename)
-            m_file = file_loaded[filename]
-        else: 
-            m_file = sheet_util.load_file(filename,
-                m_state.options['data-title'],
-                m_state.options['data-delimiter'],
-                m_state.options['ignore-data-comment']
-            )
-            if not m_file:
-                warn('Skip invalid file "%s"' % filename)
-                skip_tokens(m_tokens, ',')
-                continue
-            else:
-                logger.debug('New file loaded: %s' % m_file)
-                m_state.cur_open_filename = filename
-                file_loaded[filename] = m_file
-
-        # no column expr 
-        if not m_state.options['force-column-selection'] and (
-            len(m_tokens) == 0 or lookup(m_tokens, 0) == ',' or lookup(m_tokens, 1) == '=' or 
-            keywords.is_style_keyword(m_tokens[0])):
-            # you need to specify column name like $t if it coincides with style name
-
-            if m_file.cols() == 0:
-                raise RuntimeError('File has no valid column')
-            elif m_file.cols() == 1:
-                data_list.append((m_file.get_sequence(), m_file.get_column(0),
-                    m_file.get_label(0), '', m_file.filename))
-            elif m_file.cols() == 2:
-                data_list.append((m_file.get_column(0), m_file.get_column(1), 
-                    m_file.get_label(1), m_file.get_label(0), m_file.filename))
-            else:
-                if m_file.cols() > 10:
-                    warn('Load all %d columns to plot' % m_file.cols())
-                for j in range(1, m_file.cols()):
-                    data_list.append((m_file.get_column(0), m_file.get_column(j),
-                        m_file.get_label(j), m_file.get_label(0), m_file.filename))
-            logger.debug('All column in file loaded: Total %d datasets' % m_file.cols())
-        
-        else:
-            column_expr = parse_column(m_tokens)
-            column = m_file.eval_column_expr(column_expr)
-            label = m_file.get_label(int(column_expr)-1) if column_expr.isdigit() else column_expr
-            if column is None:  # failed
-                warn('Skip column "%s" with no valid data' % column_expr)
-                skip_tokens(m_tokens, ',')
-                continue
-
-            if lookup(m_tokens) == ':':
-                # when a x data appears, the following y data is based on this x.
-                cur_xdata = column
-                cur_xlabel = label
-
-                logger.debug('Try parsing y data')
-                get_token(m_tokens)
-                column_expr2 = parse_column(m_tokens)
-                column2 = m_file.eval_column_expr(column_expr2)
-                label2 = m_file.get_label(int(column_expr2)-1) if column_expr2.isdigit() else column_expr2
-                if column2 is not None:
-                    data_list.append((column, column2, label2, label, m_file.filename))
-                else:
-                    skip_tokens(m_tokens, ',')
-                    warn('Skip column "%s" with no valid data' % column_expr2)
-                    continue
-            else:
-                if cur_xdata is None:
-                    cur_xdata = m_file.get_sequence()
-                    cur_xlabel = ''
-                data_list.append((cur_xdata, column, label, cur_xlabel, m_file.filename))
-
-        # style parameters
-        styles = parse_style(m_tokens, ',', recog_comma=False)
-        while len(style_list) < len(data_list): # this is for a file containing multiple columns
-            style_list.append(styles)
-
-        if lookup(m_tokens) == ',':
-            get_token(m_tokens)
-            continue
-
-    assert_no_token(m_tokens)
-
-    if len(data_list) == 0:
-        warn('No data to plot')
-        return
-
-    # Broadcasting styles
-    for bc_style in m_state.options['broadcast-style']:
-        if bc_style in style_list[0]:
-            for i in range(1, len(style_list)):
-                style_list[i].setdefault(bc_style, style_list[0][bc_style])
-
-
-
-    logger.debug('Processing plot')
-    if len(data_list) > 0:
-        
-        # first time: create figure
-        if m_state.cur_figurename is None:
-            m_state.create_figure()
-            m_state.refresh_style()
-
-        # handle append
-        if not keep_existed:
-            m_state.cur_subfigure().datalines.clear()
-
-        # add filename to data label?
-        filename_prefix = len(set((d[4] for d in data_list))) != 1
-
-        for (x, y, label, xlabel, filename), style in zip(data_list, style_list):
-            ylabel = filename + ':' + str(label) if filename_prefix else str(label)
-            m_state.cur_subfigure().add_dataline((x, y), ylabel, xlabel, style)
-        
-        # Set labels
-        xlabels = set((d.get_style('xlabel') for d in m_state.cur_subfigure().datalines))
-        ylabels = set((d.get_style('label') for d in m_state.cur_subfigure().datalines))
-        if len(xlabels) == 1:
-            m_state.cur_subfigure().axes[0].label.update_style({'text': xlabels.pop()})
-        if len(ylabels) == 1:
-            m_state.cur_subfigure().axes[1].label.update_style({'text': ylabels.pop()})
-
-        # Set range
-        logger.debug('Setting automatic range')
-        max_x = max([np.max(d.x) for d in m_state.cur_subfigure().datalines])
-        min_x = min([np.min(d.x) for d in m_state.cur_subfigure().datalines])
-        max_y = max([np.max(d.y) for d in m_state.cur_subfigure().datalines])
-        min_y = min([np.min(d.y) for d in m_state.cur_subfigure().datalines])
-
-        m_state.cur_subfigure().axes[0]._set_datarange(min_x, max_x)
-        m_state.cur_subfigure().axes[1]._set_datarange(min_y, max_y)
-
-        if m_state.options['auto-adjust-range']:
-            m_state.cur_subfigure().axes[0].update_style({'range': (None,None,None)})
-            m_state.cur_subfigure().axes[1].update_style({'range': (None,None,None)})
-
-        m_state.cur_subfigure().is_changed = True
+    parser = plot_proc.PlotParser()
+    parser.parse(m_state, m_tokens)
+    if parser.plot_groups:
+        plot_proc.do_plot(m_state, parser.plot_groups, keep_existed)
     else:
-        pass
+        warn('No data to plot')
 
 
 def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
@@ -521,7 +353,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     """
     # LL(2)
     
-    if m_tokens[0] == 'option':
+    if lookup(m_tokens) == 'option':
         get_token(m_tokens)
 
         while len(m_tokens) > 0:
@@ -536,12 +368,10 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
                     raise LineParseError('Invalid option: "%s"' % opt)
                 m_state.options[opt] = translate_option_val(opt, arg)
 
-    # TODO auto generate ss when set palette (either here or in subfigure)
-
-    elif m_tokens[0] == 'default':
+    elif lookup(m_tokens) == 'default':
         get_token(m_tokens)
 
-        if keywords.is_style_keyword(m_tokens[0]) and not keywords.is_style_keyword(m_tokens[1]):
+        if keywords.is_style_keyword(lookup(m_tokens)) and not keywords.is_style_keyword(lookup(m_tokens, 1)):
             style_list = parse_style(m_tokens)
             selection = style_man.NameSelector('subfigure')
             # TODO automatically select candidate
@@ -555,7 +385,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         ss = style_man.StyleSheet(selection, style_list)
         m_state.default_stylesheet.update(ss)
 
-    elif m_tokens[0] == 'palette':
+    elif lookup(m_tokens) == 'palette':
         get_token(m_tokens)
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
@@ -570,9 +400,9 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         has_updated = False
 
         # Setting cur_subfigure, recursively
-        if keywords.is_style_keyword(m_tokens[0]) and m_tokens[1] != 'clear' and (
-            not keywords.is_style_keyword(m_tokens[1]) or 
-            (m_tokens[1] not in ('on', 'off') and len(m_tokens) <= 2)):
+        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and (
+            not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
+            (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
             # the nasty cases... either not a style keyword or not enough style parameters
             # that treated as value
 
@@ -747,3 +577,9 @@ def process_save(m_state:state.GlobalState, filename:str):
 def process_display(m_state:state.GlobalState):
     if not m_state.is_interactive:
         plot.show(m_state)
+
+def process_expr(m_state:state.GlobalState, expr):
+    evaler = expr_proc.ExprEvaler(m_state.variables, m_state.file_caches)
+    evaler.load(expr, True)
+    logger.debug(evaler.expr)
+    return evaler.evaluate()
