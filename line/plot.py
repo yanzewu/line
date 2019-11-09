@@ -210,6 +210,22 @@ def _update_subfigure(m_subfig:state.Subfigure):
             zorder=m_style['zindex']
         )
 
+    for bar in m_subfig.bars:
+        m_style = bar.computed_style
+
+        ax.bar(
+            bar.x,
+            bar.y,
+            alpha=m_style['alpha'],
+            width=m_style['width'],
+            bottom=0,
+            align='center',
+            color=m_style['fillcolor'],
+            edgecolor=m_style['linecolor'],
+            linewidth=m_style['linewidth'],
+            tick_label=None
+        )
+
     for drawline in m_subfig.drawlines:
         m_style = drawline.computed_style
 

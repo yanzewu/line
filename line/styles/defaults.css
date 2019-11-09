@@ -22,6 +22,7 @@ subfigure {
     linecolor: black;
     rsize: 1.0,1.0;
     rpos: 0.0,0.0;
+    hold: false;
 }
 
 axis {
@@ -79,6 +80,21 @@ line {
     skippoint: 1;
     colorid: 0;
     groupid: 0;
+}
+
+bar {
+    bin: 10;
+    norm: 'pdf';
+    alpha: 1;
+    linewidth: 0.5;
+    linecolor: black;
+    fillcolor: white;
+    width: 0.8;
+    visible: true;
+    zindex: 0;
+    label: '';
+    xlabel: '';
+    colorid: 0;
 }
 
 drawline {

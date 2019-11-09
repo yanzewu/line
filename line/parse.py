@@ -216,22 +216,22 @@ def parse_style_descriptor(text:str):
     return color, linestyle, pointstyle
 
 
-def build_line_style(color, linestyle, pointstyle):
+def build_line_style(linecolor, linestyle, pointstyle):
     """ Return of parse_style_descriptor => style dict
     """
     ret = {}
-    if lc is not None:
-        ret['linecolor'] = style.str2color(lc)
-    if lt is not None:
-        ret['linetype'] = lt
-        if pt is None:
+    if linecolor is not None:
+        ret['linecolor'] = style.str2color(linecolor)
+    if linestyle is not None:
+        ret['linetype'] = linestyle
+        if pointstyle is None:
             ret['pointtype'] = style.PointType.NONE
-    if pt is not None:
-        ret['pointtype'] = pt
-        if lc is not None:
-            ret['edgecolor'] = style.str2color(lc)
-            ret['fillcolor'] = style.str2color(style.LighterColor.get(lc,lc))
-        if lt is None:
+    if pointstyle is not None:
+        ret['pointtype'] = pointstyle
+        if linecolor is not None:
+            ret['edgecolor'] = style.str2color(linecolor)
+            ret['fillcolor'] = style.str2color(style.LighterColor.get(linecolor,linecolor))
+        if linestyle is None:
             ret['linetype'] = style.LineType.NONE
         else:
             ret['linewidth'] = 1

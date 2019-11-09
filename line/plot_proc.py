@@ -24,7 +24,7 @@ class PlottingGroup:
         self.xlabel = None
         self.ylabel = None
 
-    def __str__(self):
+    def __repr__(self):
         return ('PlottingGroup(hint1=%s expr1=%s hint2=%s expr2=%s xlabel=%s '
             'ylabel=%s data1=%s data2=%s style=%s)') % (
             self.hint1, self.expr1, self.hint2, self.expr2, 
@@ -72,23 +72,13 @@ class PlotParser:
         if self.next() == ':':  # expr :
             pg.hint1 = self.cur_hint
             pg.expr1 = self.token_stack.pop()
-        elif self._must_be_expr(self.next(), self.next(1)) or self.next(1) == ':':  # hint expr ?
+            self._parse_y(pg)
+        elif self.next() not in ' ,;=' and (self._must_be_expr(self.next(), self.next(1)) or self.next(1) == ':'):  # hint expr ?
             pg.hint1 = self.token_stack.pop()
             pg.expr1 = parse_column(self.m_tokens)    
 
             if self.next() == ':':  # hint expr :
-                get_token(self.m_tokens)
-                self.shift()
-                if not self.next() or self.next() == ',':
-                    pg.hint2 = pg.hint1
-                    pg.expr2 = self.token_stack.pop()
-                    pg.style = {}
-                elif self._must_be_expr(self.next(), self.next(1)):
-                    pg.hint2 = self.token_stack.pop()
-                    pg.expr2 = parse_column(self.m_tokens)
-                    pg.style = self._parse_style()
-                else:
-                    self._parse_group2(pg)
+                self._parse_y(pg)
             else:   # hint expr
                 pg.hint2 = pg.hint1
                 pg.expr2 = pg.expr1
@@ -127,6 +117,20 @@ class PlotParser:
         else:
             logger.debug('New plotting group: ' + str(pg))
             self._add_plotgroup(pg)
+
+    def _parse_y(self, pg:PlottingGroup):
+        get_token(self.m_tokens)
+        self.shift()
+        if not self.next() or self.next() == ',':
+            pg.hint2 = pg.hint1
+            pg.expr2 = self.token_stack.pop()
+            pg.style = {}
+        elif self.next() not in ' ,;=' and self._must_be_expr(self.next(), self.next(1)):
+            pg.hint2 = self.token_stack.pop()
+            pg.expr2 = parse_column(self.m_tokens)
+            pg.style = self._parse_style()
+        else:
+            self._parse_group2(pg)
 
     def _parse_group2(self, pg:PlottingGroup):
         m_tokens2 = self.m_tokens.copy()
@@ -264,8 +268,8 @@ def do_plot(m_state:state.GlobalState, plot_groups, keep_existed=False, labelfmt
     has_multiple_files = len(set((pg.source for pg in plot_groups))) != 1
     for pg in plot_groups:
         m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source) if has_multiple_files else str(pg.ylabel)
-        m_xdata = pg.xdata if not isinstance(pg.xdata, sheet_util.SheetFile) else pg.xdata.to_numpy()
-        m_ydata = pg.ydata if not isinstance(pg.ydata, sheet_util.SheetFile) else pg.ydata.to_numpy()
+        m_xdata = sheet_util.flatten(pg.xdata)
+        m_ydata = sheet_util.flatten(pg.ydata)
         m_state.cur_subfigure().add_dataline((m_xdata, m_ydata), m_ylabel, pg.xlabel, pg.style)
     
     # Set labels

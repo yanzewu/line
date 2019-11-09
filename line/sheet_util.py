@@ -126,8 +126,18 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
         self.data = [pandas.concat(newdata, axis=1)]
         self.filename = ['']
 
+    def stack(self, method='sum-'):
+        # TODO implement stack
+        pass
+
     def to_numpy(self):
         return np.dstack((d.values for d in self.data)) if len(self.data) > 1 else self.data[0].values
+
+    def __repr__(self):
+        return 'SheetFile(%s)' % ','.join(('sheet%d%s:%s' % (idx, self.data[idx].shape, self.filename[idx]) for idx in range(len(self.data))))
+
+    def __array__(self):
+        return self.to_numpy()
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
 
@@ -309,16 +319,16 @@ def save_file(mat, path):
     if mat is array-like, use np.savetxt().
     """
     if isinstance(mat, pandas.DataFrame):
-        mat.save(path)
+        mat.to_csv(path, sep='\t', index=False)
     elif isinstance(mat, SheetFile):
         if len(mat.data) > 1:
             mat2 = mat.copy()
             mat2.flatten()
-            mat2.data[0].save(path)
+            mat2.data[0].to_csv(path, sep='\t', index=False)
         else:
-            mat.data[0].save(path)
+            mat.data[0].to_csv(path, sep='\t', index=False)
     else:
-        np.savetxt(path, mat)
+        np.savetxt(path, mat, fmt='%18g', delimiter='\t')
 
 
 def loc_col(mat, colidx):
@@ -332,9 +342,9 @@ def loc_col(mat, colidx):
 def loc_col_str(mat, colname):
     """ Locate column by string (starting from 1)
     """
-    colidx = int(colname) if colname.isdigit() else None
+    colidx = int(colname)-1 if colname.isdigit() else None
 
-    if colidx == 0:
+    if colidx == -1:
         return np.arange(mat.shape[0])
 
     if isinstance(mat, pandas.DataFrame):
@@ -343,7 +353,7 @@ def loc_col_str(mat, colname):
         else:
             return mat.iloc[:, colidx].to_numpy()
     elif isinstance(mat, SheetFile):
-        return mat[colname if not colidx else colidx]
+        return mat[colname if colidx is None else colidx]
     else:
         if colidx is None:
             raise ValueError('Expect integer index for array, got "%s"' % colname)
@@ -376,3 +386,17 @@ def cols(mat):
 
 def dimension(mat):
     return len(mat.shape)
+
+def flatten(mat):
+    return np.array(mat).flatten()
+    
+def histogram(mat, bins=10, norm=None):
+
+    h, e = np.histogram(np.array(mat).flatten(), bins, density=False)
+    if norm in ('Density', 'density', 'PDF', 'pdf', 'Distribution', 'distribution'):
+        h = h / np.sum(h) / (e[1]-e[0])
+    elif norm in ('Probability', 'probability', 'Prob', 'prob'):
+        h = h / np.sum(h)
+
+    e = e[1:] + (e[1]-e[0])/2
+    return np.hstack((e[:, None], h[:, None]))

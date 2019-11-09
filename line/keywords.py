@@ -26,6 +26,7 @@ style_keywords = {
     'title',
     'tick', 'xtick', 'ytick', 'rtick', 'ttick',
     'text',
+    'width',
     'visible',
     'zindex'
 }
@@ -44,6 +45,7 @@ style_alias = {
     'pt':'pointtype',
     'lc':'linecolor',
     'pc':'pointcolor',
+    'ec': 'edgecolor',
     'tics':'tick',
     'xtics':'xtick',
     'ytics':'ytick'

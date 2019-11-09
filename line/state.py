@@ -284,6 +284,7 @@ class Subfigure(FigObject):
         self.legend = Legend('legend')
 
         self.datalines = [] # datalines
+        self.bars = []
         self.drawlines = [] # drawlines
         self.polygons = []
         self.texts = []
@@ -295,18 +296,26 @@ class Subfigure(FigObject):
         return name == 'gca' or self.name == name
 
     def get_children(self):
-        return self.axes + [self.legend] + self.datalines + self.drawlines + self.polygons + self.texts 
+        return self.axes + [self.legend] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
 
     def add_dataline(self, data, label, xlabel, style_dict):
 
         self.datalines.append(
             DataLine(data, label, xlabel, 'line%d'%len(self.datalines))
         )
-        self.datalines[-1].update_style(style_dict)
         if not self.computed_style or not self.attr('group'):
             self.datalines[-1].update_style({'colorid':len(self.datalines), 'groupid':1})
         else:
             self.update_colorid()
+        self.datalines[-1].update_style(style_dict)
+
+    def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
+
+        self.bars.append(Bar(
+            data, label, xlabel, dynamic_bin, 'bar%d' % (len(self.bars)+1)
+        ))
+        self.bars[-1].update_style({'colorid': len(self.bars)})
+        self.bars[-1].update_style(style_dict)
 
     def add_drawline(self, start_pos, end_pos, style_dict):
         
@@ -359,7 +368,9 @@ class Subfigure(FigObject):
         """ Clear lines and texts but keep style.
         """
         self.datalines.clear()
+        self.bars.clear()
         self.drawlines.clear()
+        self.polygons.clear()
         self.texts.clear()
         for i in range(4):
             self.axes[i].label.update_style({'text': ''})
@@ -491,19 +502,59 @@ class DataLine(FigObject):
         })
 
 
-class BarChart(FigObject):
+class Bar(FigObject):
 
     def __init__(self, data, label, xlabel, dynamic_bin, name):
-        self.x = data[0]
-        self.y = data[1]
-        self.dynamic_bin = dynamic_bin
 
-        super().__init__('barchart', name, {
-            'color':_set_color
+        self.dynamic_bin = dynamic_bin
+        if dynamic_bin:
+            assert not isinstance(data, tuple)
+            self.data_raw = data
+        else:
+            self.x = data[0]
+            self.y = data[1]
+
+        super().__init__('bar', name, {
+            'edgecolor': lambda s,v: s.update({'linecolor':v}),
+            'color':self._set_color,
+            'bin':self._set_bin,
+            'norm':self._set_norm
         })
         self.update_style({
             'label':label, 'xlabel':xlabel
         })
+
+    def _set_color(self, m_style, value):
+        m_style['fillcolor'] = value
+        m_style['linecolor'] = value
+
+    def _set_bin(self, m_style, value):
+        if not self.dynamic_bin:
+            raise LineProcessError("Cannot set bin width since it is static")
+        else:
+            m_style['bin'] = value
+            if m_style == self.style[1]:
+                try:
+                    self._refresh_data(value, self.get_style('norm'))
+                except KeyError:
+                    pass
+
+    def _set_norm(self, m_style, value):
+        if not self.dynamic_bin:
+            raise LineProcessError("Cannot set bin width since it is static")
+        else:
+            m_style['norm'] = value
+            if m_style == self.style[1]:
+                try:
+                    self._refresh_data(self.get_style('bin'), value)
+                except KeyError:
+                    pass
+
+    def _refresh_data(self, bins, norm):
+        from .sheet_util import histogram
+        _result = histogram(self.data_raw, bins=bins, norm=norm)
+        self.x = _result[:, 0]
+        self.y = _result[:, 1]
 
 class DrawLine(FigObject):
 
@@ -521,6 +572,7 @@ class Polygon(FigObject):
         self.x = data[0]
         self.y = data[1]
         super().__init__('polygon', name, {
+            'edgecolor': lambda s,v: s.update({'linecolor':v}),
             'color':self._set_color
         })
 

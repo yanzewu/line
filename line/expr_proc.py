@@ -32,6 +32,7 @@ class ExprEvaler:
             'min':np.minimum,
             'max':np.maximum,
             'tp': np.transpose,
+            'hist': sheet_util.histogram,
             'load': sheet_util.load_file,
             'save': sheet_util.save_file,
             'col':None,
@@ -78,7 +79,7 @@ class ExprEvaler:
                 self.m_file_caches[v] = sheet_util.load_file(self.strip_var(v))
                 return self.m_file_caches[v]
             except IOError:
-                raise LineProcessError('Undefined variable: "%s"' % v)
+                raise LineProcessError('Undefined variable: "%s"' % self.strip_var(v))
 
     def evaluate_with_hintvar(self, hintvar=None):
         """ Evaluate expression, try interpret undefined variable as column
@@ -103,10 +104,10 @@ class ExprEvaler:
                     try:
                         self.m_locals[v] = sheet_util.loc_col_str(self.hintvalue, self.strip_var(v))
                     except IndexError:
-                        if v.isdigit():
-                            raise LineProcessError('Index out of bounds: %s' % v)
+                        if self.strip_var(v).isdigit():
+                            raise LineProcessError('Index out of bounds: %s' % self.strip_var(v))
                         else:
-                            raise LineProcessError('Undefined variable: "%s"' % v)
+                            raise LineProcessError('Undefined variable: "%s"' % self.strip_var(v))
         return self._eval()
 
     def _eval(self):

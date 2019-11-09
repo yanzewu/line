@@ -5,7 +5,6 @@ Fixes
 [MID] Faster startup.
 [HIGH] Legend position.
 [MID] Dataline index start from 1.
-[MID] Subfigure store all elements together.
 
 Features
 ---
@@ -15,7 +14,7 @@ Features
 [MID] Histogram support.
 [LOW] Heatmap support.
 [LOW] As an importable library.
-[MID] Polygon and fill function.
 [MID] Shorthand for "set xxx" commands.
 [LOW] "$(" style file loader.
 [LOW] Smart distinguish between filename and expression.
+[LOW] Errorbar support.
