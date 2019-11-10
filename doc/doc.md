@@ -166,7 +166,7 @@ Example:
 - selection: Select elements by name, type, class or attributes.
 
 Selector | Selection
-- | -
+--- | ---
 type | [elements with type](#list-of-element-type-and-applicable-styles) 
 .class | elements with class
 .class type | descedants with type of element with class
@@ -202,6 +202,7 @@ Args:
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
 - `show currentfile` shows current open and save filename;
 - `show pwd` shows current directory;
+- `show palettes` shows all palettes available;
 - `show option` shows current global option.
     
 

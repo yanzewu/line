@@ -11,7 +11,6 @@ Features
 [LOW] Smarter completion (need a library other than readline).
 [LOW] Automatically determine skip points in scatter.
 [LOW] Auto determine tick format (for special cases).
-[MID] Histogram support.
 [LOW] Heatmap support.
 [LOW] As an importable library.
 [MID] Shorthand for "set xxx" commands.

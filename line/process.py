@@ -67,10 +67,23 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     # Long commands
 
     if command == 'plot':
-        parse_and_process_plot(m_state, m_tokens, keep_existed=False)
+        parse_and_process_plot(m_state, m_tokens, keep_existed=None)
 
     elif command == 'append':
         parse_and_process_plot(m_state, m_tokens, keep_existed=True)
+
+    elif command == 'hist':
+        if len(m_state.figures) > 0:
+            keep_existed = m_state.cur_subfigure().get_style('hold')
+        else:
+            keep_existed = False
+
+        parser = plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
+        parser.parse(m_state, m_tokens)
+        if parser.plot_groups:
+            plot_proc.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
+        else:
+            warn('No data to plot')
 
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)
@@ -345,6 +358,12 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     Args:
         keep_existed: Keep existed datalines.
     """
+    if keep_existed is None:
+        if len(m_state.figures) > 0:
+            keep_existed = m_state.cur_subfigure().get_style('hold')
+        else:
+            keep_existed = False
+
     parser = plot_proc.PlotParser()
     parser.parse(m_state, m_tokens)
     if parser.plot_groups:

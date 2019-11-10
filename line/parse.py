@@ -302,6 +302,14 @@ def translate_style_val(style_name:str, style_val:str):
             raise LineParseError('Invalid orient style "%s"' % style_val)
         return style_val
 
+    elif style_name == 'hold':
+        if style_val == 'on':
+            return True
+        elif style_val == 'off':
+            return False
+        else:
+            return stob(style_val)
+
     elif style_name == 'pos':
         try:
             return style.Str2Pos[style_val]
@@ -335,7 +343,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # range
     elif style_name.endswith('range'):
-        return parse_range(style_val)
+        return style_val if style_val == 'auto' else parse_range(style_val)
 
     # bool
     elif style_name == 'visible':

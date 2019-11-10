@@ -353,7 +353,7 @@ def loc_col_str(mat, colname):
         else:
             return mat.iloc[:, colidx].to_numpy()
     elif isinstance(mat, SheetFile):
-        return mat[colname if colidx is None else colidx]
+        return mat[colname if colidx is None else colidx+1]
     else:
         if colidx is None:
             raise ValueError('Expect integer index for array, got "%s"' % colname)

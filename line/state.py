@@ -263,8 +263,8 @@ class Subfigure(FigObject):
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}),
             'rlabel': lambda s,v:self.axes[2].label.update_style({'text': v}),
             'tlabel': lambda s,v:self.axes[3].label.update_style({'text': v}),
-            'xrange': lambda s,v:self.axes[0].update_style({'range': v}),
-            'yrange': lambda s,v:self.axes[1].update_style({'range': v}),
+            'xrange': self._set_xrange,
+            'yrange': self._set_yrange,
             'rrange': lambda s,v:self.axes[2].update_style({'range': v}),
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
@@ -423,6 +423,32 @@ class Subfigure(FigObject):
 
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
+
+    def update_range_param(self):
+        datalist = self.datalines + self.bars
+        max_x = max([np.max(d.x) for d in datalist])
+        min_x = min([np.min(d.x) for d in datalist])
+        max_y = max([np.max(d.y) for d in datalist])
+        min_y = min([np.min(d.y) for d in datalist])
+        if self.bars and min_y > 0:
+            min_y = 0.0
+
+        self.axes[0]._set_datarange(min_x, max_x)
+        self.axes[1]._set_datarange(min_y, max_y)
+
+    def _set_xrange(self, m_style, value):
+        if value == 'auto':
+            self.update_range_param()
+            self.axes[0].update_style({'range':(None,None,None)})
+        else:
+            self.axes[0].update_style({'range':value})
+    
+    def _set_yrange(self, m_style, value):
+        if value == 'auto':
+            self.update_range_param()
+            self.axes[1].update_style({'range':(None,None,None)})
+        else:
+            self.axes[1].update_style({'range':value})
             
 
 class Axis(FigObject):

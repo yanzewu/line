@@ -218,6 +218,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             bar.y,
             alpha=m_style['alpha'],
             width=m_style['width'],
+            label=m_style['label'],
             bottom=0,
             align='center',
             color=m_style['fillcolor'],
@@ -327,7 +328,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
         )
 
     # legend
-    if m_subfig.legend.attr('visible') and m_subfig.datalines:
+    if m_subfig.legend.attr('visible') and m_subfig.datalines + m_subfig.bars:
 
         m_style = m_subfig.legend.computed_style
 
