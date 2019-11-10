@@ -298,11 +298,22 @@ class Subfigure(FigObject):
     def get_children(self):
         return self.axes + [self.legend] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
 
+    def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
+        
+        newidx = 1 if not element_queue else int(element_queue[-1].name[len(typename):])+1
+        element_queue.append(
+            class_(
+                *args, typename + str(newidx)
+            )
+        )
+        if auto_colorid:
+            element_queue[-1].update_style({'colorid': newidx})
+        element_queue[-1].update_style(styles)
+
     def add_dataline(self, data, label, xlabel, style_dict):
 
-        self.datalines.append(
-            DataLine(data, label, xlabel, 'line%d'%len(self.datalines))
-        )
+        self._add_element(DataLine, 'line', self.datalines, False, {},
+            data, label, xlabel)
         if not self.computed_style or not self.attr('group'):
             self.datalines[-1].update_style({'colorid':len(self.datalines), 'groupid':1})
         else:
@@ -311,33 +322,23 @@ class Subfigure(FigObject):
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 
-        self.bars.append(Bar(
-            data, label, xlabel, dynamic_bin, 'bar%d' % (len(self.bars)+1)
-        ))
-        self.bars[-1].update_style({'colorid': len(self.bars)})
-        self.bars[-1].update_style(style_dict)
+        self._add_element(Bar, 'bar', self.bars, True, style_dict,
+            data, label, xlabel, dynamic_bin)
 
     def add_drawline(self, start_pos, end_pos, style_dict):
         
-        self.drawlines.append(
-            DrawLine(start_pos, end_pos, 'drawline%d'% len(self.drawlines))
-        )
-        self.drawlines[-1].update_style(style_dict)
+        self._add_element(DrawLine, 'drawline', self.drawlines, False, style_dict,
+            start_pos, end_pos)
 
     def add_polygon(self, data, style_dict):
 
-        self.polygons.append(
-            Polygon(data, 'polygon%d'%len(self.polygons))
-        )
-        self.polygons[-1].update_style({'colorid': len(self.polygons)})
-        self.polygons[-1].update_style(style_dict)
+        self._add_element(Polygon, 'polygon', self.polygons, True, style_dict,
+            data)
 
     def add_text(self, text, pos, style_dict):
         
-        self.texts.append(
-            Text(text, pos, 'text%d'%len(self.texts))
-        )
-        self.texts[-1].update_style(style_dict)
+        self._add_element(Text, 'text', self.texts, False, style_dict, 
+            text, pos)
     
     def remove_element(self, element):
         """ Remove an element and recalculate indices
@@ -347,7 +348,7 @@ class Subfigure(FigObject):
             idx = self.datalines.index(element)
             self.datalines.pop(idx)
             for i in range(idx, len(self.datalines)):
-                self.datalines[i].name = 'line%d' % i
+                self.datalines[i].name = 'line%d' % (i+1)
 
         elif isinstance(element, DrawLine):
             idx = self.drawlines.index(element)
@@ -449,6 +450,7 @@ class Subfigure(FigObject):
             self.axes[1].update_style({'range':(None,None,None)})
         else:
             self.axes[1].update_style({'range':value})
+
             
 
 class Axis(FigObject):
@@ -544,7 +546,8 @@ class Bar(FigObject):
             'edgecolor': lambda s,v: s.update({'linecolor':v}),
             'color':self._set_color,
             'bin':self._set_bin,
-            'norm':self._set_norm
+            'norm':self._set_norm,
+            'width': self._set_width,
         })
         self.update_style({
             'label':label, 'xlabel':xlabel
@@ -552,7 +555,7 @@ class Bar(FigObject):
 
     def _set_color(self, m_style, value):
         m_style['fillcolor'] = value
-        m_style['linecolor'] = value
+        m_style['linecolor'] = darken_color(*value)
 
     def _set_bin(self, m_style, value):
         if not self.dynamic_bin:
@@ -581,6 +584,15 @@ class Bar(FigObject):
         _result = histogram(self.data_raw, bins=bins, norm=norm)
         self.x = _result[:, 0]
         self.y = _result[:, 1]
+        self.update_style({'barwidth':self.get_style('width')*(self.x[1]-self.x[0])})
+
+    def _set_width(self, m_style, width):
+        m_style['width'] = width
+        if self.dynamic_bin and 'x' in self.__dict__:
+            m_style['barwidth'] = width*(self.x[1] - self.x[0])
+        else:
+            m_style['barwidth'] = width
+
 
 class DrawLine(FigObject):
 

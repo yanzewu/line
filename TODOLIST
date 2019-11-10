@@ -4,7 +4,6 @@ Fixes
 [HIGH] Error line number and token position.
 [MID] Faster startup.
 [HIGH] Legend position.
-[MID] Dataline index start from 1.
 
 Features
 ---
@@ -13,7 +12,6 @@ Features
 [LOW] Auto determine tick format (for special cases).
 [LOW] Heatmap support.
 [LOW] As an importable library.
-[MID] Shorthand for "set xxx" commands.
 [LOW] "$(" style file loader.
 [LOW] Smart distinguish between filename and expression.
 [LOW] Errorbar support.

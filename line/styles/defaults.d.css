@@ -27,6 +27,11 @@ line {
     visible: inherit;
 }
 
+bar {
+    alpha: 0.9;
+    visible: inherit;
+}
+
 drawline {
     visible: inherit;
 }

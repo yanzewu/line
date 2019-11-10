@@ -23,6 +23,12 @@ def load_palette(fp):
     """
     import json
     j = json.load(fp)
+    for name in j:
+        new_list = []
+        for d in j[name]:
+            new_list.append(style.str2color(d) if isinstance(d, str) else d)
+        j[name] = new_list
+        
     PALETTES.update(j)
 
 

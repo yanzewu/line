@@ -266,12 +266,13 @@ class PlotParser:
             return parse_style(self.m_tokens, ',', recog_comma=False, recog_class=False)
 
     def _must_be_expr(self, token, token2):
-        return token.startswith('(') or \
+        return not self._is_quoted(token) and \
+            (token.startswith('(') or \
             (
                 '(' in token and 
                 token[:token.index('(')] in expr_proc.ExprEvaler.FUNCTIONS) or \
             token.startswith('$') or \
-            not self._must_be_style(token, token2)
+            not self._must_be_style(token, token2))
 
     def _must_be_style(self, token, token2):
         return token2 == '=' or \
@@ -332,7 +333,7 @@ def do_plot(m_state:state.GlobalState, plot_groups, keep_existed=False, labelfmt
             m_state.cur_subfigure().add_bar((m_xdata, m_ydata), m_ylabel, pg.xlabel, False, pg.style)
         elif chart_type == 'hist':
             pg.style.setdefault('bin', 10)
-            pg.style.setdefault('width', 2.0)
+            pg.style.setdefault('width', 1.0)
             pg.style.setdefault('norm', 'Distribution')
             m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source) if has_multiple_files else str(pg.ylabel)
             m_state.cur_subfigure().add_bar(m_ydata, m_ylabel, pg.ylabel, True, pg.style)

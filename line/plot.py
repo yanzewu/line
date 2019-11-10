@@ -217,7 +217,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             bar.x,
             bar.y,
             alpha=m_style['alpha'],
-            width=m_style['width'],
+            width=m_style['barwidth'],
             label=m_style['label'],
             bottom=0,
             align='center',

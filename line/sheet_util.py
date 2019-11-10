@@ -390,7 +390,7 @@ def dimension(mat):
 def flatten(mat):
     return np.array(mat).flatten()
     
-def histogram(mat, bins=10, norm=None):
+def histogram(mat, bins=10, norm='pdf'):
 
     h, e = np.histogram(np.array(mat).flatten(), bins, density=False)
     if norm in ('Density', 'density', 'PDF', 'pdf', 'Distribution', 'distribution'):

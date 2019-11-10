@@ -61,6 +61,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     command = get_token(m_tokens)
     command = keywords.command_alias.get(command, command)   # expand short commands
 
+    if command in keywords.extended_set_keywords:
+        m_tokens.appendleft(command)
+        command = 'set'
+
     do_prompt = m_state.is_interactive or m_state.options['prompt-always']   # prompt
     do_focus_up = False # update focus
 

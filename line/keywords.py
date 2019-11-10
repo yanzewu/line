@@ -51,7 +51,9 @@ style_alias = {
     'ec': 'edgecolor',
     'tics':'tick',
     'xtics':'xtick',
-    'ytics':'ytick'
+    'ytics':'ytick',
+    'xlim': 'xrange',
+    'ylim': 'yrange'
 }
 
 element_keywords = {
@@ -92,6 +94,13 @@ command_alias = {
     'a':'append',
     'add':'append',
     'sel':'select'
+}
+
+extended_set_keywords = {
+    'grid', 'hold', 'legend', 'palette',
+    'xlabel', 'ylabel',
+    'xrange', 'yrange',
+    'xscale', 'yscale',
 }
 
 def is_style_keyword(token):

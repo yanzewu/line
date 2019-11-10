@@ -1,5 +1,6 @@
 
 import enum
+import colorsys
 from collections import namedtuple
 from . import palette
 
@@ -90,11 +91,24 @@ LighterColor = {
     'BLACK':'GREY'
 }
 
+def lighten_color(r, g, b):
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    return colorsys.hsv_to_rgb(h, s, min(v+0.2, 1.0))
+
+
+def darken_color(r, g, b):
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    return colorsys.hsv_to_rgb(h, s, min(v-0.2, 1.0))
+
+
 def str2color(s):
 
     if len(s) == 1:
         c = ShortColorAlias[s]
         return Color.__dict__[VisualColors.get(c,c)]
+
+    if s.startswith('#'):
+        s = s[1:]
 
     try:
         v = int(s, 16)

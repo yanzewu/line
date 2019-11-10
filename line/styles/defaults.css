@@ -90,6 +90,7 @@ bar {
     linecolor: black;
     fillcolor: white;
     width: 0.8;
+    barwidth: 1.0;
     visible: true;
     zindex: 0;
     label: '';
