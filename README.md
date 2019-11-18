@@ -2,7 +2,8 @@
 
 Creating nice line and scatter plot with least typing.
 
-![](doc/plot1.png)
+<img width="300" height="200" src="doc/plot1.png">
+<img width="300" height="200" src="doc/plot2.png">
 
 ## Installation
 

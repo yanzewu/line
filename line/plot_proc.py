@@ -130,6 +130,7 @@ class PlotParser:
     def parse_single_hist_group(self):
         pg = PlottingGroup()
         pg.hint1 = self.cur_hint
+        pg.expr1 = self.cur_xexpr
 
         self.token_stack = []
         self._parse_y(pg)
@@ -175,8 +176,6 @@ class PlotParser:
             pg.expr2 = parse_column(self.m_tokens)
             pg.style = self._parse_style()
         elif self.next(1) == '=':    # expr style
-            pg.hint1 = self.cur_hint
-            pg.expr1 = self.cur_xexpr
             pg.hint2 = pg.hint1
             pg.expr2 = self.token_stack.pop()
             pg.style = self._parse_style()
