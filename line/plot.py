@@ -166,7 +166,8 @@ def _update_subfigure(m_subfig:state.Subfigure):
             a,
             direction=tick_styles[i]['orient'],
             labelcolor=tick_styles[i]['color'],
-            width=tick_styles[i]['linewidth']
+            width=tick_styles[i]['linewidth'],
+            length=tick_styles[i]['length']
         )
     
     # tick label style

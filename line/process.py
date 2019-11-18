@@ -495,7 +495,6 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
 
     if element_name == 'currentfile':
         get_token(m_tokens)
-        print('File opened:', m_state.cur_open_filename)
         print('File saved:', m_state.cur_save_filename)
 
     elif element_name == 'pwd':
@@ -512,7 +511,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             print(m_state.options[get_token(m_tokens)])
             assert_no_token(m_tokens)
 
-    elif element_name == 'palettes':
+    elif element_name in ('palette', 'palettes'):
         palette_names = list(palette.PALETTES)
         palette_names.sort()
         for i in range(8):

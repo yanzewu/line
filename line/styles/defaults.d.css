@@ -97,3 +97,26 @@ legend {
     pointsize: 6;
     edgewidth: 0.8;
 }
+
+.originlab {
+    fontfamily: Arial;
+}
+
+.originlab axis{
+    linewidth: 1;
+}
+
+.originlab tick{
+    orient: out;
+    linewidth: 1;
+    length: 6;
+    fontsize: 18;
+}
+
+.originlab label{
+    fontsize: 20;
+}
+
+.originlab legend{
+    fontsize: 20;
+}

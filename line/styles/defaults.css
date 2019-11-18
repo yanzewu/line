@@ -53,6 +53,7 @@ tick {
     color: black;
     orient: 'in';
     linewidth: 0.5;
+    length: 3;
     visible: true;
 }
 

@@ -352,7 +352,7 @@ def _parse_selector_with_match(seletor_match):
             if _token2[0] == '#':
                 return ClassNameSelector(_token1[1:], _token2[1:])
             else:
-                return ClassTypeSelector(_token1[1:], _token2[1:])
+                return ClassTypeSelector(_token1[1:], _token2)
 
         elif seletor_match.group('c'):
             assert _token1[0] != '#'

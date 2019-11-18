@@ -1,6 +1,13 @@
 
 
-# Documentation of Line
+# Line Documentation
+
+Structure of this documentation:
+
+- [Command Line Options](#command-line-options)
+- [Command Reference](#command-reference)
+- [Expressions](#expressions)
+- [Styles](#styles)
 
 ## Command Line Options
 
@@ -8,11 +15,11 @@ Entering interactive mode:
 
     line 
 
-Run script:
+Run script (in non-interactive mode):
 
     line [scriptname]
 
-Run commands in line:
+Run commands in line (in non-interactive mode):
 
     line -e 'command1;command2;...'
 
@@ -22,26 +29,46 @@ Plotting file directly:
 
 The file plotting mode has same grammar as `plot` command.
 
-### Switches
+### Global Switches
 
 Controls the program behavior. Can be also adjusted by `set option`.
 
 - --auto-adjust-range
+- --autoload-file-as-variable
 - --data-title
-- --broadcast-style
 - --data-delimiter
 - --display-when-quit
-- --force-column-selection
 - --ignore-data-comment
 - --prompt-always
 - --prompt-multi-removal
 - --prompt-overwrite
 - --prompt-save-when-quit
-- --remove-element-by-style
-- --set-future-line-style
-- --set-skip-invalid-selection
 
 ## Command Reference
+
+Contents:
+
+- [append](#append)
+- [cd](#cd)
+- [clear](#clear)
+- [display](#display)
+- [figure,subfigure](#figure%44-subfigure)
+- [fill](#fill)
+- [group](#group)
+- [hist](#hist)
+- [input](#input)
+- [load](#load)
+- [line,hline,vline](#line%44-hline%44-vline)
+- [plot](#plot)
+- [print](#print)
+- [quit](#quit)
+- [remove](#remove)
+- [replot](#replot)
+- [save](#save)
+- [set](#set)
+- [split,hsplit,vsplit](#split%44-hsplit%44-vsplit)
+- [show](#show)
+- [text](#text)
 
 ### plot
 ---
@@ -50,38 +77,23 @@ Plotting data from file to current subfigure.
 
 Usage:
 
-    plot (filename1) (xcol:)(ycol1) (style=val) (linespec), (filename2) (xcol2:)(ycol2) (style=val), ...
+    plot (source1) (xexpr:)(yexpr) (style=val) (linespec) ..., (source2) (xexpr2:)(yexpr2) (style=val), ...
 
 Example:
 
     plot a.txt 1:2 lw=2, lc=red, 3 lc=blue, ($4+1) lc=green
-    plot a.txt t:x,y b-
-
+    plot a.txt t:x r-,y b-
 
 Args:
 
-- filename: If `filename1` is not set, the plotting source is the last opened file. Exception will arise if filename is empty.
-- xcol, ycol: Column selections. Can be One of plain number, column title or expression.
-    - If the selection is in bracket, it is parsed as an expression.
-    - If the first character is not `$`, it is parsed as column title or column index;
-    - If the first character is `$`, it is also parsed as an expression, which ends at the next `:`, `,` or word before `=`, whichever comes first.
-    - By default, number is parsed as indices. Using `col()` to select number by title.
-    - If a column selection is not present, by default all columns in the file are added into current figure (\$0:\$1 if only one column, \$1:\$2,... if multiple columns). A file will be selected first if its name coincide with column name. Use '$' to select column to avoid such conflict, or set *--force-column-selection=true*.
+- source: A single variable name (if exists in global variable table) or filename. If source is not given, the previous source in current command is used.
+- xexpr, yexpr: Column expression. See [Expressions](#expressions) for details.
+    - If the expr only contains digits, it is treated as a column index.
+    - If a column selection is not present, by default all columns in the file are added into current figure. If there are multiple columns and the source is a file, the first column is treated as x column.
 - style, val: See [Style name and value](#list-of-valid-style-and-names).
-    - If a style is [broadcastable](#broadcasity), it will be applied to other data in this command, unless set explicitly.
 - linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.
 
-Expression:
-
-Expression is parsed by python `eval()`, with data treated as numpy array. Variables in expression must start with `$`. For exmaple, `$a` is parsed as column with title "a". By default, `$1` is parsed as column with index 1. To use number as column titles, use `col()` function to select column.
-
-`$0` is a special column with integer sequence starting from 0.
-
-Avaiable functions are #available functions.
-
 Related options:
-
-- --force-column-selection=true/false: If true, column selection must be present after a file. This may reduced the time of identifying whether a string is column title or new file. (Default: false).
 
 - --ignore-data-comment=true/false: If true, ignore lines starting with `#`. (Default: true)
 
@@ -89,17 +101,26 @@ Related options:
 
 - --data-title=true/false/auto. Do/don't Treat the first row of data as title. (Default: auto).
 
+### hist
+---
+
+Plot histogram from data.
+
+Usage:
+
+    hist (source1) (expr1) (style=val) ..., (source2) (expr2) (style=val), ...
+
+Arguments:
+- source, expr: Same as in [plot](#plot).
+
+The bin number of histogram can be set as `bin=[value]`.
 
 ### append
 ---
 
 Append data to current subfigure.
 
-Usage:
-
-    append (filename1) (xcol:)(ycol1) (style=val), (filename2) (xcol2:)(ycol2) (style=val), ...
-
-Argument is same as `plot`.
+Equivalent to `hold on; plot`. See [plot](#plot) for details.
 
 ### remove
 ---
@@ -108,11 +129,11 @@ Remove objects in current subfigure. Can only remove datas, lines and texts.
 
 Usage:
 
-    remove selection1,selection2 ... style=val ...
+    remove selection1, selection2 ... style=val ...
 
 Args:
 
-- element: Selections of elements, see [set](#set) for details.
+- element: Selections of elements, see [Element Selector](#element-selector) for details.
 - style, val: Remove all lines with certain style.
 
 Line indices will change if there are lines removed. Use `show line label` to see the indices.
@@ -125,7 +146,7 @@ Related options:
 ### group
 ---
 
-Assigning group to lines in current subfigure.
+Batch change lines' colorid and groupid. See [Palette System](#palette-system) for details.
 
 Usage:
 
@@ -134,7 +155,8 @@ Usage:
     group ABCABC...
     group clear
 
-Group identifier can be set either before or after plotting. The same character will represent same style series#link.
+`colorid` is bind to each character according to its first occurence. For example, "AABBC" will set colorid 1,1,2,2,3. "AACCB" will set the same sequence.
+`groupid` is set according to the repeated times of a character. For example, "AABBC" will set `groupid` to 1,2,1,2,1. groupid can be useful to change style pairwisely, like `set line +pairdash`.
 
 The "..." will be expanded by the last repeating unit before it.
 
@@ -142,9 +164,8 @@ The "..." will be expanded by the last repeating unit before it.
     ABCCC... -> ABCCCCC
     ABCC...D -> ABCCCCCCD
 
-Identifier "0" represent the base style#link in style series.
+Identifier "0" represent the reference style, which has colorid 0 and groupid 0. It is usually a black solid line.
 
-"group clear" will clear group in current subfigure.
 
 ### set
 ---
@@ -156,38 +177,36 @@ Usage:
     set (default) (selection1,selection2,...) style1=val1 style2=val2 +class1 -class2 ...
     set (default) (selection1,selection2,...) clear
     set option opt=arg
+    set palette (type) palettename
 
 Example:
 
     set default figure dpi high
     set line lw=2
     set line +paircross
+    set gca hold on
 
-- selection: Select elements by name, type, class or attributes.
+See [Element Selector](#element-selector) for more details about selections. If no element is set, the style is applied to current subfigure.
 
-Selector | Selection
---- | ---
-type | [elements with type](#list-of-element-type-and-applicable-styles) 
-.class | elements with class
-.class type | descedants with type of element with class
-style=val | element with certain style value
-type:style=val | element with certain type and style value. e.g. line[color=black]
-name | element with name, e.g. line1
-.class.name | descedants with name of element with class
+`set default` modifies default value of styles.
 
-If no element is set, the style is applied to current subfigure.
-- `set palette` changes palette for current subfigure.
+- `set palette (type)` changes palette for certain figure elements (one of line (default),bar,polygon,drawline).
 - `set option` changes default options, e.g. `set option ignore-data-comment=true`.
 
-Related options:
+#### Abbrevation
 
-- --set-skip-invalid-selection=true/false: Skip invalid selection of element. (Default: true)
-- --set-future-line-style=true/false: Apply line styles to future lines. (Default: true)
+If the first parameter of set is one of "grid,hold,legend,palette,x/ylabel,x/yrange,x/yscale", then the "set" word can be omitted. Examples:
+
+    hold on # == set gca hold on
+    grid on # == set gca grid visible=true
+    xlabel "t" # == set gca xlabel "t"
+    xrange 0:10 # == set gca xrange 0:10
+
 
 ### show
 ---
 
-Show style parameters and options.
+Display element style, options and miscellaneous info.
 
 Usage:
 
@@ -198,13 +217,25 @@ Usage:
     show option [optionname]
 
 Args:
-- selection: Selections of elements, see [set](#set) for details.
+- selection: Selections of elements, see [Element Selector](#element-selector) for details.
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
-- `show currentfile` shows current open and save filename;
+- `show currentfile` shows current save filename;
 - `show pwd` shows current directory;
 - `show palettes` shows all palettes available;
 - `show option` shows current global option.
     
+
+### fill
+---
+
+Fill under current line or between lines.
+
+Usage:
+
+    fill line1 line2    # fill the area under line1 and line2, using sequential colors
+    fill line1-line2 # fill the area between line1 and line2
+
+Fill will generate polygon objects, available for style customizing.
 
 ### line, hline, vline
 ---
@@ -362,13 +393,125 @@ Related options:
 - --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
 
 
+## Expressions
+
+Line handles simple arithmetic expression, including indexing `[]` and functions `func()`. The grammar is similar to Python or other programming language:
+
+- Arithmetic operators: `+ - * / ** ^ |`. All the operations are column-wise;
+- Indexing a column: Using column title `['column_title']` or column index (starting from 1) `[1] [2]`;
+- Variable: Start with dollar sign `$`. Line also tries to parse variable without dollar sign, but will not guarantee parsed;
+- Function: Can have multiple arguments. List of available functions is given below;
+- String: With either single quotation or double quotation;
+
+It's suggested to quote expression by bracket `()` to avoid ambiguity with the other part of the command.
+
+Examples:
+
+    sin($x) # calculate sin() for each element in $x
+    $a+$b   # calculate element-wise sum of $a and $b
+    $file[2]    # get second column of $file
+
+Function list:
+
+ Name | Usage
+ --- | ---
+sin | sin(x)
+cos | cos(x)
+tan | tan(x)
+cumsum | cumsum(x)
+exp | exp(x)
+log | log(x)
+sinh | sinh(x)
+cosh | cosh(x)
+tanh | tanh(x)
+sqrt | sqrt(x)
+abs | abs(x)
+tp | tp(x)
+min | min(x, y) (minimum element between two lists)
+max | max(x, y) (maximum element between two lists)
+hist | hist(x) (requires a column, returns a Nx2 matrix)
+load | load('filename')
+save | save('filename')
+col | col('column_name') (only available in plotting)
+
+### Assigning
+
+Assigning starts with a dollar sign:
+
+    line> $a = 2
+    line> $b = load('filename.txt')
+
+The variable must be a single token, and will be overrided if the name exists.
+
+### Files and Autoloaded Variables
+
+When `autoload-file-as-variable` is set, Line will try parsing a varaible that has not been defined as matrix file(s). The format of matrix file is same as spreadsheet, except that title and index can be omitted.
+
+Example:
+
+    $file   # <= load file.txt, stored in variable with same name
+    $file1 + $file2 # load two files and add them up
+    $file[2]   # Second column of file.txt
+
+Currently line does not support special charaters in file (such as `. + - * /`). Please use `load()` instead.
+
+### Automatic Column Mapping
+
+In plotting commands, columns are automatically mapped to variables, if the variable name does not exist in global space.
+
+Examples:
+
+    plot file $a + $b => plot $file["a"] + $file["b"]
+    plot file $1 => $file[1]
+
+
+
 ## Styles
 
-In Line, any modifiable properties (colors, linewidths, ranges, ...) are get/set by style APIs, and eventually by set/show commands. Line use a CSS-like style protocol: each element (see figure model below) has a type, name, a set of independent style and style classes.
+In Line, any modifiable properties (colors, linewidths, ranges, ...) are get/set by style APIs, and eventually by set/show commands. Line uses a CSS-like style protocol: each element (see figure model below) has a type, name, a set of independent style and style classes.
 
-### Figure Model
+### Set Styles via CSS
 
-![](FigureModel.png)
+The default behavior of Line can be modified by modifying [styles/defaults.d.css](../styles/defaults.d.css) (modifying defaults.css is also possible, but may cause some weird behavior). The same goal can also be achieved by  `set default` or modifying `.linerc` file.
+
+Note that currently Line only supports part of CSS. The style names must be predefined and the maximum hierachy of descendant is 2. The available selectors are:
+
+- ClassNameSelector: `.class #name`: Select element which inside class;
+- NameSelector `#name`: Select element which return true by has_name();
+- TypeStyleSelector `type[style=val]`: Select type element with style;
+- StyleSelector `[style=val]`: Select element with certain style value;
+- ClassTypeSelector: `.class type`: Select type element within element with class;
+- ClassSelector `.class`: Select element which has name in class_names;
+- TypeSelector `type`: Select element with certain element_type attribute;
+
+### Element Selector
+
+Element selection is widely used in Line commands. Line uses a slightly different one from CSS selector to save typing:
+
+Selector | Selection
+--- | ---
+type | [elements with type](#list-of-element-type-and-applicable-styles) 
+.class | elements with class
+.class.type | descedants with type of element with class
+style=val | element with certain style value
+type:style=val | element with certain type and style value. e.g. line[color=black]
+name | element with name, e.g. line1
+.class.name | descedants with name of element with class
+
+Examples:
+
+    line    # select all data lines
+    line1   # select data line 1
+    line:label=y1   # select data line whose label is y1
+    lw=2    # select all elements with linewidth=2 (including axis, ticks, ...)
+
+### Palette System
+
+For figure elements like lines, drawlines and and polygons, Line has a palette system to batch assigning colors. When an element is created, it is assigned a `colorid` (usually just its index). Color is assigned according to this number. Colorid can be manually set by set command. For data line it also can be changed using [group](#group) command.
+
+Each data line also has a `groupid` to distinguish it between others. This is automatically set when using group command to change its colorid. Line also has several style classes for group, such as `pairdash`, `pairdot` and `paircross`.
+
+List of palettes can be found by `show palettes`, usually it's intrisic palettes and some matplotlib palettes. Palettes can be customized in [styles/palettes.json](../styles/palettes.json).
 
 ### Inheritable Style and Element Hierachy
 
@@ -391,29 +534,42 @@ The hierachy of elements:
         - texts
         - legend
 
+![](FigureModel.png)
+
+### List of Intrinsic Style Classes
+
+These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
+
+- pairdash
+- pairdot
+- paircross
+- prettycircle
+
 ### List of Element Type and Applicable Styles
 
  Element Type | Style 
  --- | ---
  figure | size, margin, (h/v)spacing, dpi
- subfigure | rsize, rpos, palette, padding, title 
- subfigure (redirect) | xlabel, ylabel, xrange, yrange, xtick, ytick
- axis | linewidth, color, range, visible, zindex
- label | font, fontfamily, fontsize, text
- tick | orient, color, font, fontfamily, fontsize, format, linewidth, visible
- grid | linewidth, color, linetype, visible
- dataline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, visible, zindex
- drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, startpos, endpos, coord, visible, zindex
+ subfigure | rsize, rpos, padding, title, font, fontfamily, fontsize, color, linecolor, xlabel, ylabel, xrange, yrange, xtick, ytick
+ axis | linewidth, linetype, font, fontfamily, fontsize, color, range, scale, visible, zindex
+ label | font, fontfamily, fontsize, text, visible
+ tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, visible
+ grid | linewidth, linetype, linecolor, visible, zindex
+ line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
+ bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
+ drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, coord, visible, zindex
+ polygon | linetype, linecolor, fillcolor, color, coord, alpha, colorid, visible, zindex
  text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
  legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, visible, zindex
- option | (set option flags)
 
 ### List of Valid Style Values
 
 Style Name | Value Description
 --- | ---
 alpha | float
-color |  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
+bin | int
+color or c|  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
+colorid | int
 coord | 'data'/'axis'/'figure'
 dpi | int / 'high'/'mid'/'low'
 edgewidth | int
@@ -421,46 +577,30 @@ font | string,int (font name, size) or string (font name)
 fontfamily | string (font name)
 fontsize | float
 format | string (indicator like '%f')
+groupid | int
+hold | 'on'/'off'/'true'/'false'
 hspacing | float
-label | string
-linetype | '-'/'--'/'-.'/':'/'solid'/'dash'/'dot'/'dashdot'
-linewidth | float
+label or t | string
+length | float
+linetype or lt| '-'/'--'/'-.'/':'/'solid'/'dash'/'dot'/'dashdot'
+linewidth or lw| float
 margin | float,float,float,float (bottom,left,right,top)
+norm | 'pdf'/'density'/'distribution'/'probability'/'count'
 orient | 'in/out'
 padding | float,float,float,float (bottom,left,right,top)
-palette | string (name of a palette)
-pointsize | float
-pointtype | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
+pointsize or ps| float
+pointtype or pt | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
 pos | float,float or 'topleft'/'topright'/'topcenter'/'bottomleft'/...
 rsize | float,float (x,y)
-range | float:float:float float:float
+xrange/yange or xlim/ylim | float:float:float float:float
 scale | 'linear'/'log'
 size | int,int (x,y)
 skippoint | int
 spacing | float,float
 title | string
-tick | string
+tick or tics| string
 text | string
 visible | 'true'/'false'
 vspacing | float
+width | float
 zindex | int
-
-### Broadcasting
-
-Styles appear in the first plotting data will be broadcasted to all the remaining data if it's broadcastale.
-
-By default, styles except `linecolor`, `edgecolor`, `skippoint` and `zindex` in drawline and dataline are broadcastable. This can be set by *--add-boardcast-style=(stylename)* and *--remove-broadcast-style=(stylename)*.
-
-### Set Styles via CSS
-
-You can modify the default behavior by modifying styles/defaults.d.css (modifying defaults.css is also possible, but may cause some weird behavior). You can also change the default style using `set default` or modifying `.linerc` file.
-
-Note that currently Line only supports part of CSS. The style names must be predefined and the maximum hierachy of descendant is 2. The available selectors are:
-
-- ClassNameSelector: `.class #name`: Select element which inside class;
-- NameSelector `#name`: Select element which return true by has_name();
-- TypeStyleSelector `type[style=val]`: Select type element with style;
-- StyleSelector `[style=val]`: Select element with certain style value;
-- ClassTypeSelector: `.class type`: Select type element within element with class;
-- ClassSelector `.class`: Select element which has name in class_names;
-- TypeSelector `type`: Select element with certain element_type attribute;

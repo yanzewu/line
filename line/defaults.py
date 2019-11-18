@@ -9,19 +9,14 @@ from . import palette
 default_options = {
     'auto-adjust-range':True,
     'data-title':'auto',
-    'broadcast-style':['linewidth', 'pointsize', 'edgewidth'],
     'data-delimiter':'auto',
     'display-when-quit':False,
-    'force-column-selection':False,
     'ignore-data-comment': True,
     'identify-data':False,              # not used now
     'prompt-always':False,
     'prompt-multi-removal':True,
     'prompt-overwrite':True,
     'prompt-save-when-quit':False,
-    'remove-element-by-style':False,
-    'set-future-line-style':True,
-    'set-skip-invalid-selection':True,
 }
 
 default_font = 'CMU Serif'
