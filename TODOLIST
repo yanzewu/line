@@ -1,9 +1,9 @@
 
 Fixes
 ---
-[HIGH] Error line number and token position.
 [MID] Faster startup.
 [HIGH] Legend position.
+[HIGH] Figure title (and subfigure title).
 
 Features
 ---

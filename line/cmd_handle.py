@@ -39,6 +39,7 @@ class CMDHandler:
     def __init__(self, m_state=None):
 
         self.token_buffer = deque()
+        self.token_begin_pos = []
         self.completion_buffer = []
 
         if m_state is None:
@@ -87,21 +88,29 @@ class CMDHandler:
         plot.initialize(self.m_state)
         for line in lines:
             try:
-                ret = self.handle_line(line, self.token_buffer, True)
+                ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
             except Exception as e:
                 if self._debug:
                     raise
                 else:
-                    if self._filename:
-                        print('"%s", line %d:' % (self._filename, lines.index(line)), file=sys.stderr)
+                    if self.token_begin_pos:
+                        token_pos = self.token_begin_pos[-len(self.token_buffer)-1 if len(self.token_buffer) < len(self.token_begin_pos) else 0]
                     else:
-                        print('line %d:' % lines.index(line), file=sys.stderr)
+                        token_pos = 0
+                    if self._filename:
+                        print('"%s", line %d, col %d (near "%s"):' % (self._filename, lines.index(line), token_pos, line[token_pos:token_pos+5].strip('\n')),
+                            file=sys.stderr)
+                    else:
+                        print('line %d, col %d (near "%s"):' % (lines.index(line), token_pos, line[token_pos:token_pos+5].strip('\n')), file=sys.stderr)
 
                     print_error(e)
+                    self.token_buffer.clear()
+                    self.token_begin_pos.clear()
                     return
             else:
                 if ret == 0:
                     self.token_buffer.clear()
+                    self.token_begin_pos.clear()
                 elif ret == self.RET_EXIT:
                     break
                 elif ret == self.RET_CONTINUE:
@@ -121,22 +130,30 @@ class CMDHandler:
             return 1
 
         try:
-            ret = self.handle_line(line, self.token_buffer, True)
+            ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
         except Exception as e:
-            self.token_buffer.clear()
+            
             if self._debug:
                 raise
             else:
+                if self.token_begin_pos:
+                    token_pos = self.token_begin_pos[-len(self.token_buffer)-1 if len(self.token_buffer) < len(self.token_begin_pos) else 0]
+                else:
+                    token_pos = 0
+                print(' ' * (len(ps) + token_pos) + '^')
                 print_error(e)
+                self.token_buffer.clear()
+                self.token_begin_pos.clear()
                 return 0            
         else:
             if ret == 0:
                 self.token_buffer.clear()
+                self.token_begin_pos.clear()
                 return 0
             elif ret == self.RET_EXIT:
                 return 1
             elif ret == self.RET_CONTINUE:
-                self.proc_input(self.PS2)
+                return self.proc_input(self.PS2)
 
     def input_loop(self):
         self.init_input()
@@ -147,7 +164,7 @@ class CMDHandler:
         plot.finalize(self.m_state)
         self.finalize_input()
 
-    def handle_line(self, line, token_buffer, execute=True):
+    def handle_line(self, line, token_buffer, token_begin_pos, execute=True):
         """ Preprocessing and execute
         """
         logger.debug('Handle input line: %s' % line)
@@ -163,14 +180,17 @@ class CMDHandler:
                 if string[-1] != string[0]:
                     raise LineParseError("Quote not match")
                 token_buffer.append(string)
+                token_begin_pos.append(cur_token.start())
 
             elif cur_token.group('b'):  # variable or others
                 token_buffer.append(cur_token.group('b'))
+                token_begin_pos.append(cur_token.start())
 
             elif cur_token.group('c'):  # special characters
                 char = cur_token.group('c')
                 if char in ',:=':
                     token_buffer.append(char)
+                    token_begin_pos.append(cur_token.start())
                 elif char == '#':
                     break
                 elif char == '\\':
@@ -185,9 +205,14 @@ class CMDHandler:
                         if ret != 0:
                             return ret
                         else:
-                            self.token_buffer.clear()
+                            token_buffer.clear()
+                            token_begin_pos.clear()
                     else:
-                        self.token_buffer.clear()
+                        token_buffer.clear()
+                        token_begin_pos.clear()
+
+            else:
+                raise RuntimeError()
 
         if execute:
             return process.parse_and_process_command(self.token_buffer, self.m_state)
