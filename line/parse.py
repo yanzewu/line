@@ -96,10 +96,10 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
 
     while lookup(m_tokens, 0, True) not in termflag:
         if recog_class:
-            if m_tokens[0].startswith('+'):
+            if m_tokens[0].startswith('+') and m_tokens[0] != '+':
                 class_add.append(get_token(m_tokens)[1:])
                 continue
-            elif m_tokens[0].startswith('-'):
+            elif m_tokens[0].startswith('-') and m_tokens[0] != '-':
                 class_remove.append(get_token(m_tokens)[1:])
                 continue
             
@@ -210,6 +210,9 @@ def parse_style_descriptor(text:str):
             else:
                 linestyle = style.LineType(style.LineTypeStr.index(text[0]))
                 text = text[1:]
+        elif text[0] == ':':
+            linestyle = style.LineType(style.LineTypeStr.index(text[0]))
+            text = text[1:]
         else:
             raise ValueError(text[0])
 

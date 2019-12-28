@@ -147,12 +147,14 @@ def _update_subfigure(m_subfig:state.Subfigure):
         color=label_styles[0]['color'],
         fontfamily=label_styles[0]['fontfamily'],
         fontsize=label_styles[0]['fontsize'],
+        visible=label_styles[0]['visible'],
     )
     ax.set_ylabel(
         m_subfig.axes[1].label.attr('text'),
         color=label_styles[1]['color'],
         fontfamily=label_styles[1]['fontfamily'],
         fontsize=label_styles[1]['fontsize'],
+        visible=label_styles[1]['visible'],
     )
     # the right label requires drawing a new axis
     ax.set_xscale(m_subfig.axes[0].attr('scale'))

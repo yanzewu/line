@@ -309,7 +309,7 @@ If filename is not present, save will prompt for a new filename. It will also pr
 
 Related options:
 
-- --prompt-overwrite=true/false: Prompt before overwritting a file. (Default: true).
+- --prompt-overwrite=true/false: Prompt before overwritting a file. (Default: true). To use this option in non-interactive mode, set --prompt-always to true.
 
 ### clear
 ---
@@ -558,7 +558,7 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
  line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
  bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, coord, visible, zindex
- polygon | linetype, linecolor, fillcolor, color, coord, alpha, colorid, visible, zindex
+ polygon | linetype, linecolor, fillcolor, color, alpha, colorid, visible, zindex
  text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
  legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, visible, zindex
 

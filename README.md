@@ -2,8 +2,10 @@
 
 Creating nice line and scatter plot with least typing.
 
+<div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
 <img width="40%" height="200" src="doc/plot1.png">
 <img width="40%" height="200" src="doc/plot2.png">
+</div>
 
 ## Installation
 
@@ -19,9 +21,9 @@ The package is pure-python and is directly executable. To install it into python
 
     pip install -e line
 
-## Tutorial
+## Quickstart
 
-The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference) and [styles](doc/doc.md#styles).
+The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference), [expressions](doc/doc.md#expressions) and [styles](doc/doc.md#styles).
 
 To get started, type
 

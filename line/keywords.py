@@ -54,7 +54,8 @@ style_alias = {
     'xtics':'xtick',
     'ytics':'ytick',
     'xlim': 'xrange',
-    'ylim': 'yrange'
+    'ylim': 'yrange',
+    'fontname': 'fontfamily'
 }
 
 element_keywords = {

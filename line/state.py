@@ -213,12 +213,12 @@ class Figure(FigObject):
 
         super().__init__('figure', figure_name, {
             'dpi':self._set_dpi,
-            'hspacing':lambda s, v:   _assign_list(s['spacing'], 0, v),
-            'vspacing': lambda s, v:   _assign_list(s['spacing'], 1,  v),
-            'margin-bottom': lambda s,v: _assign_list(s['margin'], 0, v),
-            'margin-left': lambda s,v: _assign_list(s['margin'], 1, v),
-            'margin-right': lambda s,v:_assign_list(s['margin'], 2, v),
-            'margin-top': lambda s,v:  _assign_list(s['margin'], 3, v),
+            'hspacing':lambda s, v: self._set_spacing_and_margin(s, 'spacing', 0, v),
+            'vspacing': lambda s, v: self._set_spacing_and_margin(s, 'spacing', 1, v),
+            'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 0, v),
+            'margin-left': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
+            'margin-right': lambda s,v:self._set_spacing_and_margin(s, 'margin', 2, v),
+            'margin-top': lambda s,v:  self._set_spacing_and_margin(s, 'margin', 3, v),
         }, {
             'hspacing': lambda x: x['spacing'][0],
             'vspacing': lambda x: x['spacing'][1]
@@ -234,6 +234,13 @@ class Figure(FigObject):
         m_style['size'] = [
             defaults.default_figure_size_inches[0]*m_style['dpi'],
             defaults.default_figure_size_inches[1]*m_style['dpi']]
+
+    def _set_spacing_and_margin(self, m_style, key, idx, val):
+
+        if key not in m_style:
+            m_style[key] = list(self.style[0][key])
+
+        m_style[key][idx] = val
 
     def has_name(self, name):
         return name == 'gcf' or name == self.name
@@ -255,10 +262,10 @@ class Subfigure(FigObject):
     def __init__(self, subfigure_name):
 
         super().__init__('subfigure', subfigure_name, {
-            'padding-bottom': lambda s,v:_assign_list(s['padding'], 0, v),
-            'padding-left': lambda s,v: _assign_list(s['padding'], 1, v),
-            'padding-right': lambda s,v:_assign_list(s['padding'], 2, v),
-            'padding-top': lambda s,v:  _assign_list(s['padding'], 3, v),
+            'padding-bottom': lambda s,v:self._set_padding(s, 0, v),
+            'padding-left': lambda s,v: self._set_padding(s, 1, v),
+            'padding-right': lambda s,v:self._set_padding(s, 2, v),
+            'padding-top': lambda s,v:  self._set_padding(s, 3, v),
             'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}),
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}),
             'rlabel': lambda s,v:self.axes[2].label.update_style({'text': v}),
@@ -291,6 +298,12 @@ class Subfigure(FigObject):
 
         self.is_changed = True
         self.backend = None
+
+    def _set_padding(self, m_style, idx, val):
+        
+        if 'padding' not in m_style:
+            m_style['padding'] = list(self.style[0]['padding'])
+        m_style['padding'][idx] = val
 
     def has_name(self, name):
         return name == 'gca' or self.name == name
@@ -648,9 +661,6 @@ class Label(FigObject):
         m_style['fontfamily'] = value[0]
         m_style['fontsize'] = value[1]
 
-    
-def _assign_list(a, idx, v):
-    a[idx] = v
 
 def _set_color(m_style, value):
     m_style['linecolor'] = value

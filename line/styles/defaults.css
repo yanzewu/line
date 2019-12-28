@@ -122,7 +122,6 @@ polygon {
     linecolor: black;
     fillcolor: white;
     visible: true;
-    coord: 'data';
     zindex: 0; 
     colorid: 0;
 }
