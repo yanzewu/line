@@ -3,8 +3,8 @@
 Creating nice line and scatter plot with least typing.
 
 <div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
-<img width="30%" height="200" src="doc/plot1.png">
-<img width="30%" height="200" src="doc/plot2.png">
+<img width="35%" height="200" src="doc/plot1.png">
+<img width="35%" height="200" src="doc/plot2.png">
 </div>
 
 ## Installation
@@ -17,7 +17,7 @@ Prerequesties:
 - Pandas >= 0.22 (Necessary)
 - PyQt5 (Optional, for Qt backend)
 
-The package is pure-python and is directly executable. To install it into python library:
+The package is written in pure python and is directly executable. To install it into python library:
 
     pip install -e line
 
@@ -25,65 +25,103 @@ The package is pure-python and is directly executable. To install it into python
 
 The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference), [expressions](doc/doc.md#expressions) and [styles](doc/doc.md#styles).
 
-To get started, type
+The plotting grammar of Line is similar (but looser) with Gnuplot. The major differences are:
+- No quote for filename is needed if column entries are given. i.e. `plot 'filename' 1:2` in Gnuplot is equvalent to `plot filename 1:2` in Line;
+- Supports matlab-style line description (like "r-", "kd--");
+- No requirement for frequent `replot`. The replotting is automatically done when there is anything changed (but certainly you can manually replot);
+- Uniform description of style element. Line use a CSS-like model to select and modify element styles, therefore all grammars of style getting/setting are similar and straightforward;
+- A better palette system. Setting palette only needs one command, and one can easily change the color order via modifying `groupid` or using `group` command.
+
+### Launch
+
+To enter interactive mode, type
 
     line
 
-which will enter interactive mode. To run a script, type
+To run a script, type
 
     line [scriptname]
+
+To execute commands directly, type
+
+    line -e [commands]
 
 To plot from file directly from command line, type
 
     line -p [filename] (columnx:)(columny)
 
-The basic plotting logic of Line is similar as gnuplot, with a slightly looser grammar. No quote is required (unless necessary) for filename and column identifier is also not required. Filename could also be wildcard string.
-To plot a figure from file:
 
-    line> plot test-data.txt 2 t='second column'  # plot second column as y, data index as x
-    line> plot test-data.txt $0:2 lw=2 lc=red     # plot second column as y, data index as x
-    line> plot test-data.txt 1:2 rx-        # plot second column as y, first column as x
-    line> plot test-data.txt 1:2,3      # plot second and third column as y, first column as x
-    line> plot 'test-data.txt'        # plot all columns (using first column as x)
+### Plotting
+
+Line provides various ways to select columns:
+
+    line> plot test-data.txt 2          # plot second column against data index
+    line> plot test-data.txt $0:2       # same as above, since '$0' is data index
+    line> plot test-data.txt 1:2        # plot second column agianst first column
+    line> plot test-data.txt 1:2,3      # plot second and third column against first column
+    line> plot test-data.txt t:y1       # plot column 'y1' against column 't'
+    line> plot test-data.txt 1:y1       # plot column 'y1' against first column
+    line> plot 'test-data.txt'          # plot remained columns against first column
+    line> plot 'test-data.txt', 'hist-data.txt' # plot two files
+
+To add/modify styles of lines:
+
+    line> plot test-data.txt t:y1 t='second column'  # set data title
+    line> plot test-data.txt t:y1 lw=2 lc=red        # plot with linewidth and linecolor set
+    line> plot test-data.txt 1:2 'rx-'               # plot with line descriptor
+    
 
 The data delimiter and existence of head is automatically determined, but can be specified by *data-delimiter* and *data-title* options.
-Append data to existing figure:
+Append data to existing figure ("hold on"):
 
     line> add test-data.txt 3       # add the third column
 
-Adjust ranges, grids and legends:
+### Adjusting styles
 
-    line> xrange 0:2
-    line> grid on
-    line> grid color=dash
-    line> legend off
+Adjust ranges, scales, grids and legends (the beginning "set" is omitted):
 
-Command "set" contains all adjustments to style and non-style paramters. The global options can be also be changed here. The figure is refreshed if necessary.
+    line> xrange 0:2            # setting x range
+    line> xscale log            # set x scale
+    line> grid on               # show grid
+    line> grid lt=dash          # setting grid style
+    line> legend off            # hide legend
+    line> legend pos=topleft    # set legend position
 
-    line> set tick format='%.3f'
-    line> set label fontfamily=Arial
-    line> set lw=2  # set all data lines
-    line> set line1 lw=2    # only set line0
-    line> set line:label='data3' color=red  # set line with label=data3 to red
-    line> set option auto-adjust-range=false
-    line> set palette mpl.OrRd
-    line> set xscale log
+More setting commands:
+
+    line> set tick format='%.3f'        # set tick format
+    line> set label fontfamily=Arial    # set label font
+    line> set line lw=2                 # set linewidth of all data lines
+    line> set line1 lw=2                # only set line0
+    line> set line:label='data3' color=red      # set line with certain label to red
+    line> set option auto-adjust-range=false    # disable automatic range adjust
+    line> set palette mpl.OrRd          # set palette
+    line> set palette lighter bar       # set palette for bars
 
 Its counterparts, "show" command, displays all style parameters.
 
-    line> show line1
+    line> show line1        # show all attributes of line1
+    line> show line lw      # show linewidth of all lines
 
-In script mode, Line will not draw the plot unless necessary. To display figure, type
+### Writting scripts
+
+Load a script:
+
+    load [scriptname]
+
+To display figure:
 
     display
 
-To modify figure in script mode, add
+To interrupt script running and switch to interactive mode:
 
     input
 
-which will interrupt script running and switch to interactive mode.
+Note Line will not display the figure unless `display` or `input` are given. The command `input` is useful when one needs to modify scripts.
 
 
 ## Configuration
 
-Line reads `.linerc` in user's home directory. You can also use `load` command to specify configurations.
+Line reads `.linerc` in user's home directory, which is just a script. You can also use `load` command to specify configurations.
+
+More custom style classes can be added to [styles/defaults.d.css](styles/defaults.d.css). Palettes can be added to [styles/palettes.json](styles/palettes.json).

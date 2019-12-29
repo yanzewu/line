@@ -1,0 +1,9 @@
+$h = hist(load('example/hist-data.txt'))
+hist 'example/hist-data.txt' $1 colorid=2 t=Dist1, $1+1 colorid=5 t=Dist2
+hold on
+plot h 1:2 bs- t="Dist1 (line)" zindex=1 fillcolor=blue
+set bar alpha 0.5
+set palette bar lighter
+set fontfamily "CMU Serif"
+xlabel y
+display
