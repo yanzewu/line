@@ -9,21 +9,18 @@ import numpy as np
 
 from . import state
 from . import plot
-from . import sheet_util
 from . import expr_proc
 from . import plot_proc
 from . import io_util
 from . import keywords
 from . import defaults
-from . import scale
 from . import cmd_handle
 
-from . import style_man
-from . import palette
+from .style import css
+from .style import palette
 
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
-from .collection_util import extract_single
 
 logger = logging.getLogger('line')
 
@@ -382,7 +379,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     m_subfig = m_state.cur_subfigure()
 
     selection = parse_style_selector(m_tokens)
-    ss = style_man.StyleSheet(selection)
+    ss = css.StyleSheet(selection)
     elements = ss.select(m_state.cur_subfigure())
 
     if not elements:
@@ -428,16 +425,16 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
         if keywords.is_style_keyword(lookup(m_tokens)) and not keywords.is_style_keyword(lookup(m_tokens, 1)):
             style_list = parse_style(m_tokens)
-            selection = style_man.NameSelector('subfigure')
+            selection = css.NameSelector('subfigure')
             # TODO automatically select candidate
         else:
             selection = parse_style_selector(m_tokens)
             for s in selection:
-                if not isinstance(s, style_man.TypeSelector):
+                if not isinstance(s, css.TypeSelector):
                     raise LineParseError('Only element names (e.g. figure, subfigure) are allowed')
             style_list = parse_style(m_tokens)
 
-        ss = style_man.StyleSheet(selection, style_list)
+        ss = css.StyleSheet(selection, style_list)
         m_state.default_stylesheet.update(ss)
 
     elif lookup(m_tokens) == 'palette':
@@ -465,20 +462,20 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             # the nasty cases... either not a style keyword or not enough style parameters
             # that treated as value
 
-            selection = style_man.NameSelector('gca')
+            selection = css.NameSelector('gca')
             style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
         else:
             selection = parse_style_selector(m_tokens)
             if lookup(m_tokens) == 'clear':
                 get_token(m_tokens)
                 assert_no_token(m_tokens)
-                style_list = style_man.ResetStyle()
+                style_list = css.ResetStyle()
                 add_class = []
                 remove_class = []
             else:
                 style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
             
-        ss = style_man.StyleSheet(selection, style_list)
+        ss = css.StyleSheet(selection, style_list)
         has_updated = process_set_style(m_state, ss, add_class, remove_class)
 
         if has_updated:
@@ -522,7 +519,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             m_state.refresh_style(True)
 
         selection = parse_style_selector(m_tokens)
-        ss = style_man.StyleSheet(selection, None)
+        ss = css.StyleSheet(selection, None)
         elements = ss.select(m_state.cur_figure())
         
         if len(elements) == 0:
@@ -551,7 +548,7 @@ def parse_and_process_style(m_state:state.GlobalState, m_tokens):
     classname = get_token(m_tokens)
     style_list = parse_style(m_tokens)
 
-    ss = style_man.StyleSheet(style_man.ClassSelector(classname), style_list)
+    ss = css.StyleSheet(css.ClassSelector(classname), style_list)
     m_state.class_stylesheet.update(ss)
 
 

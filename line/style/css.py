@@ -2,9 +2,9 @@
 import enum
 import re
 
-from .keywords import is_inheritable, is_copyable
-from .errors import LineProcessError, LineParseError
-from .parse import translate_style_val
+from ..keywords import is_inheritable, is_copyable
+from ..errors import LineProcessError, LineParseError
+from ..parse import translate_style_val
 
 _selector_matcher = re.compile(r'(?P<a>[\.\#\s]?[^\.#{\s\[]+)\s*((?P<b>[\#]?[^\.#{\s\[]+)|(?P<c>\[\w+\=[\w\,]+\]))?')
 

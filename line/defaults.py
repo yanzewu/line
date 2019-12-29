@@ -2,8 +2,8 @@
 """ Initializing default options, styles and palettes.
 """
 
-from . import style_man
-from . import palette
+from .style import css
+from .style import palette
 
 
 default_options = {
@@ -33,9 +33,9 @@ def init_global_state(m_state):
     m_state.options = default_options
     style_dir = os.path.join(os.path.dirname(__file__) , 'styles')
     with open(os.path.join(style_dir, 'defaults.css'), 'r') as f:
-        m_state.default_stylesheet = style_man.load_css(f)
+        m_state.default_stylesheet = css.load_css(f)
     with open(os.path.join(style_dir, 'defaults.d.css')) as f:
-        m_state.custom_stylesheet = style_man.load_css(f)
+        m_state.custom_stylesheet = css.load_css(f)
 
     for selector, style in m_state.default_stylesheet.data.items():
         default_style_entries[selector.typename] = set(style)

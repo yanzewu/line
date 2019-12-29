@@ -4,7 +4,7 @@
 import logging
 
 from . import style
-from . import style_man
+from .style import css
 from . import keywords
 
 from .errors import LineParseError, LineProcessError, warn, print_as_warning
@@ -59,25 +59,25 @@ def parse_single_style_selector(t):
     if ':' in t:
         typename, attr = t.split(':', 1)
         name, val = attr.split('=')
-        return style_man.TypeStyleSelector(t, name, translate_style_val(name, val))
+        return css.TypeStyleSelector(t, name, translate_style_val(name, val))
     elif '=' in t:
         name, val = attr.split('=')
-        return style_man.StyleSelector(name, translate_style_val(name, val))
+        return css.StyleSelector(name, translate_style_val(name, val))
     elif '.' in t[1:]:
         if t[0] != '.':
             raise LineParseError('Line does not support type-type selection')
         _first, _second = t[1:].split('.', 1)
         if _second in keywords.element_keywords:
-            return style_man.ClassTypeSelector(_first, _second)
+            return css.ClassTypeSelector(_first, _second)
         else:
-            return style_man.ClassNameSelector(_first, _second)
+            return css.ClassNameSelector(_first, _second)
     elif t[0] == '.':
-        return style_man.ClassSelector(t[1:])
+        return css.ClassSelector(t[1:])
     else:
         if t in keywords.element_keywords:
-            return style_man.TypeSelector(t)
+            return css.TypeSelector(t)
         else:
-            return style_man.NameSelector(t)
+            return css.NameSelector(t)
         
 
 def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True, recog_class=False, raise_error=False):
@@ -277,9 +277,9 @@ def translate_style_val(style_name:str, style_val:str):
     # Already agreed with document.
 
     if style_val == 'inherit' and keywords.is_inheritable(style_name):
-        return style_man.SpecialStyleValue.INHERIT
+        return css.SpecialStyleValue.INHERIT
     elif style_val == 'default' and keywords.is_copyable(style_name):
-        return style_man.SpecialStyleValue.DEFAULT
+        return css.SpecialStyleValue.DEFAULT
 
     if style_name.endswith('color'):
         return style.str2color(style_val)

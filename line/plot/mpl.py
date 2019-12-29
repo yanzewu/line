@@ -13,15 +13,15 @@ import matplotlib.font_manager as font_manager
 
 from . import state
 from . import style
-from .defaults import default_math_font, default_fonts
+from . import defaults
 
 logger = logging.getLogger('line')
 
 # things between initialize() and finalize() can be viewed as a show() process
 # so everything need to be redraw once closed.
 
-matplotlib.rcParams['mathtext.fontset'] = default_math_font
-matplotlib.rcParams['font.family'] = default_fonts
+matplotlib.rcParams['mathtext.fontset'] = defaults.default_math_font
+matplotlib.rcParams['font.family'] = defaults.default_fonts
 
 def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
     try:

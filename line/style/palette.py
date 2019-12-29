@@ -4,7 +4,7 @@
 import numpy as np
 
 from . import style
-from . import style_man
+from . import css
 
 
 PALETTES = {}
@@ -33,14 +33,14 @@ def load_palette(fp):
 
 
 def palette2stylesheet(palette, target=None):
-    """ Return style_man.StyleSheet object from list of colors.
+    """ Return css.StyleSheet object from list of colors.
     """
-    ss = style_man.StyleSheet()
+    ss = css.StyleSheet()
     for idx, color in enumerate(palette):
         if target:
-            ss.data[style_man.TypeStyleSelector(target, 'colorid', idx)] = style_man.Style(color=color)
+            ss.data[css.TypeStyleSelector(target, 'colorid', idx)] = css.Style(color=color)
         else:
-            ss.data[style_man.StyleSelector('colorid', idx)] = style_man.Style(color=color)
+            ss.data[css.StyleSelector('colorid', idx)] = css.Style(color=color)
     return ss
 
 
