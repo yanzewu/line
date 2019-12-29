@@ -1,3 +1,4 @@
 tests/
+test/*.png
 .vscode/
 __pycache__/

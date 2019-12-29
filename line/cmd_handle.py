@@ -98,10 +98,10 @@ class CMDHandler:
                     else:
                         token_pos = 0
                     if self._filename:
-                        print('"%s", line %d, col %d (near "%s"):' % (self._filename, lines.index(line), token_pos, line[token_pos:token_pos+5].strip('\n')),
+                        print('"%s", line %d, col %d (near "%s"):' % (self._filename, lines.index(line)+1, token_pos+1, line[token_pos:token_pos+5].strip('\n')),
                             file=sys.stderr)
                     else:
-                        print('line %d, col %d (near "%s"):' % (lines.index(line), token_pos, line[token_pos:token_pos+5].strip('\n')), file=sys.stderr)
+                        print('line %d, col %d (near "%s"):' % (lines.index(line)+1, token_pos+1, line[token_pos:token_pos+5].strip('\n')), file=sys.stderr)
 
                     print_error(e)
                     self.token_buffer.clear()

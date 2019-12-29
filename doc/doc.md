@@ -296,6 +296,8 @@ The behavior of `figure` is similar with matlab's figure. It creates new figure 
 
 The index of subfigure is an integer, starting from left to right and top to bottom.
 
+Both indices start from 1.
+
 ### save
 ---
 

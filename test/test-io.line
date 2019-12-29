@@ -1,0 +1,36 @@
+
+# cd
+
+show pwd
+cd example
+show pwd
+cd ..
+show pwd
+
+# load
+
+cd example
+load plot.line
+cd ..
+
+# save
+
+set option prompt-always=true
+plot sin(x)
+save
+figure 2
+plot cos(x)
+save test/1.png
+save test/2.png
+figure 1
+save test/1.png
+
+# input
+
+print "Enter input mode: please type some valid commands"
+input
+
+# quit
+
+quit
+print "This should not be seen"

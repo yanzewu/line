@@ -374,6 +374,9 @@ def update_focus_figure(m_state:state.GlobalState):
     """ Bring figure m_state.cur_figure to the front. Only called
     in interactive mode.
     """
+    if not plt.fignum_exists(m_state.cur_figure().backend.number):
+        update_figure(m_state, True)
+
     plt.figure(m_state.cur_figurename)
     if plt.get_backend().startswith('Qt'):
         plt.get_current_fig_manager().window.raise_()

@@ -1,0 +1,45 @@
+# test plot
+
+# best cases
+plot 'example/test-data.txt' 1:2, 1:3
+plot 'example/test-data.txt' 1:2, 'example/test-data.txt' 1:3
+plot 'example/test-data.txt' t:y1, 'example/test-data.txt' 1:y2
+
+plot 'example/test-data.txt' 1:2,3,2,3
+plot 'example/test-data.txt' t:y1,y2,y1
+plot 'example/test-data.txt' 1:2,1:3,1:2,3,2,1:3
+plot 'example/test-data.txt' t:y1,y2,t:y1,t:y2,y1
+
+# omitting quote
+plot example/test-data.txt 1:2, 3
+plot example/test-data.txt 1:2, example/test-data.txt 1:3
+
+# omitting indices
+plot 'example/test-data.txt' 2, 3
+plot 'example/test-data.txt'
+
+ style (good)
+plot example/test-data.txt 1:2 lw=2 lc=red, 3 lw=2
+plot example/test-data.txt 1:2 lw=2 lc=red, 'example/test-data.txt' lw=2
+
+# style (ambiguous)
+plot example/test-data.txt 1:2 t y2
+plot example/test-data.txt 1:t t time
+plot example/test-data.txt t
+plot 'example/test-data.txt' t time
+plot example/test-data.txt t t time
+plot example/test-data.txt t, t t time
+
+# expression
+plot example/test-data.txt $0:$1+2, sin($2)
+plot example/test-data.txt $2+2, sin($2)
+plot example/test-data.txt col(2), col('y2')
+plot example/test-data.txt load('example/test-data.txt')
+
+# variable
+$a = load('example/test-data.txt')
+$b = a[2]
+
+plot a 2, b
+plot a t:y1, b 0
+display

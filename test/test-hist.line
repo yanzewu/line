@@ -1,0 +1,40 @@
+# test hist
+
+# best cases
+hist 'example/test-data.txt' 2, 3
+hist 'example/test-data.txt' y1, 'example/test-data.txt' y2
+
+hist 'example/test-data.txt' 2,3,2,3
+hist 'example/test-data.txt' t,y1,y2,y1
+
+# omitting quote
+hist example/test-data.txt 2, 3
+hist example/test-data.txt 2, example/test-data.txt 3
+
+# omitting indices
+hist 'example/test-data.txt'
+
+# style (good)
+hist example/test-data.txt 2 lw=2 lc=red bin=20, 3 lw=2 norm=count
+hist example/test-data.txt 2 lw=2 lc=red, 'example/test-data.txt' lw=2 norm=pdf
+
+# style (ambiguous)
+hist example/test-data.txt 2 t y2
+hist example/test-data.txt t t time
+hist example/test-data.txt t
+hist 'example/test-data.txt' t time
+hist example/test-data.txt t, t t time
+
+# expression
+hist example/test-data.txt $1+2, sin($2)
+hist example/test-data.txt $2+2, sin($2)
+hist example/test-data.txt col(2), col('y2')
+hist example/test-data.txt load('example/test-data.txt')
+
+# variable
+$a = load('example/test-data.txt')
+$b = a[2]
+
+hist a 2, b
+hist a y1, b 0
+display

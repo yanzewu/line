@@ -1,0 +1,106 @@
+
+# style descriptors
+plot (sin(x)+10)
+set line1 'r-'
+set line1 'gd--'
+set line1 'bs-.'
+set line1 'k:'
+set line1 'ms'
+set line1 'x'
+set line1 'r'
+set line1 '-'
+
+display
+
+# set
+
+set figure size=800,600 margin=0.07,0.07,0.07,0.07 hspacing=0.03 dpi=high
+set figure dpi=200
+set subfigure rsize=0.8,0.8 rpos=0.05,0.05 padding-left=0.1
+set subfigure color=green linecolor=blue
+set hold=true
+hold off
+
+set xaxis linewidth=2 linetype=-- font=Arial color=default range=0:12
+set yaxis linewidth=2 linetype=-- font=Arial color=inherit range=0:12
+set raxis,taxis visible=false
+
+xlabel "This is xlabel"
+ylabel "This is ylabel" 
+ylabel text "This is also ylabel"
+xlabel visible=false color=inherit
+xlabel on
+xrange 0:12
+
+xrange 0:1
+yscale log
+yscale linear
+xscale log
+xscale linear
+
+set xtick orient=out color=black font="Times" format="%.4f"
+set ytick linewidth=2 length=3
+
+grid on
+grid lt=- lc=black zindex=-1
+
+display
+
+# data components
+
+hold on
+hist x
+line 0,0 1,1
+fill line1
+text "mytext" topleft
+
+set line1 linewidth=2 linecolor=cyan linetype=- pointsize=2 pointtype=o edgewidth=1 edgecolor=r \
+fillcolor=green label="line1" zindex=0
+set bar1 bin=10 norm=density linewidth=1 linecolor=red fillcolor=lightred label="bar1" alpha=0.8 zindex=-2
+set drawline1 lw=2 lc=grey lt=-- ps=2 pt=d edgewidth=2 edgecolor=red fillcolor=blue coord=data
+set polygon1 lt=- lc=yellow fillcolor=lightyellow alpha=0.9 colorid=2
+set text1 font=Times fontsize=15 color=k pos=0.5,0.5 coord=data 
+
+display
+
+# class
+
+set line1 rd- +prettycircle
+set line1 -prettycircle
+
+# set default
+set default figure size=800,400
+set default line linecolor=red
+figure 2
+plot cos(x)
+
+# group and palette
+
+figure 3
+$y2=x
+plot example/test-data.txt y2,$y2+0.1,$y2+0.2,$y2+0.3,$y2+0.4
+group ABCBC...0
+set line +pairdash
+set palette lighter
+replot
+
+display
+
+# show
+
+set gca +originlab
+
+show xaxis
+show xaxis range
+show xrange
+show gca xrange
+show figure
+show line lw
+show line
+show figure dpi
+show line:lw=2
+show .pairdash
+show line3
+show .originlab.line1 
+
+display

@@ -1,0 +1,10 @@
+# Testing lexer behavior
+    # 234
+   ##
+print "123"
+print "123 456 45"
+print "23456" \
+print 12="34"
+print "789"#comment
+print "123'45'345" '456' '123"45"3  '
+print 12345; print 67890

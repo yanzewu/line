@@ -219,7 +219,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # select subfigure
     elif command == 'subfigure':
-        subfig_idx = stod(get_token(m_tokens))
+        subfig_idx = stod(get_token(m_tokens)) - 1
         assert_no_token(m_tokens)
 
         m_fig = m_state.cur_figure()
@@ -227,7 +227,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if subfig_idx < len(m_fig.subfigures):
             m_fig.cur_subfigure = subfig_idx
         else:
-            raise LineProcessError('subfigure %d does not exist' % subfig_idx)
+            raise LineProcessError('subfigure %d does not exist' % (subfig_idx + 1))
 
     # save figure
     elif command == 'save':
@@ -607,6 +607,8 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
     m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
     m_fig.is_changed = True
     m_fig.update_style({'split': [hsplitnum, vsplitnum]})
+    if m_fig.cur_subfigure >= len(m_fig.subfigures):
+        m_fig.cur_subfigure = 0
 
 
 def process_save(m_state:state.GlobalState, filename:str):

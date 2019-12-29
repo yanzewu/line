@@ -3,8 +3,8 @@
 Creating nice line and scatter plot with least typing.
 
 <div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
-<img width="40%" height="200" src="doc/plot1.png">
-<img width="40%" height="200" src="doc/plot2.png">
+<img width="30%" height="200" src="doc/plot1.png">
+<img width="30%" height="200" src="doc/plot2.png">
 </div>
 
 ## Installation
@@ -64,6 +64,7 @@ Command "set" contains all adjustments to style and non-style paramters. The glo
     line> set label fontfamily=Arial
     line> set lw=2  # set all data lines
     line> set line1 lw=2    # only set line0
+    line> set line:label='data3' color=red  # set line with label=data3 to red
     line> set option auto-adjust-range=false
     line> set palette mpl.OrRd
     line> set xscale log

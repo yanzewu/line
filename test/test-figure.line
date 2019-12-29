@@ -1,0 +1,37 @@
+# subfigure
+figure 1
+
+hsplit 2
+vsplit 3
+subfigure 1
+text "subfigure 1" topleft
+subfigure 2
+text "subfigure 2" topleft
+subfigure 3
+text "subfigure 3" topleft
+subfigure 4
+text "subfigure 4" topleft
+subfigure 5
+text "subfigure 5" topleft
+subfigure 6
+text "subfigure 6" topleft
+
+display
+
+split 1,2
+split 3,2
+split 1,1
+
+# figure
+
+figure 1
+plot x
+figure 1
+figure 2
+figure 1
+remove line1
+figure 3
+plot cos(x)
+figure 1
+
+display

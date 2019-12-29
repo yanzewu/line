@@ -1,0 +1,41 @@
+# Commands about figure elements
+
+# removal
+plot sin(x), cos(x) ps=2, tan(x)
+remove line1 line3
+show line label
+remove ps=4
+show line label
+remove ps=2
+show line label
+
+# line
+line 0,0 2,2 lc=red
+hline 1
+hline 2 lt=-- lc=grey lw=1
+vline 3
+vline 4 lt=: lc=green lw=2
+line 0.2,0.2 0.4,0.4
+line 0.2,0.2 0.4,0.4 coord=data
+line 0.1,0.1 0.5,0.1 coord=axis
+
+# text
+text 123 0,0.5
+text 123 topleft
+text "123" bottomright font=Arial,9
+set text2 text="456"
+
+hold on
+
+# fill
+plot sin(x), (sin(0.5*x)+0.1), (sin(x)+0.2)
+fill line1 line2
+fill line2-line3
+set polygon1,polygon2,polygon3 alpha=0.5
+remove polygon1
+
+display
+
+# clear
+clear
+display
