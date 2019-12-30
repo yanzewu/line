@@ -1,9 +1,12 @@
 
 import numpy as np
-from . import style
-from . import FigObject
+
 from .. import scale
-from ..errors import LineProcessError
+
+from . import style
+from . import errors
+from . import FigObject
+
 
 class Axis(FigObject):
 

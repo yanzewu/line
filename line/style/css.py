@@ -2,9 +2,8 @@
 import enum
 import re
 
-from ..keywords import is_inheritable, is_copyable
-from ..errors import LineProcessError, LineParseError
-from ..parse import translate_style_val
+from . import errors
+from .literal import is_inheritable_style, is_copyable_style, translate_style_val
 
 _selector_matcher = re.compile(r'(?P<a>[\.\#\s]?[^\.#{\s\[]+)\s*((?P<b>[\#]?[^\.#{\s\[]+)|(?P<c>\[\w+\=[\w\,]+\]))?')
 
@@ -21,12 +20,12 @@ class Style(dict):
 
     def copy_from(self, other):
         self.update({
-            (d, v) for (d, v) in other.items() if is_copyable(d)
+            (d, v) for (d, v) in other.items() if is_copyable_style(d)
         })
 
     def inherit_from(self, other):
         self.update({
-            (d, v) for (d, v) in other.items() if is_inheritable(d)
+            (d, v) for (d, v) in other.items() if is_inheritable_style(d)
         })
 
     def export(self):
@@ -275,7 +274,7 @@ class StyleSheet:
                     if element.computed_style is None:
                         element.computed_style = style.copy()
                     else:
-                        element.computed_style = dict(((d, v) for d, v in element.computed_style.items() if not is_copyable(d)))
+                        element.computed_style = dict(((d, v) for d, v in element.computed_style.items() if not is_copyable_style(d)))
                         element.computed_style.update(style)
 
     def select(self, stylable):
@@ -306,16 +305,16 @@ def compute_inheritance(stylable, parent_style={}):
 
     for d, v in stylable.export_style().items():
         if v is SpecialStyleValue.INHERIT:
-            if is_inheritable(d):
+            if is_inheritable_style(d):
                 try:
                     stylable.computed_style[d] = parent_style[d]
                 except KeyError:
-                    raise LineProcessError('Cannot inherit style: "%s"' % d)
+                    raise errors.LineProcessError('Cannot inherit style: "%s"' % d)
             else:
-                raise LineProcessError('Style %s is not inheritable' % d)
+                raise errors.LineProcessError('Style %s is not inheritable' % d)
         elif v is SpecialStyleValue.DEFAULT:
-            if not is_copyable(d):
-                raise LineProcessError('There is no default value for %s' % d)
+            if not is_copyable_style(d):
+                raise errors.LineProcessError('There is no default value for %s' % d)
         else:
             stylable.computed_style[d] = v
 
@@ -334,12 +333,12 @@ def compute_style(stylable, default_stylesheet):
 def parse_selector(selector):
     m_selector = _selector_matcher.match(selector)
     if m_selector is None:
-        raise LineParseError('Invalid selection: %s' % selector)
+        raise errors.LineParseError('Invalid selection: %s' % selector)
     else:
         try:
             return _parse_selector_with_match(m_selector)
         except (RuntimeError, AssertionError):
-            raise LineParseError('Invalid selection: %s' % selector)
+            raise errors.LineParseError('Invalid selection: %s' % selector)
 
 
 def _parse_selector_with_match(seletor_match):

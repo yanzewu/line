@@ -1,7 +1,8 @@
 
 from . import FigObject
+from . import errors
+
 from .component import *
-from ..errors import LineProcessError
 
 class Subfigure(FigObject):
 
@@ -122,7 +123,7 @@ class Subfigure(FigObject):
             self.texts.pop(idx)
             
         else:
-            raise LineProcessError('Cannot remove element: "%s"' % element.name)
+            raise errors.LineProcessError('Cannot remove element: "%s"' % element.name)
 
     def clear(self):
         """ Clear lines and texts but keep style.

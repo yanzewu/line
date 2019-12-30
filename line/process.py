@@ -74,32 +74,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_plot(m_state, m_tokens, keep_existed=True)
 
     elif command == 'hist':
-        if len(m_state.figures) > 0:
-            keep_existed = m_state.cur_subfigure().get_style('hold')
-        else:
-            keep_existed = False
-
-        parser = plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
-        parser.parse(m_state, m_tokens)
-        if parser.plot_groups:
-            plot_proc.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
-        else:
-            warn('No data to plot')
+        parse_and_process_hist(m_state, m_tokens)
 
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)
 
     elif command == 'group':
-        group_descriptor = get_token(m_tokens)
-        assert_no_token(m_tokens)
-        if group_descriptor == 'clear':
-            m_state.cur_subfigure().update_style({'group':None})
-        else:
-            m_state.cur_subfigure().update_style({'group': parse_group(group_descriptor)})
-            logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
-
-        m_state.cur_subfigure().update_colorid()
-        m_state.cur_subfigure().is_changed = True
+        parse_and_process_group(m_state, m_tokens)
 
     elif command == 'set':
         parse_and_process_set(m_state, m_tokens)
@@ -111,12 +92,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_style(m_state, m_tokens)
 
     elif command == 'line':
-        x1 = stof(get_token(m_tokens))
-        assert_token(get_token(m_tokens), ',')
-        y1 = stof(get_token(m_tokens))
-        x2 = stof(get_token(m_tokens))
-        assert_token(get_token(m_tokens), ',')
-        y2 = stof(get_token(m_tokens))
+        x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
         
         m_state.cur_subfigure().add_drawline((x1,y1), (x2,y2), parse_style(m_tokens))
         m_state.cur_subfigure().is_changed = True
@@ -132,56 +108,21 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_subfigure().is_changed = True
 
     elif command == 'fill':
-        fill_between = []
-        fill_x = []
-        while len(m_tokens) > 0:
-            if keywords.is_style_keyword(lookup(m_tokens)):
-                break
-            token = get_token(m_tokens)
-            try:
-                if '-' in token:
-                    line1, line2 = token.split('-', 1)
-                    fill_between.append((
-                        [d for d in m_state.cur_subfigure().datalines if d.name == line1][0],
-                        [d for d in m_state.cur_subfigure().datalines if d.name == line2][0]
-                    ))
-                else:
-                    fill_x.append([d for d in m_state.cur_subfigure().datalines if d.name == token][0])
-            except IndexError:
-                warn('Skip line "%s" as it does not exist' % token)
-
-        style_dict = parse_style(m_tokens)
-        if not fill_between and not fill_x:
-            warn('No line to fill')
-        else:
-            for line1, line2 in fill_between:
-                m_state.cur_subfigure().add_polygon(((
-                    np.concatenate((line1.x, np.flip(line2.x)))), np.concatenate((line1.y, np.flip(line2.y)))), style_dict)
-            for line1 in fill_x:
-                m_state.cur_subfigure().add_polygon((
-                    np.concatenate((line1.x, np.flip(line1.x))), np.concatenate((line1.y,
-                        np.ones_like(line1.x) * m_state.cur_subfigure().axes[1].get_style('tickpos')[0]))), style_dict)
-            m_state.cur_subfigure().is_changed = True
+        parse_and_process_fill(m_state, m_tokens)
         
     elif command == 'text':
         text = get_token(m_tokens)
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
-            pos = (stof(token1), stof(get_token(m_tokens)))
-            m_state.cur_subfigure().add_text(text, pos, parse_style(m_tokens))
+            m_state.cur_subfigure().add_text(text, (stof(token1), stof(get_token(m_tokens))), parse_style(m_tokens))
         else:
-            pos = style.Str2Pos[token1]
-            style_list = parse_style(m_tokens)
-            style_list['coord'] = 'axis'
-            m_state.cur_subfigure().add_text(text, pos, style_list)
+            m_state.cur_subfigure().add_text(text, style.Str2Pos[token1], {**parse_style(m_tokens), **{'coord':'axis'}})
 
         m_state.cur_subfigure().is_changed = True
 
     elif command == 'split':
-        hsplitnum = stod(get_token(m_tokens))
-        assert_token(get_token(m_tokens), ',')
-        vsplitnum = stod(get_token(m_tokens))
+        hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
         assert_no_token(m_tokens)
         process_split(m_state, hsplitnum, vsplitnum)
 
@@ -238,17 +179,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         process_save(m_state, filename)
 
     elif command == 'clear':
-        assert_no_token(m_tokens)
         m_state.cur_subfigure().clear()
 
     elif command == 'replot':
-        arg1 = None
-        if len(m_tokens) >= 1:
-            assert_token(get_token(m_tokens), 'all')
-            arg1 = 'all'
-
-        assert_no_token(m_tokens)
-        if arg1:
+        if lookup(m_tokens, 1) == 'all':
             m_state.cur_figure().is_changed = True
         else:
             m_state.cur_subfigure().is_changed = True
@@ -257,7 +191,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         outstr = ''
         while len(m_tokens) > 0:
             if m_tokens[0].startswith('$'):
-                outstr += process_expr(m_state, parse_column(m_tokens))
+                outstr += str(process_expr(m_state, parse_column(m_tokens)))
             else:
                 outstr += m_tokens[0]
                 m_tokens.popleft()
@@ -302,27 +236,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'load':
         filename = get_token(m_tokens)
         assert_no_token(m_tokens)
-        handler = cmd_handle.CMDHandler(m_state)
-        is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
-        plot.finalize(m_state)
-        
-        cwd = os.getcwd()
-
-        loadpaths = ['.', os.path.expanduser('~/.line/')]
-
-        full_filename = None
-        for path in loadpaths:
-            if io_util.file_exist(os.path.join(path, filename)):
-                full_filename = os.path.join(path, filename)
-                break
-        
-        if not full_filename:
-            raise LineProcessError('Cannot open file "%s"' % filename)
-
-        handler.proc_file(full_filename)
-        os.chdir(cwd)
-        m_state.is_interactive = is_interactive
-        plot.initialize(m_state)
+        process_load(m_state, filename)
 
     else:
         raise LineParseError('No command named "%s"' % command)
@@ -372,6 +286,18 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     else:
         warn('No data to plot')
 
+def parse_and_process_hist(m_state:state.GlobalState, m_tokens:deque):
+    if len(m_state.figures) > 0:
+        keep_existed = m_state.cur_subfigure().get_style('hold')
+    else:
+        keep_existed = False
+
+    parser = plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
+    parser.parse(m_state, m_tokens)
+    if parser.plot_groups:
+        plot_proc.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
+    else:
+        warn('No data to plot')
 
 def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `remove` command.
@@ -397,6 +323,19 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     for e in elements:
         m_state.cur_subfigure().remove_element(e)
 
+    m_state.cur_subfigure().is_changed = True
+
+
+def parse_and_process_group(m_state:state.GlobalState, m_tokens:deque):
+    group_descriptor = get_token(m_tokens)
+    assert_no_token(m_tokens)
+    if group_descriptor == 'clear':
+        m_state.cur_subfigure().update_style({'group':None})
+    else:
+        m_state.cur_subfigure().update_style({'group': parse_group(group_descriptor)})
+        logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
+
+    m_state.cur_subfigure().update_colorid()
     m_state.cur_subfigure().is_changed = True
 
 
@@ -552,6 +491,39 @@ def parse_and_process_style(m_state:state.GlobalState, m_tokens):
     m_state.class_stylesheet.update(ss)
 
 
+def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
+    fill_between = []
+    fill_x = []
+    while len(m_tokens) > 0:
+        if keywords.is_style_keyword(lookup(m_tokens)):
+            break
+        token = get_token(m_tokens)
+        try:
+            if '-' in token:
+                line1, line2 = token.split('-', 1)
+                fill_between.append((
+                    [d for d in m_state.cur_subfigure().datalines if d.name == line1][0],
+                    [d for d in m_state.cur_subfigure().datalines if d.name == line2][0]
+                ))
+            else:
+                fill_x.append([d for d in m_state.cur_subfigure().datalines if d.name == token][0])
+        except IndexError:
+            warn('Skip line "%s" as it does not exist' % token)
+
+    style_dict = parse_style(m_tokens)
+    if not fill_between and not fill_x:
+        warn('No line to fill')
+    else:
+        for line1, line2 in fill_between:
+            m_state.cur_subfigure().add_polygon(((
+                np.concatenate((line1.x, np.flip(line2.x)))), np.concatenate((line1.y, np.flip(line2.y)))), style_dict)
+        for line1 in fill_x:
+            m_state.cur_subfigure().add_polygon((
+                np.concatenate((line1.x, np.flip(line1.x))), np.concatenate((line1.y,
+                    np.ones_like(line1.x) * m_state.cur_subfigure().axes[1].get_style('tickpos')[0]))), style_dict)
+        m_state.cur_subfigure().is_changed = True
+
+
 def process_set_style(m_state, style_sheet, add_class_list, remove_class_list):
     
     has_updated = style_sheet.apply_to(m_state.cur_figure())
@@ -640,3 +612,26 @@ def process_expr(m_state:state.GlobalState, expr):
     evaler.load(expr, True)
     logger.debug(evaler.expr)
     return evaler.evaluate()
+
+def process_load(m_state:state.GlobalState, filename):
+    handler = cmd_handle.CMDHandler(m_state)
+    is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
+    plot.finalize(m_state)
+    
+    cwd = os.getcwd()
+
+    loadpaths = ['.', os.path.expanduser('~/.line/')]
+
+    full_filename = None
+    for path in loadpaths:
+        if io_util.file_exist(os.path.join(path, filename)):
+            full_filename = os.path.join(path, filename)
+            break
+    
+    if not full_filename:
+        raise LineProcessError('Cannot open file "%s"' % filename)
+
+    handler.proc_file(full_filename)
+    os.chdir(cwd)
+    m_state.is_interactive = is_interactive
+    plot.initialize(m_state)

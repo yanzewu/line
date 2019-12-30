@@ -1,7 +1,7 @@
 
 from . import FigObject
-from .subfigure import Subfigure
-from .. import defaults
+from . import Subfigure
+from . import defaults
 
 class Figure(FigObject):
 

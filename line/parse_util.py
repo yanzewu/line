@@ -30,6 +30,9 @@ def assert_token(token, expected):
     if token != expected:
         raise LineParseError('"%s" expected' % expected)
 
+def make_assert_token(expected):
+    return (lambda x: assert_token(x, expected))
+
 def lookup(m_tokens, idx=0, ret_string=False):
     """ Exception-free look up the next token in advance.
     idx: number of token ahead;
@@ -47,6 +50,17 @@ def skip_tokens(m_tokens, termflag):
     while len(m_tokens) > 0:
         if get_token(m_tokens) == termflag:
             break
+
+def zipeval(functions, m_tokens):
+    """ [f(t) for f, t in zip(functions, m_tokens)]
+    raise error if len(m_tokens) < len(functions)
+    tokens will be poped by len(functions)
+    """
+    r = []
+    for f in functions:
+        r.append(f(get_token(m_tokens)))
+    return r
+
 
 def stod(token):
 

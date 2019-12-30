@@ -1,8 +1,8 @@
 
 import copy
 
-from ..style.css import Style
-from .. import defaults
+from . import css
+from . import defaults
 
 
 class FigObject:
@@ -19,7 +19,7 @@ class FigObject:
         self.typename = typename
         self.name = name
         self.classnames = []
-        self.style = [Style(), Style()]        # style stack
+        self.style = [css.Style(), css.Style()]        # style stack
         self.computed_style = None
         self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
         self.custom_style_getter = custom_style_getter
