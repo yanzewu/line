@@ -1,7 +1,6 @@
 
 
 import numpy as np
-from collections import OrderedDict
 
 from .style import css
 from .element import Figure, Subfigure
@@ -14,7 +13,7 @@ class GlobalState:
     
     def __init__(self):
         
-        self.figures = OrderedDict()        # name:Figure
+        self.figures = dict()               # name:Figure
         self.cur_figurename = None          # Name of current figure
         self.default_stylesheet = css.StyleSheet()
         self.custom_stylesheet = css.StyleSheet()

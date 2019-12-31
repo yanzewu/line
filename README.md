@@ -1,6 +1,6 @@
 # LINE
 
-Creating nice line and scatter plot with least typing.
+Creating nice academic-style plot with least typing.
 
 <div style="display:flex; flex-direction: row; justify-content: center; align-items: center">
 <img width="35%" height="200" src="doc/plot1.png">
@@ -29,24 +29,24 @@ The plotting grammar of Line is similar (but looser) with Gnuplot. The major dif
 - No quote for filename is needed if column entries are given. i.e. `plot 'filename' 1:2` in Gnuplot is equvalent to `plot filename 1:2` in Line;
 - Supports matlab-style line description (like "r-", "kd--");
 - No requirement for frequent `replot`. The replotting is automatically done when there is anything changed (but certainly you can manually replot);
-- Uniform description of style element. Line use a CSS-like model to select and modify element styles, therefore all grammars of style getting/setting are similar and straightforward;
-- A better palette system. Setting palette only needs one command, and one can easily change the color order via modifying `groupid` or using `group` command.
+- Uniform description of style element. Line uses CSS model to select and modify element styles, therefore grammars of getting/setting styles are simple and straightforward;
+- A better palette system. Setting palette only requires one command, and one can easily change the color order via modifying `groupid` or using `group` command.
 
 ### Launch
 
-To enter interactive mode, type
+Launch in interactive mode:
 
     line
 
-To run a script, type
+Run a script:
 
     line [scriptname]
 
-To execute commands directly, type
+Execute commands directly:
 
     line -e [commands]
 
-To plot from file directly from command line, type
+Plot from file directly:
 
     line -p [filename] (columnx:)(columny)
 
@@ -64,7 +64,7 @@ Line provides various ways to select columns:
     line> plot 'test-data.txt'          # plot remained columns against first column
     line> plot 'test-data.txt', 'hist-data.txt' # plot two files
 
-To add/modify styles of lines:
+Customize line styles while plotting:
 
     line> plot test-data.txt t:y1 t='second column'  # set data title
     line> plot test-data.txt t:y1 lw=2 lc=red        # plot with linewidth and linecolor set
@@ -78,10 +78,12 @@ Append data to existing figure ("hold on"):
 
 ### Adjusting styles
 
-Adjust ranges, scales, grids and legends (the beginning "set" is omitted):
+Adjust ranges, scales, grids, legends, etc. (the beginning "set" can be omitted):
 
+    line> set xrange 0:2        # setting x range, the 'set' can be omitted
     line> xrange 0:2            # setting x range
     line> xscale log            # set x scale
+    line> ylabel 'y'            # set ylabel
     line> grid on               # show grid
     line> grid lt=dash          # setting grid style
     line> legend off            # hide legend
@@ -109,11 +111,11 @@ Load a script:
 
     load [scriptname]
 
-To display figure:
+Display figure in a script:
 
     display
 
-To interrupt script running and switch to interactive mode:
+Interrupt script running and switch to interactive mode:
 
     input
 
@@ -124,4 +126,4 @@ Note Line will not display the figure unless `display` or `input` are given. The
 
 Line reads `.linerc` in user's home directory, which is just a script. You can also use `load` command to specify configurations.
 
-More custom style classes can be added to [styles/defaults.d.css](styles/defaults.d.css). Palettes can be added to [styles/palettes.json](styles/palettes.json).
+More custom style classes can be added to [styles/defaults.d.css](line/styles/defaults.d.css). Palettes can be added to [styles/palettes.json](line/styles/palettes.json).

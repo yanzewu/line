@@ -7,7 +7,7 @@ from . import style
 from .style import css, translate_style_val
 from . import keywords
 
-from .errors import LineParseError, LineProcessError, warn, print_as_warning
+from .errors import LineParseError, warn, print_as_warning
 from .parse_util import *
 
 logger = logging.getLogger('line')
@@ -39,8 +39,7 @@ def parse_column(m_tokens):
     elif m_tokens[0][0] == '$':
         column_expr = get_token_raw(m_tokens)
         while lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**'):
-            column_expr += get_token_raw(m_tokens)
-            column_expr += get_token_raw(m_tokens)
+            column_expr += get_token_raw(m_tokens) + get_token_raw(m_tokens)
 
     else:
         column_expr = get_token_raw(m_tokens)
@@ -144,13 +143,9 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         return 'visible', False
 
     style_name = keywords.style_alias.get(style_name, style_name)
-    if style_name not in keywords.style_keywords:
-        if raise_error:
-            raise LineParseError('Invalid style "%s"' % style_name)
-        else:
-            is_invalid = True
-    else:
-        is_invalid = False
+    is_invalid = style_name not in keywords.style_keywords
+    if is_invalid and raise_error:
+        raise LineParseError('Invalid style "%s"' % style_name)
         
     style_val = get_token(m_tokens)
     if style_val == '=':
@@ -160,11 +155,9 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
 
     while len(m_tokens) > 0:
         if lookup(m_tokens) == ',' and recog_comma:
-            style_val += get_token(m_tokens)
-            style_val += get_token(m_tokens)
+            style_val += get_token(m_tokens) + get_token(m_tokens)
         elif lookup(m_tokens) == ':' and recog_colon:
-            style_val += get_token(m_tokens)
-            style_val += get_token(m_tokens)
+            style_val += get_token(m_tokens) + get_token(m_tokens)
         else:
             break
     
@@ -177,7 +170,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         style_val_real = translate_style_val(style_name, style_val)
     except (LineParseError, KeyError, ValueError) as e:
         if raise_error:
-            raise LineProcessError('Invalid style parameter for "%s": %s' % (style_name, style_val))
+            raise LineParseError('Invalid style parameter for "%s": %s' % (style_name, style_val))
         else:
             print_as_warning(e)
             warn('Skip invalid style parameter for "%s": %s' % (style_name, style_val))

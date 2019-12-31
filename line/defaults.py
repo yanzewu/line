@@ -2,14 +2,11 @@
 """ Initializing default options, styles and palettes.
 """
 
-from .style import css
-from .style import palette
-
-
 default_options = {
     'auto-adjust-range':True,
     'data-title':'auto',
     'data-delimiter':'auto',
+    'delayed-init': True,
     'display-when-quit':False,
     'ignore-data-comment': True,
     'identify-data':False,              # not used now
@@ -30,6 +27,9 @@ def init_global_state(m_state):
 
     import os.path
 
+    from .style import css
+    from .style import palette
+
     m_state.options = default_options
     style_dir = os.path.join(os.path.dirname(__file__) , 'styles')
     with open(os.path.join(style_dir, 'defaults.css'), 'r') as f:
@@ -40,7 +40,8 @@ def init_global_state(m_state):
     for selector, style in m_state.default_stylesheet.data.items():
         default_style_entries[selector.typename] = set(style)
 
+    palette.load_intrinsic_palette()
     with open(os.path.join(style_dir, 'palettes.json')) as f:
         palette.load_palette(f)
         m_state.custom_stylesheet.update(palette.palette2stylesheet(palette.PALETTES['default']))
-                
+

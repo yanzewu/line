@@ -8,7 +8,6 @@ import rlcompleter
 import readline
 
 from . import state
-from . import parse
 from . import process
 from . import completion
 from .errors import LineParseError, print_error
@@ -35,6 +34,7 @@ class CMDHandler:
     RET_CONTINUE = 2
 
     _debug = False
+    _initialized = False
 
     def __init__(self, m_state=None):
 
@@ -45,7 +45,7 @@ class CMDHandler:
         if m_state is None:
             self.m_state = state.GlobalState()
             defaults.init_global_state(self.m_state)
-
+            process.initialize()
         else:
             self.m_state = m_state
 

@@ -2,7 +2,6 @@
 import enum
 import colorsys
 from collections import namedtuple
-from . import palette
 
 PositionStyle = enum.Enum('PositionStyle', 'TOPLEFT TOPMID TOPRIGHT BOTTOMLEFT BOTTOMMID BOTTOMRIGHT')
 
@@ -128,10 +127,3 @@ Str2Pos = {
     'bottomright':(0.7,0.2),
     'best': 'best'
 }
-
-def init():
-    palette._load_palette_mpl()
-    #palette._load_palette_seaborn()
-    palette._load_colors_mpl()
-
-init()

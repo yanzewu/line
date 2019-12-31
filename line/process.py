@@ -1,5 +1,4 @@
 
-import sys
 import itertools
 import logging
 from collections import deque
@@ -7,13 +6,11 @@ import os
 
 import numpy as np
 
+from . import defaults
+from . import keywords
+from . import io_util
 from . import state
 from . import plot
-from . import expr_proc
-from . import plot_proc
-from . import io_util
-from . import keywords
-from . import defaults
 from . import cmd_handle
 
 from .style import css
@@ -22,7 +19,25 @@ from .style import palette
 from .parse import *
 from .errors import LineParseError, LineProcessError, warn
 
+expr_proc = None
+plot_proc = None
+
 logger = logging.getLogger('line')
+
+def initialize():
+    
+    global expr_proc
+    global plot_proc
+
+    if expr_proc is None:
+        from . import expr_proc as expr_proc_1
+        expr_proc = expr_proc_1
+    if plot_proc is None:
+        from . import plot_proc as plot_proc_1
+        plot_proc = plot_proc_1
+
+if defaults.default_options['delayed-init'] == False:
+    initialize()
 
 
 def parse_and_process_command(tokens, m_state:state.GlobalState):

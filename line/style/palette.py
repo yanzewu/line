@@ -32,6 +32,13 @@ def load_palette(fp):
     PALETTES.update(j)
 
 
+def load_intrinsic_palette():
+    """ Load intrinsic palettes (from matplotlib)
+    """
+    _load_palette_mpl()
+    _load_colors_mpl()
+
+
 def palette2stylesheet(palette, target=None):
     """ Return css.StyleSheet object from list of colors.
     """
