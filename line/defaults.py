@@ -2,19 +2,7 @@
 """ Initializing default options, styles and palettes.
 """
 
-default_options = {
-    'auto-adjust-range':True,
-    'data-title':'auto',
-    'data-delimiter':'auto',
-    'delayed-init': True,
-    'display-when-quit':False,
-    'ignore-data-comment': True,
-    'identify-data':False,              # not used now
-    'prompt-always':False,
-    'prompt-multi-removal':True,
-    'prompt-overwrite':True,
-    'prompt-save-when-quit':False,
-}
+default_options = {}
 
 default_font = 'CMU Serif'
 default_math_font = 'cm'
@@ -22,6 +10,19 @@ default_fonts = ['CMU Serif', 'Times New Roman', 'Arial', 'serif']  # font fallb
 default_figure_size_inches = [7.2, 4.8]
 default_style_entries = {}
 
+def read_default_options(section='DEFAULT'):
+
+    global default_options
+
+    import configparser
+    import os.path
+    from .parse_util import parse_general
+
+    style_dir = os.path.join(os.path.dirname(__file__) , 'styles')
+    config = configparser.ConfigParser()
+    config.read(os.path.join(style_dir, 'options.ini'))
+    default_options = dict(((k, parse_general(v)) for (k, v) in config[section].items()))
+    
 
 def init_global_state(m_state):
 
@@ -45,3 +46,4 @@ def init_global_state(m_state):
         palette.load_palette(f)
         m_state.custom_stylesheet.update(palette.palette2stylesheet(palette.PALETTES['default']))
 
+read_default_options()

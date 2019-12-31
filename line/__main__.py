@@ -3,6 +3,7 @@ import sys
 import logging
 import warnings
 
+from . import defaults
 from . import cmd_handle
 from .parse import translate_option_val
 from .process import process_display
@@ -18,8 +19,6 @@ Available options are:
 By default, reads script files from args.
 Additional options can be shown by `line -e 'show option'`'''
 
-    cmd_handler = cmd_handle.CMDHandler()
-
     mode = 'script'
     args = []
 
@@ -33,15 +32,17 @@ Additional options can be shown by `line -e 'show option'`'''
             exit(0)
         elif arg in ('-d', '--debug'):
             logging.getLogger('line').setLevel(logging.DEBUG)
-            cmd_handler._debug = True
+            cmd_handle.CMDHandler._debug = True
         elif arg.startswith('--'):
             opt, val = arg[2:].split('=')
-            cmd_handler.m_state.options[opt] = translate_option_val(opt, val)
+            defaults.default_options[opt] = translate_option_val(opt, val)
         else:
             args.append(arg)
     
-    if not cmd_handler._debug:
+    if not cmd_handle.CMDHandler._debug:
         warnings.filterwarnings('ignore')
+
+    cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0))
 
     if len(args) == 0:
         cmd_handler.read_source()

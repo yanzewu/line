@@ -6,6 +6,7 @@ import os.path
 from collections import deque
 import rlcompleter
 import readline
+import threading
 
 from . import state
 from . import process
@@ -34,13 +35,20 @@ class CMDHandler:
     RET_CONTINUE = 2
 
     _debug = False
-    _initialized = False
 
-    def __init__(self, m_state=None):
+    def __init__(self, m_state=None, preload_input=False):
 
         self.token_buffer = deque()
         self.token_begin_pos = []
         self.completion_buffer = []
+        self._filename = None
+
+        if preload_input:
+            th = threading.Thread(target=self.get_input_cache)
+            th.start()
+        else:
+            self._input_cache = None
+            th = None
 
         if m_state is None:
             self.m_state = state.GlobalState()
@@ -49,7 +57,11 @@ class CMDHandler:
         else:
             self.m_state = m_state
 
-        self._filename = None
+        if th is not None:
+            try:
+                th.join()
+            except KeyboardInterrupt:
+                exit()
 
     def init_input(self):
         if self.HISTORY_NAME:
@@ -124,10 +136,14 @@ class CMDHandler:
 
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
-        try:
-            line = input(ps)
-        except KeyboardInterrupt:
-            return 1
+        if self._input_cache is not None:
+            line = self._input_cache
+            self._input_cache = None
+        else:
+            try:
+                line = input(ps)
+            except KeyboardInterrupt:
+                return 1
 
         try:
             ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
@@ -154,6 +170,15 @@ class CMDHandler:
                 return 1
             elif ret == self.RET_CONTINUE:
                 return self.proc_input(self.PS2)
+
+    def get_input_cache(self):
+        self.init_input()
+        try:
+            self._input_cache = input(self.PS1)
+        except KeyboardInterrupt:
+            import os
+            os._exit(1)
+        
 
     def input_loop(self):
         self.init_input()
