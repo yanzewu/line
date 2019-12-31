@@ -18,8 +18,8 @@ class Figure(FigObject):
             'dpi':self._set_dpi,
             'hspacing':lambda s, v: self._set_spacing_and_margin(s, 'spacing', 0, v),
             'vspacing': lambda s, v: self._set_spacing_and_margin(s, 'spacing', 1, v),
-            'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 0, v),
-            'margin-left': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
+            'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
+            'margin-left': lambda s,v: self._set_spacing_and_margin(s, 'margin', 0, v),
             'margin-right': lambda s,v:self._set_spacing_and_margin(s, 'margin', 2, v),
             'margin-top': lambda s,v:  self._set_spacing_and_margin(s, 'margin', 3, v),
         }, {

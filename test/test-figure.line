@@ -4,17 +4,17 @@ figure 1
 hsplit 2
 vsplit 3
 subfigure 1
-text "subfigure 1" topleft
+set title "subfigure 1"
 subfigure 2
-text "subfigure 2" topleft
+set title "subfigure 2"
 subfigure 3
-text "subfigure 3" topleft
+set title "subfigure 3"
 subfigure 4
-text "subfigure 4" topleft
+set title "subfigure 4"
 subfigure 5
-text "subfigure 5" topleft
+set title "subfigure 5"
 subfigure 6
-text "subfigure 6" topleft
+set title "subfigure 6"
 
 display
 

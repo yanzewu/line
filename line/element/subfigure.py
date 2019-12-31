@@ -9,8 +9,8 @@ class Subfigure(FigObject):
     def __init__(self, subfigure_name):
 
         super().__init__('subfigure', subfigure_name, {
-            'padding-bottom': lambda s,v:self._set_padding(s, 0, v),
-            'padding-left': lambda s,v: self._set_padding(s, 1, v),
+            'padding-bottom': lambda s,v:self._set_padding(s, 1, v),
+            'padding-left': lambda s,v: self._set_padding(s, 0, v),
             'padding-right': lambda s,v:self._set_padding(s, 2, v),
             'padding-top': lambda s,v:  self._set_padding(s, 3, v),
             'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}),

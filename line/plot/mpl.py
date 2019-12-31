@@ -70,8 +70,8 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
     margin = m_fig.attr('margin')
 
     def scale(x):
-        return x[0]*(1-margin[3]-margin[0])+margin[0], x[1]*(1-margin[2]-margin[1])+margin[1], \
-            x[2]*(1-margin[3]-margin[0]), x[3]*(1-margin[2]-margin[1])
+        return x[0]*(1-margin[2]-margin[0])+margin[0], x[1]*(1-margin[3]-margin[1])+margin[1], \
+            x[2]*(1-margin[2]-margin[0]), x[3]*(1-margin[3]-margin[1])
 
     for subfig in m_fig.subfigures:
         
@@ -84,13 +84,13 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
             ax = plt.Axes(
                 m_plt_fig,
                 scale((pos[0]+padding[0], pos[1]+padding[1], 
-                rsize[0]-padding[0], rsize[1]-padding[1]))
+                rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
             )
             subfig.backend = ax
         else:
             ax.set_position((
                 scale((pos[0]+padding[0], pos[1]+padding[1], 
-                rsize[0]-padding[0], rsize[1]-padding[1]))
+                rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
             ))
 
         m_plt_fig.add_axes(ax)
@@ -124,7 +124,11 @@ def _update_subfigure(m_subfig:state.Subfigure):
     ax.set_visible(m_subfig.attr('visible'))
     ax.set_frame_on(True)
 
-    # ax.set_title(m_subfig.attr('title')) TITLE has fonts...
+    ax.set_title(m_subfig.computed_style['title'],
+        fontsize=m_subfig.computed_style['fontsize'],
+        fontfamily=m_subfig.computed_style['fontfamily']
+    )
+
     # axis
     for i, d in enumerate(('bottom', 'left', 'right', 'top')):
         ax.spines[d].set_visible(m_subfig.axes[i].attr('visible'))
