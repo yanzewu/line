@@ -1,6 +1,7 @@
 
 from ..keywords import style_keywords, inheritable_styles
 from ..parse_util import *
+from ..option_util import parse_general, parse_range
 
 from . import css
 from . import style

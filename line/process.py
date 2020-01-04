@@ -367,12 +367,15 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             arg = get_token(m_tokens)
             if arg == '=':
                 arg = get_token(m_tokens)
-            if opt not in m_state.options:
-                warn('Skip invalid option "%s"' % opt)
-            else:
-                if opt not in m_state.options:
-                    raise LineParseError('Invalid option: "%s"' % opt)
-                m_state.options[opt] = translate_option_val(opt, arg)
+            try:
+                m_state.options.update(
+                    defaults.parse_default_options({opt:arg}, 
+                    option_range=defaults.default_options.keys(), raise_error=True
+                ))
+            except KeyError:
+                raise LineParseError('Invalid option: "%s"' % opt)
+            except ValueError:
+                raise LineParseError('Invalid value for %s: "%s"' % (opt, arg))
 
     elif lookup(m_tokens) == 'default':
         get_token(m_tokens)

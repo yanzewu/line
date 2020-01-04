@@ -29,7 +29,7 @@ The plotting grammar of Line is similar (but looser) with Gnuplot. The major dif
 - No quote for filename is needed if column entries are given. i.e. `plot 'filename' 1:2` in Gnuplot is equvalent to `plot filename 1:2` in Line;
 - Supports matlab-style line description (like "r-", "kd--");
 - No requirement for frequent `replot`. The replotting is automatically done when there is anything changed (but certainly you can manually replot);
-- Uniform description of style element. Line uses CSS model to select and modify element styles, therefore grammars of getting/setting styles are simple and straightforward;
+- Uniform description of style elements. Line uses CSS model to select and modify element styles, therefore the syntax for getting/setting styles are simple and straightforward;
 - A better palette system. Setting palette only requires one command, and one can easily change the color order via modifying `groupid` or using `group` command.
 
 ### Launch

@@ -1,6 +1,11 @@
 
 """ Initializing default options, styles and palettes.
 """
+import configparser
+import os.path
+
+from . import option_util
+
 
 default_options = {}
 
@@ -10,23 +15,35 @@ default_fonts = ['CMU Serif', 'Times New Roman', 'Arial', 'serif']  # font fallb
 default_figure_size_inches = [7.2, 4.8]
 default_style_entries = {}
 
-def read_default_options(section='DEFAULT'):
+
+def parse_default_options(option_list, option_range=None, raise_error=False):
+
+    return option_util.parse_option_list(option_list, 
+        omit_when_valueerror=not raise_error, 
+        strict=raise_error,
+        option_range=option_range,
+        default_handler=option_util.to_bool, 
+        custom_handler_dict={
+            'data-delimiter': lambda x: x,
+            'data-title': lambda x: x if x == 'auto' else option_util.to_bool(x)
+        })
+
+
+def read_default_options():
 
     global default_options
 
-    import configparser
-    import os.path
-    from .parse_util import parse_general
-
     style_dir = os.path.join(os.path.dirname(__file__) , 'styles')
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(inline_comment_prefixes='#')
     config.read(os.path.join(style_dir, 'options.ini'))
-    default_options = dict(((k, parse_general(v)) for (k, v) in config[section].items()))
+    default_options = dict(((k, option_util.parse_general(v)) for (k, v) in config['DEFAULT'].items()))
+    if 'custom' in config.sections():
+        default_options.update(
+            parse_default_options(config['custom'].items(), option_range=default_options.keys())
+            )
     
 
 def init_global_state(m_state):
-
-    import os.path
 
     from .style import css
     from .style import palette

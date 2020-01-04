@@ -262,19 +262,3 @@ def _text_order(text):
             order[t] = i
             i += 1
     return order
-
-
-
-def translate_option_val(option:str, value:str):
-    
-    if option == 'data-delimiter':
-        return value
-    elif option == 'data-title':
-        if value == 'auto':
-            return value
-
-    try:
-        return STOB[value]
-    except KeyError:
-        raise LineParseError('true/false requried for option "%s", got "%s"' % (option, value))
-

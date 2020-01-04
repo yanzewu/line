@@ -82,13 +82,6 @@ def stob(token):
     except KeyError:
         raise LineParseError("true/false required")
 
-def is_num(token):
-    try:
-        float(token)
-        return True
-    except ValueError:
-        return False
-
 def parse_token_with_comma(m_tokens):
     """ Parse consecutive tokens separated by ",", return the list.
     """
@@ -101,41 +94,4 @@ def parse_token_with_comma(m_tokens):
             break
     return tokenlist
 
-
-def parse_range(token):
-    """ Parse the range start:step:stop / start:stop into tuple (start, stop, step)
-    """
-    ssplit = token.split(':')
-    start = stof(ssplit[0]) if ssplit[0] else None
-    if len(ssplit) == 3:
-        step = stof(ssplit[1]) if ssplit[1] else None
-    else:
-        step = None
-    stop = stof(ssplit[-1]) if ssplit[-1] else None
-
-    return start, stop, step
-
-def parse_general(token:str):
-    """ Parse general token into python objects.
-    """
-    if ',' in token:
-        return [parse_general(t) for t in token.split(',')]
-    elif ':' in token:
-        return parse_range(token)
-
-    else:
-        try:
-            return STOB[token]
-        except KeyError:
-            pass
-        
-        if '.' in token or 'e' in token:
-            try:
-                return float(token)
-            except ValueError:
-                return token
-        try:
-            return int(token)
-        except ValueError:
-            return token
 

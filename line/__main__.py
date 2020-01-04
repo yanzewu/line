@@ -5,7 +5,6 @@ import warnings
 
 from . import defaults
 from . import cmd_handle
-from .parse import translate_option_val
 from .process import process_display
 
 def main():
@@ -21,6 +20,7 @@ Additional options can be shown by `line -e 'show option'`'''
 
     mode = 'script'
     args = []
+    kwargs = []
 
     for arg in sys.argv[1:]:
         if arg in ('-e', '--eval'):
@@ -34,11 +34,13 @@ Additional options can be shown by `line -e 'show option'`'''
             logging.getLogger('line').setLevel(logging.DEBUG)
             cmd_handle.CMDHandler._debug = True
         elif arg.startswith('--'):
-            opt, val = arg[2:].split('=')
-            defaults.default_options[opt] = translate_option_val(opt, val)
+            kwargs.append(arg[2:].split('='))
         else:
             args.append(arg)
     
+    defaults.default_options.update(defaults.parse_default_options(kwargs, 
+        option_range=defaults.default_options.keys(), raise_error=True))
+
     if not cmd_handle.CMDHandler._debug:
         warnings.filterwarnings('ignore')
 
