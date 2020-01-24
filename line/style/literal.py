@@ -78,6 +78,11 @@ def translate_style_val(style_name:str, style_val:str):
             raise LineParseError('Invalid scale "%s"' % style_val)
         return style_val
 
+    elif style_name == 'fillstyle':
+        if style_val not in ('none', 'full'):
+            raise LineParseError('Invalid fill style "%s"' % style_val)
+        return style_val
+
     # require multiple num value
     elif style_name in ('rsize', 'rpos', 'spacing'):
         v1, v2 = style_val.split(',')

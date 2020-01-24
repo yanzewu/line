@@ -32,7 +32,7 @@ plot example/test-data.txt t, t t time
 
 # expression
 plot example/test-data.txt $0:$1+2, sin($2)
-plot example/test-data.txt $2+2, sin($2)
+plot example/test-data.txt $2+2, (sin($2)+sin($3)*col('y2'))
 plot example/test-data.txt col(2), col('y2')
 plot example/test-data.txt load('example/test-data.txt')
 

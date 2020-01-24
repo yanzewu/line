@@ -54,10 +54,10 @@ line 0,0 1,1
 fill line1
 text "mytext" topleft
 
-set line1 linewidth=2 linecolor=cyan linetype=- pointsize=2 pointtype=o edgewidth=1 edgecolor=r \
+set line1 linewidth=2 linecolor=cyan linetype=- pointsize=2 pointtype=o edgewidth=1 edgecolor=r fillstyle=none \
 fillcolor=green label="line1" zindex=0
 set bar1 bin=10 norm=density linewidth=1 linecolor=red fillcolor=lightred label="bar1" alpha=0.8 zindex=-2
-set drawline1 lw=2 lc=grey lt=-- ps=2 pt=d edgewidth=2 edgecolor=red fillcolor=blue coord=data
+set drawline1 lw=2 lc=grey lt=-- ps=2 pt=d edgewidth=2 edgecolor=red fillcolor=blue fillstyle=full coord=data
 set polygon1 lt=- lc=yellow fillcolor=lightyellow alpha=0.9 colorid=2
 set text1 font=Times fontsize=15 color=k pos=0.5,0.5 coord=data 
 

@@ -210,8 +210,9 @@ def _update_subfigure(m_subfig:state.Subfigure):
             marker=m_style['pointtype'].to_str(),
             mec=m_style['edgecolor'],
             mew=m_style['edgewidth'],
-            mfc=m_style['fillcolor'],
+            mfc=None if m_style['fillstyle'] == 'none' else m_style['fillcolor'],
             ms=m_style['pointsize'],
+            fillstyle=m_style['fillstyle'],
             markevery=m_style['skippoint'],
             visible=m_style['visible'],
             zorder=m_style['zindex']
@@ -263,6 +264,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             mew=m_style['edgewidth'],
             mfc=m_style['fillcolor'],
             ms=m_style['pointsize'],
+            fillstyle=None if m_style['fillstyle'] == 'none' else m_style['fillstyle'],
             transform=trans,
             visible=m_style['visible'],
             zorder=m_style['zindex']

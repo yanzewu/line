@@ -147,7 +147,7 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
         if 'out' in kwargs:
             return NotImplemented
 
-        if method == '__call__':
+        if ufunc.nin == 1:
 
             m_out = []
             

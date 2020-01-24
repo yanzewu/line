@@ -557,9 +557,9 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
  label | font, fontfamily, fontsize, text, visible
  tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, visible
  grid | linewidth, linetype, linecolor, visible, zindex
- line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
+ line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
  bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
- drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, color, coord, visible, zindex
+ drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, coord, visible, zindex
  polygon | linetype, linecolor, fillcolor, color, alpha, colorid, visible, zindex
  text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
  legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, visible, zindex
@@ -575,6 +575,7 @@ colorid | int
 coord | 'data'/'axis'/'figure'
 dpi | int / 'high'/'mid'/'low'
 edgewidth | int
+fillstyle | 'full'/'none'
 font | string,int (font name, size) or string (font name)
 fontfamily | string (font name)
 fontsize | float
