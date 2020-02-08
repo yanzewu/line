@@ -60,7 +60,8 @@ set bar1 bin=10 norm=density linewidth=1 linecolor=red fillcolor=lightred label=
 set drawline1 lw=2 lc=grey lt=-- ps=2 pt=d edgewidth=2 edgecolor=red fillcolor=blue fillstyle=full coord=data
 set polygon1 lt=- lc=yellow fillcolor=lightyellow alpha=0.9 colorid=2
 set text1 font=Times fontsize=15 color=k pos=0.5,0.5 coord=data 
-
+set label,tick,legend fontsize=12
+set ytick format '%.2m'
 display
 
 # class
@@ -69,7 +70,7 @@ set line1 rd- +prettycircle
 set line1 -prettycircle
 
 # set default
-set default figure size=800,400
+set default figure size=800,400 margin=0,0,0,0
 set default line linecolor=red
 figure 2
 plot cos(x)

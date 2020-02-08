@@ -1,5 +1,6 @@
 
 import numpy as np
+import re
 
 from .. import scale
 
@@ -61,7 +62,18 @@ class Axis(FigObject):
 
 class Tick(FigObject):
     def __init__(self, name):
-        super().__init__('tick', name)
+        super().__init__('tick', name, {
+            'format': self._set_formatter
+        })
+
+    def _set_formatter(self, m_style, value):
+        
+        if 'm' in value:
+            value1 = value.replace('m', 'g')
+            m_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
+        else:
+            m_style['formatter'] = lambda x, pos:value % x
+
 
 class Grid(FigObject):
     def __init__(self, name):

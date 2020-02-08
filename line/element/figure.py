@@ -41,7 +41,7 @@ class Figure(FigObject):
     def _set_spacing_and_margin(self, m_style, key, idx, val):
 
         if key not in m_style:
-            m_style[key] = list(self.style[0][key])
+            m_style[key] = list(self.get_style(key))
 
         m_style[key][idx] = val
 

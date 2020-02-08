@@ -186,12 +186,22 @@ def _update_subfigure(m_subfig:state.Subfigure):
         yticklabel.set_fontsize(tick_styles[1]['fontsize'])
 
     # tick format
-    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(
-        m_subfig.axes[0].tick.attr('format')
-    ))
-    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(
-        m_subfig.axes[1].tick.attr('format')
-    ))
+    if 'formatter' in m_subfig.axes[0].tick.computed_style:
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(
+            m_subfig.axes[0].tick.attr('formatter')
+        ))
+    else:
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(
+            m_subfig.axes[0].tick.attr('format')
+        ))
+    if 'formatter' in m_subfig.axes[1].tick.computed_style:
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(
+            m_subfig.axes[1].tick.attr('formatter')
+        ))
+    else:
+        ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(
+            m_subfig.axes[1].tick.attr('format')
+        ))
     
     logger.debug('Total %d datalines, %d drawlines, %d texts' % (
         len(m_subfig.datalines), len(m_subfig.drawlines), len(m_subfig.texts)))

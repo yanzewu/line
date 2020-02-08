@@ -60,7 +60,7 @@ style_alias = {
 }
 
 element_keywords = {
-    'figure', 'subfigure', 'axis', 'label', 'tick',
+    'figure', 'subfigure', 'axis', 'label', 'tick', 'legend',
     'grid', 'title', 'line', 'drawline', 'polygon', 'text'
 }
 

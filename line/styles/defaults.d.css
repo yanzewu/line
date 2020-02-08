@@ -1,14 +1,6 @@
 
 /* Inheritance */
 
-figure {
-    margin: 0.05,0.05,0.05,0.05;
-    spacing: 0.05,0.05;
-}
-
-subfigure {
-    padding: 0.1,0.1,0.0,0.0;
-}
 
 label {
     fontfamily: inherit;
@@ -18,7 +10,8 @@ label {
 }
 
 tick {
-    fontfamily: inherit;
+    fontfamily: inherit; 
+    fontsize: inherit;
     color: inherit;
     visible: inherit;
 }

@@ -235,6 +235,12 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'input':
         m_state.is_interactive = True
+        _cur_figurename = m_state.cur_figurename
+        for fig in m_state.figures:
+            m_state.cur_figurename = fig
+            m_state.cur_figure().is_changed = True
+            redraw_cur_figure(m_state)
+        m_state.cur_figurename = _cur_figurename
 
     elif command == 'display':
         process_display(m_state)
@@ -264,22 +270,26 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         return 0
 
     # update figure
+    if m_state.cur_figure().is_changed or m_state.cur_subfigure().is_changed:
+        redraw_cur_figure(m_state)
+
+    if do_focus_up:
+        plot.update_focus_figure(m_state)
+
+    return 0
+
+def redraw_cur_figure(m_state:state.GlobalState):
+
+    m_state.refresh_style(True)
     if m_state.cur_figure().is_changed:
-        m_state.refresh_style(True)
         plot.update_figure(m_state, True)
         m_state.cur_figure().is_changed = False
         for m_subfig in m_state.cur_figure().subfigures:
             m_subfig.is_changed = False
 
     elif m_state.cur_subfigure().is_changed:
-        m_state.refresh_style()
         plot.update_subfigure(m_state)
-        m_state.cur_subfigure().is_changed = False
-
-    if do_focus_up:
-        plot.update_focus_figure(m_state)
-
-    return 0
+        m_state.cur_subfigure().is_changed = False 
 
 
 def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed):
@@ -380,7 +390,11 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     elif lookup(m_tokens) == 'default':
         get_token(m_tokens)
 
-        if keywords.is_style_keyword(lookup(m_tokens)) and not keywords.is_style_keyword(lookup(m_tokens, 1)):
+        if keywords.is_style_keyword(lookup(m_tokens)) and \
+            lookup(m_tokens, 1) != ',' and (
+            not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
+            (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
+
             style_list = parse_style(m_tokens)
             selection = css.NameSelector('subfigure')
             # TODO automatically select candidate
@@ -413,7 +427,8 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         has_updated = False
 
         # Setting cur_subfigure, recursively
-        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and (
+        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and \
+            lookup(m_tokens, 1) != ',' and (
             not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
             (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
             # the nasty cases... either not a style keyword or not enough style parameters

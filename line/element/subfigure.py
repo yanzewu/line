@@ -49,7 +49,7 @@ class Subfigure(FigObject):
     def _set_padding(self, m_style, idx, val):
         
         if 'padding' not in m_style:
-            m_style['padding'] = list(self.style[0]['padding'])
+            m_style['padding'] = list(self.get_style('padding'))
         m_style['padding'][idx] = val
 
     def has_name(self, name):
