@@ -116,14 +116,55 @@ def str2color(s):
     else:
         return Color( (v//0x10000)/256, ((v % 0x10000)//0x100)/256, (v % 0x100)/256)
 
-# A good way to implement pos is considering the size of object
-# but here I just use fixed coordinates
-Str2Pos = {
-    'topleft': (0.1,0.9),
-    'centerleft': (0.1,0.6),
-    'bottomleft':(0.1,0.2),
-    'topright':(0.7,0.9),
-    'centerright':(0.7,0.6),
-    'bottomright':(0.7,0.2),
-    'best': 'best'
-}
+class FloatingPos(enum.Enum):
+
+    AUTO = 0
+    CENTER = 1
+    LEFT = 2
+    RIGHT = 3
+    OUTLEFT = 4
+    OUTRIGHT = 5
+    TOP = 6
+    BOTTOM = 7
+    OUTTOP = 8
+    OUTBOTTOM = 9
+    
+    def _is_horizontal(self):
+        return self.value >= 1 and self.value <= 5
+    
+    def _is_vertical(self):
+        return self.value == 1 or (self.value >= 6 and self.value <= 9)
+
+def str2pos(s):
+
+    if s == 'auto':
+        return FloatingPos.AUTO
+    elif s == 'center':
+        return (FloatingPos.CENTER, FloatingPos.CENTER)
+    try:
+        v1, v2 = s.split(',')
+    except ValueError:
+        raise ValueError('Invalid value: "%s"' % s)
+
+    def _convert(val):
+        if val == 'auto':
+            raise ValueError('auto is not allowed')
+        try:
+            return FloatingPos.__members__[val.upper()], False
+        except KeyError:
+            return float(val), True
+
+    m_v1, is_num1 = _convert(v1)
+    m_v2, is_num2 = _convert(v2)
+
+    if (is_num2 and not is_num1 and not m_v1._is_horizontal() or
+        is_num1 and not is_num2 and not m_v2._is_vertical()):
+        raise ValueError('Horizontal/vertical not match')
+
+    if not is_num1 and not is_num2:
+        if m_v1._is_vertical() and m_v2._is_horizontal():
+            return (m_v2, m_v1)
+        elif not (m_v1._is_horizontal() and m_v2._is_vertical()):
+            raise ValueError('Horizontal/vertical not match')
+
+    return (m_v1, m_v2)

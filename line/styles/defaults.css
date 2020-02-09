@@ -5,13 +5,13 @@
 figure {
     size: 1440, 960;
     dpi: 200;
-    margin: 0.05,0.05,0.05,0.05;
-    spacing: 0.05,0.05;
+    margin: 0,0,0,0;
+    spacing: -0.05,-0.03;
     split: 1,1;
 }
 
 subfigure {
-    padding: 0.1,0.1,0.0,0.0;
+    padding: 0.125,0.1,0.05,0.05;
     palette: 'default';
     group: none;
     title: '';
@@ -44,6 +44,7 @@ label {
     color: black;
     visible: true;
     text: '';
+    pos: 0.5,0;
 }
 
 tick {
@@ -136,7 +137,7 @@ text {
     coord: 'axis';
     zindex: 0;
     text: 'Text';
-    pos: 'topleft';
+    pos: top,left;
 }
 
 legend {
@@ -148,6 +149,6 @@ legend {
     fontsize: 16;
     color: white;
     visible: true;
-    pos: 'best';
+    pos: auto;
     zindex: 0;
 }

@@ -87,7 +87,7 @@ Adjust ranges, scales, grids, legends, etc. (the beginning "set" can be omitted)
     line> grid on               # show grid
     line> grid lt=dash          # setting grid style
     line> legend off            # hide legend
-    line> legend pos=topleft    # set legend position
+    line> legend pos=top,left   # set legend position
 
 More setting commands:
 

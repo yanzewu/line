@@ -130,9 +130,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
-            m_state.cur_subfigure().add_text(text, (stof(token1), stof(get_token(m_tokens))), parse_style(m_tokens))
+            m_state.cur_subfigure().add_text(text, style.str2pos(token1 + ',' + get_token(m_tokens)), parse_style(m_tokens))
         else:
-            m_state.cur_subfigure().add_text(text, style.Str2Pos[token1], {**parse_style(m_tokens), **{'coord':'axis'}})
+            m_state.cur_subfigure().add_text(text, style.str2pos(token1), {**parse_style(m_tokens), **{'coord':'axis'}})
 
         m_state.cur_subfigure().is_changed = True
 
@@ -172,11 +172,25 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # select subfigure
     elif command == 'subfigure':
-        subfig_idx = stod(get_token(m_tokens)) - 1
-        assert_no_token(m_tokens)
+        arg = stod(get_token(m_tokens))
+        
+        if m_state.cur_figurename is None:
+            m_state.create_figure()
+            redraw_cur_figure(m_state)
 
         m_fig = m_state.cur_figure()
 
+        if lookup(m_tokens) == ',':
+            vs = arg
+            _, hs, _, subfig_idx = zipeval([make_assert_token(','), stod, make_assert_token(','), stod], m_tokens)
+            if (hs, vs) != tuple(m_fig.attr('split')):
+                process_split(m_state, hs, vs)
+        else:
+            subfig_idx = stod(arg)
+
+        assert_no_token(m_tokens)
+
+        subfig_idx -= 1
         if subfig_idx < len(m_fig.subfigures):
             m_fig.cur_subfigure = subfig_idx
         else:
@@ -598,16 +612,25 @@ def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
                 subfig_state_2d[i].append(m_state.create_subfigure('subfigure%d' % (i*hsplitnum + j)))
 
             subfig_state_2d[i][j].update_style({'rpos': (
-                j / hsplitnum + hspacing / 2,
-                (vsplitnum - 1 - i) / vsplitnum + vspacing / 2
+                j * (1 + hspacing) / hsplitnum,
+                (vsplitnum - 1 - i) * (1 + vspacing) / vsplitnum
                 ), 
                 'rsize': (
-                1 / hsplitnum -  hspacing,
-                1 / vsplitnum - vspacing
+                1 / hsplitnum -  (1 - 1/hsplitnum) * hspacing,
+                1 / vsplitnum - (1 - 1/vsplitnum) * vspacing
             )})
     
     m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
     m_fig.is_changed = True
+    
+    if m_state.options['resize-when-split']:
+        split_old = m_fig.get_style('split')
+        size_old = m_fig.get_style('size')
+        m_fig.update_style({'size': [
+            np.round(size_old[0]*np.sqrt(hsplitnum/split_old[0] * split_old[1]/vsplitnum)), 
+            np.round(size_old[1]*np.sqrt(vsplitnum/split_old[1] * split_old[0]/hsplitnum))]
+            })
+
     m_fig.update_style({'split': [hsplitnum, vsplitnum]})
     if m_fig.cur_subfigure >= len(m_fig.subfigures):
         m_fig.cur_subfigure = 0

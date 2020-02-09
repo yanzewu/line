@@ -41,6 +41,9 @@ xscale linear
 set xtick orient=out color=black font="Times" format="%.4f"
 set ytick linewidth=2 length=3
 
+set legend pos left,bottom
+set ytick format '%.2m'
+
 grid on
 grid lt=- lc=black zindex=-1
 
@@ -52,7 +55,7 @@ hold on
 hist x
 line 0,0 1,1
 fill line1
-text "mytext" topleft
+text "mytext" top,left
 
 set line1 linewidth=2 linecolor=cyan linetype=- pointsize=2 pointtype=o edgewidth=1 edgecolor=r fillstyle=none \
 fillcolor=green label="line1" zindex=0
@@ -61,7 +64,6 @@ set drawline1 lw=2 lc=grey lt=-- ps=2 pt=d edgewidth=2 edgecolor=red fillcolor=b
 set polygon1 lt=- lc=yellow fillcolor=lightyellow alpha=0.9 colorid=2
 set text1 font=Times fontsize=15 color=k pos=0.5,0.5 coord=data 
 set label,tick,legend fontsize=12
-set ytick format '%.2m'
 display
 
 # class

@@ -152,6 +152,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
         fontfamily=label_styles[0]['fontfamily'],
         fontsize=label_styles[0]['fontsize'],
         visible=label_styles[0]['visible'],
+        x=label_styles[0]['pos'][0],
     )
     ax.set_ylabel(
         m_subfig.axes[1].label.attr('text'),
@@ -159,6 +160,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
         fontfamily=label_styles[1]['fontfamily'],
         fontsize=label_styles[1]['fontsize'],
         visible=label_styles[1]['visible'],
+        y=label_styles[1]['pos'][0],
     )
     # the right label requires drawing a new axis
     ax.set_xscale(m_subfig.axes[0].attr('scale'))
@@ -299,7 +301,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         m_style = text.computed_style
 
-        x, y = text.attr('pos')
+        x, y = _translate_loc_normal(*text.attr('pos'))
 
         ax.text(
             x,
@@ -351,12 +353,20 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         m_style = m_subfig.legend.computed_style
 
+        legend_pos = m_subfig.legend.attr('pos')
+        if legend_pos == style.FloatingPos.AUTO:
+            p = 'best'
+            b = None
+        else:
+            p, b = _translate_loc(*legend_pos)
+
         legend = ax.legend(
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
             fontsize=m_style['fontsize'],
-            loc=m_subfig.legend.attr('pos'),
+            loc=p,
+            bbox_to_anchor=b,
             frameon=True,
             framealpha=m_style['alpha']
         )
@@ -420,3 +430,43 @@ def show(m_state:state.GlobalState):
     for figure in m_state.figures.values():
         figure.clear_backend()
 
+def _translate_loc(x, y):
+    # this is just ad-hoc. Should use redrawing or float system in the future.
+
+    try:
+        return _mpl_loc_code[(x, y)]
+    except KeyError:
+        return (x, y), None
+    
+def _translate_loc_normal(x, y):
+    return (
+        {style.FloatingPos.LEFT:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.RIGHT:1}.get(x, x),
+        {style.FloatingPos.BOTTOM:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.TOP:1}.get(y, y))
+
+_mpl_loc_code = {
+    (style.FloatingPos.LEFT, style.FloatingPos.BOTTOM): (3, None),
+    (style.FloatingPos.LEFT, style.FloatingPos.CENTER): (6, None),
+    (style.FloatingPos.LEFT, style.FloatingPos.TOP):    (2, None),
+    (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM):    (4, None),
+    (style.FloatingPos.RIGHT, style.FloatingPos.CENTER):    (7, None),
+    (style.FloatingPos.RIGHT, style.FloatingPos.TOP):       (1, None),
+    (style.FloatingPos.CENTER, style.FloatingPos.BOTTOM):   (8, None),
+    (style.FloatingPos.CENTER, style.FloatingPos.CENTER):   (10,None),
+    (style.FloatingPos.CENTER, style.FloatingPos.TOP):      (9, None),
+    (style.FloatingPos.LEFT, style.FloatingPos.OUTBOTTOM):  (2, (0,0)),
+    (style.FloatingPos.LEFT, style.FloatingPos.OUTTOP):     (3, (0,1)),
+    (style.FloatingPos.RIGHT, style.FloatingPos.OUTBOTTOM): (1, (1,0)),
+    (style.FloatingPos.RIGHT, style.FloatingPos.OUTTOP):    (4, (1,1)),
+    (style.FloatingPos.CENTER, style.FloatingPos.OUTBOTTOM):(9, (0.5,0)),
+    (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP):   (8, (0.5,1)),
+    (style.FloatingPos.OUTLEFT, style.FloatingPos.BOTTOM):  (4, (0,0)),
+    (style.FloatingPos.OUTLEFT, style.FloatingPos.CENTER):  (7, (0,0.5)),
+    (style.FloatingPos.OUTLEFT, style.FloatingPos.TOP):     (1, (0,1)),
+    (style.FloatingPos.OUTRIGHT, style.FloatingPos.BOTTOM):  (3, (1,0)),
+    (style.FloatingPos.OUTRIGHT, style.FloatingPos.CENTER):  (6, (1,0.5)),
+    (style.FloatingPos.OUTRIGHT, style.FloatingPos.TOP):     (2, (1,1)),
+    (style.FloatingPos.OUTLEFT, style.FloatingPos.OUTBOTTOM):   (1, (0,0)),
+    (style.FloatingPos.OUTLEFT, style.FloatingPos.OUTTOP):      (4, (0,1)),
+    (style.FloatingPos.OUTRIGHT, style.FloatingPos.OUTBOTTOM):  (2, (1,0)),
+    (style.FloatingPos.OUTRIGHT, style.FloatingPos.OUTTOP):     (3, (1,1)),
+}

@@ -1,7 +1,7 @@
 
 Fixes
 ---
-[HIGH] Legend position.
+
 
 Features
 ---
@@ -13,8 +13,10 @@ Features
 [LOW] "$(" style file loader.
 [LOW] Smart distinguish between filename and expression.
 [LOW] Errorbar support.
-[MID] Adjustable label position.
-[MID] Adaptive figure size with multiple subfigures;
-[MID] Figure title.
+[MID] Float position system.
+[LOW] Figure grid system.
+[LOW] Figure title.
 [MID] Group support colorid auto-generalization;
 [HIGH] Batch file loader.
+[LOW] Automatic style element lookup (not gca by default);
+[LOW] Viewmodel framework for style computation;

@@ -43,6 +43,7 @@ Controls the program behavior. Can be also adjusted by `set option`.
 - --prompt-multi-removal
 - --prompt-overwrite
 - --prompt-save-when-quit
+- --rescale-when-split
 
 ## Command Reference
 
@@ -263,7 +264,7 @@ Usage:
 
 Args:
 
-- pos: Either position descriptor ('topleft', 'topright', ... ), or positions 'x,y'. By default it's axis coordinate. Specify `coord=data/axis` to change it.
+- pos: Positions 'x,y'. By default it's axis coordinate. Specify `coord=data/axis` to change it.
 - style,val: Style parameters.
 
 
@@ -282,6 +283,10 @@ Args:
 
 - hnum,vnum: Numbers of subfigures in horizontal/vertical direction. If it is less than current number, extra subfigures will be removed.
 
+Related options:
+
+- --resize-when-split: Resize the figure automatically when spiltting.
+
 ### figure, subfigure
 ---
 
@@ -291,10 +296,11 @@ Usage:
 
     figure (title)
     subfigure index
+    subfigure vnum,hnum,index
 
 The behavior of `figure` is similar with matlab's figure. It creates new figure and bring it to the front.
 
-The index of subfigure is an integer, starting from left to right and top to bottom.
+The index of subfigure is an integer, starting from left to right and then top to bottom. If `vnum` and `hnum` are given, figure will be split first.
 
 Both indices start from 1.
 
@@ -593,7 +599,7 @@ orient | 'in/out'
 padding | float,float,float,float (bottom,left,right,top)
 pointsize or ps| float
 pointtype or pt | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
-pos | float,float or 'topleft'/'topright'/'topcenter'/'bottomleft'/...
+pos | float,float (x,y) or (subfigure elements only) floating positions
 rsize | float,float (x,y)
 xrange/yange or xlim/ylim | float:float:float float:float
 scale | 'linear'/'log'

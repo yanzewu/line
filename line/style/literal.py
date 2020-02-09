@@ -58,10 +58,9 @@ def translate_style_val(style_name:str, style_val:str):
 
     elif style_name == 'pos':
         try:
-            return style.Str2Pos[style_val]
-        except KeyError:
-            v1, v2 = style_val.split(',')
-            return stof(v1), stof(v2)    
+            return style.str2pos(style_val)
+        except ValueError as e:
+            raise LineParseError(str(e))
 
     elif style_name == 'size':
         v1, v2 = style_val.split(',')

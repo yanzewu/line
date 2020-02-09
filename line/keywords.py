@@ -95,12 +95,14 @@ command_alias = {
     'exit':'quit',
     'p':'plot',
     'a':'append',
+    's': 'set',
     'add':'append',
-    'sel':'select'
+    'subplot': 'subfigure',
+    'fig': 'figure',
 }
 
 extended_set_keywords = {
-    'grid', 'hold', 'legend', 'palette',
+    'grid', 'hold', 'legend', 'palette', 'title',
     'xlabel', 'ylabel',
     'xrange', 'yrange',
     'xscale', 'yscale',
