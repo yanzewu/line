@@ -40,9 +40,15 @@ xscale linear
 
 set xtick orient=out color=black font="Times" format="%.4f"
 set ytick linewidth=2 length=3
+set ytick format '%.2m'
 
 set legend pos left,bottom
-set ytick format '%.2m'
+
+set legend,tick fontsize=12
+set tick,legend fontsize=12
+set label fontsize=12
+set label,tick fontsize=12
+set label,tick,legend fontsize=12
 
 grid on
 grid lt=- lc=black zindex=-1

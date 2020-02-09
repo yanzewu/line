@@ -205,6 +205,11 @@ class PlotParser:
         else:
             pg.source = [pg.hint2 if pg.hint2 else pg.expr2]
         
+        if isinstance(pg.xdata, sheet_util.SheetFile):
+            pg.xdata = pg.xdata.flatten()
+        if isinstance(pg.ydata, sheet_util.SheetFile):
+            pg.ydata = pg.ydata.flatten()
+
         xcols = sheet_util.cols(pg.xdata)
         ycols = sheet_util.cols(pg.ydata)
         if xcols == 1:

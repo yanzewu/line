@@ -16,7 +16,6 @@ Features
 [MID] Float position system.
 [LOW] Figure grid system.
 [LOW] Figure title.
-[MID] Group support colorid auto-generalization;
 [HIGH] Batch file loader.
 [LOW] Automatic style element lookup (not gca by default);
 [LOW] Viewmodel framework for style computation;

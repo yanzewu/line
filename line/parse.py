@@ -246,12 +246,33 @@ def parse_group(group:str):
             if prefix[2*i - len(prefix):i] == prefix[i:]:
                 repeator = prefix[i:]
             i -= 1
-        prefix = prefix[:len(prefix)-len(repeator)]
 
-        return ([order[t] for t in prefix], [order[t] for t in repeator], [order[t] for t in suffix])
+        is_direct_repeat = True
+        if len(repeator) == 1:
+            i = len(prefix)-1
+            r1 = 0
+            r2 = 0
+            while i > 0:
+                if prefix[i-1] == prefix[i]:
+                    pass
+                elif r1 == 0:
+                    r1 = len(prefix) - i
+                elif r2 == 0:
+                    r2 = len(prefix) - i - r1
+                    break
+                i -= 1
+            if r1 == r2 and r1 > 1:
+                is_direct_repeat = False
+                repeator = prefix[len(prefix)-r1:]
+            print(r1, r2)
+
+        if is_direct_repeat:
+            prefix = prefix[:len(prefix)-len(repeator)]
+
+        return ([order[t] for t in prefix], [order[t] for t in repeator], [order[t] for t in suffix], is_direct_repeat)
 
     else:
-        return ([order[t] for t in group], [], [])
+        return ([order[t] for t in group], [], [], True)
 
 
 def _text_order(text):

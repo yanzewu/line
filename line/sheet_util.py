@@ -21,7 +21,7 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
 
         self.name_convention = r'%F:%T'
         self.shape = (self.data[0].shape[0], self.data[0].shape[1], len(self.data)
-        ) if self.data else (0, 0, 0)
+        ) if len(self.data) > 0 else (0, 0, 0)
 
     def add_file(self, data, filename):
         if len(self.data) > 0 and (self.data[0].shape != data.shape or (self.data[0].columns != data.columns).any()):
@@ -118,13 +118,17 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
 
     def flatten(self):
         if len(self.data) == 1:
-            return
+            return self
 
+        new_data = []
         for d, fn in zip(self.data, self.filename):
+            new_columns = []
+            new_data_ = d.copy()
             for i in range(d.shape[1]):
-                d.columns[i] = self.name_convention.replace(r'%T',d.columns[i]).replace(r'%F',fn)
-        self.data = [pandas.concat(newdata, axis=1)]
-        self.filename = ['']
+                new_columns.append(self.name_convention.replace(r'%T',d.columns[i]).replace(r'%F',fn))
+            new_data_.columns = new_columns
+            new_data.append(new_data_.copy())
+        return SheetFile([pandas.concat(new_data, axis=1)], [self.filename[0]])
 
     def stack(self, method='sum-'):
         # TODO implement stack
@@ -167,7 +171,9 @@ def load_file(filename, data_title='auto', data_delimiter='auto', ignore_data_co
     
     if allow_wildcard and ('*' in filename or '?' in filename):
         import fnmatch
-        filenames = fnmatch.filter([f for f in os.listdir() if os.path.isfile(f)], filename)
+        path, fn = os.path.split(filename)
+        flist = [os.path.join(path, f) for f in os.listdir(path)]
+        filenames = fnmatch.filter([f for f in flist if os.path.isfile(f)], os.path.join(path, fn))
         if not filenames:
             raise IOError('Wildcard "%s" does not match any file' % filename)
 

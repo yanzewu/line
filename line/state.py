@@ -28,25 +28,25 @@ class GlobalState:
 
         self.options = {}   # Additional program options
 
-    def cur_figure(self):
+    def cur_figure(self, create_if_empty=False):
         """ Get current figure state
         """
         
         if self.cur_figurename is None:
-            raise LineProcessError("No figure is created yet")
+            if create_if_empty:
+                self.create_figure()
+            else:
+                raise LineProcessError("No figure is created yet")
 
         return self.figures[self.cur_figurename]
 
 
-    def cur_subfigure(self):
+    def cur_subfigure(self, create_if_empty=False):
         """ Get current subfigure state
         """
-        if self.cur_figurename is None:
-            raise LineProcessError("No figure is created yet")
+        m_fig = self.cur_figure(create_if_empty=create_if_empty)
 
-        return self.figures[self.cur_figurename].subfigures[
-            self.figures[self.cur_figurename].cur_subfigure
-        ]
+        return m_fig.subfigures[m_fig.cur_subfigure]
 
     def create_figure(self):
         """ Create a new figure with subfigure initialized.
