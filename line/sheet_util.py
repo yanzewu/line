@@ -172,6 +172,8 @@ def load_file(filename, data_title='auto', data_delimiter='auto', ignore_data_co
     if allow_wildcard and ('*' in filename or '?' in filename):
         import fnmatch
         path, fn = os.path.split(filename)
+        if path == '':
+            path = '.'
         flist = [os.path.join(path, f) for f in os.listdir(path)]
         filenames = fnmatch.filter([f for f in flist if os.path.isfile(f)], os.path.join(path, fn))
         if not filenames:

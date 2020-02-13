@@ -44,7 +44,8 @@ Additional options can be shown by `line -e 'show option'`'''
     if not cmd_handle.CMDHandler._debug:
         warnings.filterwarnings('ignore')
 
-    cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0))
+    cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0) and
+        defaults.default_options['delayed-init'])
 
     if len(args) == 0:
         cmd_handler.read_source()

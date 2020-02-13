@@ -9,7 +9,6 @@ Features
 [LOW] Automatically determine skip points in scatter.
 [LOW] Auto determine tick format (for special cases).
 [LOW] Heatmap support.
-[LOW] As an importable library.
 [LOW] "$(" style file loader.
 [LOW] Smart distinguish between filename and expression.
 [LOW] Errorbar support.
@@ -19,3 +18,5 @@ Features
 [HIGH] Batch file loader.
 [LOW] Automatic style element lookup (not gca by default);
 [LOW] Viewmodel framework for style computation;
+[MID] Programmable data title;
+[LOW] Adaptive padding (by fontsize);

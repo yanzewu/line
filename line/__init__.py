@@ -8,3 +8,6 @@ from . import style
 from . import state
 from . import plot
 from . import process
+
+
+from .api import figure, subfigure, plot, show, gcf, gca, load_file

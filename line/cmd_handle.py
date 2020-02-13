@@ -35,6 +35,7 @@ class CMDHandler:
     RET_CONTINUE = 2
 
     _debug = False
+    _input_inited = False
 
     def __init__(self, m_state=None, preload_input=False):
 
@@ -64,6 +65,9 @@ class CMDHandler:
                 exit()
 
     def init_input(self):
+        if self._input_inited:
+            return
+
         if self.HISTORY_NAME:
             try:
                 readline.read_history_file(self.HISTORY_NAME)
@@ -79,6 +83,7 @@ class CMDHandler:
         readline.parse_and_bind('\\m-b: backward-word')
         readline.set_completer(self.complete)
         readline.set_completer_delims(' ,;:=')
+        self._input_inited = True
 
     def finalize_input(self):
         if self.HISTORY_NAME:
