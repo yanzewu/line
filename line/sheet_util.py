@@ -6,6 +6,7 @@ import os.path
 import logging
 import pandas
 import numpy as np
+import warnings
 
 logger = logging.getLogger('line')
 
@@ -23,12 +24,37 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
         self.shape = (self.data[0].shape[0], self.data[0].shape[1], len(self.data)
         ) if len(self.data) > 0 else (0, 0, 0)
 
-    def add_file(self, data, filename):
+    def add_file(self, data, filename, do_copy=False):
         if len(self.data) > 0 and (self.data[0].shape != data.shape or (self.data[0].columns != data.columns).any()):
             raise ValueError("Data shape or column name does not match")
-        self.data.append(data)
+
+        if isinstance(data, pandas.DataFrame):
+            self.data.append(data if not do_copy else data.copy())
+        else:
+            raise ValueError("Invalid data type: %s" % type(data))
+
         self.filename.append(filename)
         self.shape = (self.data[0].shape[0], self.data[0].shape[1], self.shape[2]+1)
+
+    def add_sheet(self, other):
+        if not isinstance(other, SheetFile):
+            raise ValueError("Invalid data type: %s" % type(other))
+        if len(other.data) == 0:
+            return
+        else:
+            for d, f in zip(other.data, other.filename):
+                self.add_file(d, f, True)
+        
+    def reload(self, keep_shape=True):
+        """ Reload files according to recorded filename.
+        If `keep_shape` is set, force the new shape to be matched.
+        """
+        new_sheet = load_file(*self.filename, False)
+        if keep_shape and new_sheet.shape != self.shape:
+            raise ValueError("Data shape does not match")
+        self.data = new_sheet.data
+        self.filename = new_sheet.filename
+        self.shape = new_sheet.shape
 
     def cols(self):
         return self.data.shape[1]
@@ -167,71 +193,83 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
             return getattr(ufunc, method)(*m_inputs, **kwargs)
 
 
-def load_file(filename, data_title='auto', data_delimiter='auto', ignore_data_comment=True, allow_wildcard=True, na_filter=True):
+def load_file(*filenames, allow_wildcard=True, **kwargs):
     
-    if allow_wildcard and ('*' in filename or '?' in filename):
-        import fnmatch
-        path, fn = os.path.split(filename)
-        if path == '':
-            path = '.'
-        flist = [os.path.join(path, f) for f in os.listdir(path)]
-        filenames = fnmatch.filter([f for f in flist if os.path.isfile(f)], os.path.join(path, fn))
-        if not filenames:
-            raise IOError('Wildcard "%s" does not match any file' % filename)
-
-    else:
-        filenames = [filename]
+    filenames_full = []
+    for filename in filenames:
+        if allow_wildcard and ('*' in filename or '?' in filename):
+            import fnmatch
+            path, fn = os.path.split(filename)
+            if path == '':
+                path = '.'
+            flist = [os.path.join(path, f) for f in os.listdir(path)]
+            m_filenames = fnmatch.filter([f for f in flist if os.path.isfile(f)], os.path.join(path, fn))
+            if not m_filenames:
+                warnings.warn('Wildcard "%s" does not match any file' % filename)
+            filenames_full += m_filenames
+        else:
+            filenames_full.append(filename)
 
     sf = SheetFile()
-    for fn in filenames:
-        f = open(fn, 'r')
-        data_info = sniff(f)
-        if data_title != 'auto':
-            data_info['title'] = data_title
-        if data_delimiter == 'white':
-            data_info['delimiter'] = r'\s+'
-        elif data_delimiter != 'auto':
-            data_info['delimiter'] = data_delimiter
-        if ignore_data_comment == False:
-            data_info['comment'] = None
-        elif ignore_data_comment == 'smart':
-            data_info['comment'] = 'smart'
-        else:
-            data_info['comment'] = True
-
-        if data_info['comment'] == 'smart':
-            m_f = io.StringIO()
-            line = f.readline()
-            while line:
-                q = line.find('#')
-                if q != -1:
-                    line = line[:q]
-                    if len(line) == 0 or line.isspace():
-                        pass
-                    else:
-                        m_f.write(line[:q])
-                        m_f.write('\n')
-                else:
-                    m_f.write(line)
-                    m_f.write('\n')
-                line = f.readline()
-            data_info['comment'] = None
-        else:
-            m_f = f
-
-        logger.debug(data_info)
-        d = pandas.read_csv(m_f,
-            sep=data_info['delimiter'],
-            header=0 if data_info['title'] else None,
-            index_col=False,
-            skip_blank_lines=True,
-            skipinitialspace=True,
-            comment='#' if data_info['comment'] else None,
-            na_filter=na_filter,
-        )
-        sf.add_file(d, fn)
-
+    for fn in filenames_full:
+        sf.add_file(load_dataframe(fn, **kwargs), fn)
     return sf
+
+
+def load_single_file(filename, **kwargs):
+
+    return SheetFile([load_dataframe(filename, **kwargs)], [filename])
+    
+
+def load_dataframe(filename, data_title='auto', data_delimiter='auto', ignore_data_comment=True, na_filter=True):
+    """ Load file as `pandas.DataFrame` instance.
+    """
+
+    f = open(filename, 'r')
+    data_info = sniff(f)
+    if data_title != 'auto':
+        data_info['title'] = data_title
+    if data_delimiter == 'white':
+        data_info['delimiter'] = r'\s+'
+    elif data_delimiter != 'auto':
+        data_info['delimiter'] = data_delimiter
+    if ignore_data_comment == False:
+        data_info['comment'] = None
+    elif ignore_data_comment == 'smart':
+        data_info['comment'] = 'smart'
+    else:
+        data_info['comment'] = True
+
+    if data_info['comment'] == 'smart':
+        m_f = io.StringIO()
+        line = f.readline()
+        while line:
+            q = line.find('#')
+            if q != -1:
+                line = line[:q]
+                if len(line) == 0 or line.isspace():
+                    pass
+                else:
+                    m_f.write(line[:q])
+                    m_f.write('\n')
+            else:
+                m_f.write(line)
+                m_f.write('\n')
+            line = f.readline()
+        data_info['comment'] = None
+    else:
+        m_f = f
+
+    logger.debug(data_info)
+    return pandas.read_csv(m_f,
+        sep=data_info['delimiter'],
+        header=0 if data_info['title'] else None,
+        index_col=False,
+        skip_blank_lines=True,
+        skipinitialspace=True,
+        comment='#' if data_info['comment'] else None,
+        na_filter=na_filter,
+    )
 
 
 def sniff(f, default_delimiter=r'\s+', ignore_comment=True):

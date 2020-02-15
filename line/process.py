@@ -21,6 +21,7 @@ from .errors import LineParseError, LineProcessError, warn
 
 expr_proc = None
 plot_proc = None
+dataview = None
 
 logger = logging.getLogger('line')
 
@@ -28,6 +29,7 @@ def initialize():
     
     global expr_proc
     global plot_proc
+    global dataview
 
     if expr_proc is None:
         from . import expr_proc as expr_proc_1
@@ -35,6 +37,10 @@ def initialize():
     if plot_proc is None:
         from . import plot_proc as plot_proc_1
         plot_proc = plot_proc_1
+
+    if dataview is None:
+        from . import dataview as dataview_1
+        dataview = dataview_1
 
 if defaults.default_options['delayed-init'] == False:
     initialize()
@@ -154,18 +160,11 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     # select or create figure
     elif command == 'figure':
         if len(m_tokens) == 0:
-            i = 1
-            while str(i) in m_state.figures:
-                i += 1
-            fig_name = str(i)
+            fig_name = None
         else:
             fig_name = get_token(m_tokens)
             assert_no_token(m_tokens)
-
-        m_state.cur_figurename = fig_name
-        if fig_name not in m_state.figures:
-            m_state.create_figure()
-            m_state.cur_figure().is_changed = True
+        m_state.figure(fig_name)
 
         if m_state.is_interactive:
             do_focus_up = True
@@ -321,7 +320,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     parser = plot_proc.PlotParser()
     parser.parse(m_state, m_tokens)
     if parser.plot_groups:
-        plot_proc.do_plot(m_state, parser.plot_groups, keep_existed)
+        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed)
     else:
         warn('No data to plot')
 
@@ -334,7 +333,7 @@ def parse_and_process_hist(m_state:state.GlobalState, m_tokens:deque):
     parser = plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
     parser.parse(m_state, m_tokens)
     if parser.plot_groups:
-        plot_proc.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
+        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
     else:
         warn('No data to plot')
 
@@ -540,35 +539,29 @@ def parse_and_process_style(m_state:state.GlobalState, m_tokens):
 
 def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
     fill_between = []
-    fill_x = []
     while len(m_tokens) > 0:
         if keywords.is_style_keyword(lookup(m_tokens)):
             break
         token = get_token(m_tokens)
         try:
             if '-' in token:
-                line1, line2 = token.split('-', 1)
-                fill_between.append((
-                    [d for d in m_state.cur_subfigure().datalines if d.name == line1][0],
-                    [d for d in m_state.cur_subfigure().datalines if d.name == line2][0]
-                ))
+                line1str, line2str = token.split('-', 1)
+                line1 = [d for d in m_state.cur_subfigure().datalines if d.name == line1str][0]
+                line2 = [d for d in m_state.cur_subfigure().datalines if d.name == line2str][0]
             else:
-                fill_x.append([d for d in m_state.cur_subfigure().datalines if d.name == token][0])
+                line1 = [d for d in m_state.cur_subfigure().datalines if d.name == token][0]
+                line2 = None
         except IndexError:
             warn('Skip line "%s" as it does not exist' % token)
+        else:
+            fill_between.append((line1, line2))
 
     style_dict = parse_style(m_tokens)
-    if not fill_between and not fill_x:
+    if not fill_between:
         warn('No line to fill')
     else:
         for line1, line2 in fill_between:
-            m_state.cur_subfigure().add_polygon(((
-                np.concatenate((line1.x, np.flip(line2.x)))), np.concatenate((line1.y, np.flip(line2.y)))), style_dict)
-        for line1 in fill_x:
-            m_state.cur_subfigure().add_polygon((
-                np.concatenate((line1.x, np.flip(line1.x))), np.concatenate((line1.y,
-                    np.ones_like(line1.x) * m_state.cur_subfigure().axes[1].get_style('tickpos')[0]))), style_dict)
-        m_state.cur_subfigure().is_changed = True
+            m_state.cur_subfigure().fill(line1, line2, **style_dict)
 
 
 def process_set_style(m_state, style_sheet, add_class_list, remove_class_list):

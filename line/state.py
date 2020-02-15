@@ -79,3 +79,21 @@ class GlobalState:
             self.class_stylesheet.apply_to(self.cur_figure(), 0)
             css.compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True
+
+    def figure(self, fig_name=None):
+        """ Set current figure. Create one if necessary.
+        """
+
+        if not fig_name:
+            i = 1
+            while str(i) in self.figures:
+                i += 1
+            fig_name = str(i)
+        else:
+            fig_name = str(fig_name)
+
+        self.cur_figurename = fig_name
+        if fig_name not in self.figures:
+            self.create_figure()
+            self.cur_figure().is_changed = True
+

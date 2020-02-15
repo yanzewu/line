@@ -32,6 +32,8 @@ class ExprEvaler:
             'min':np.minimum,
             'max':np.maximum,
             'tp': np.transpose,
+            'range':np.arange,
+            'linspace':np.linspace,
             'hist': sheet_util.histogram,
             'load': sheet_util.load_file,
             'save': sheet_util.save_file,

@@ -8,7 +8,7 @@ from .parse import *
 from . import expr_proc
 
 
-class PlottingGroup:
+class PlottingPackage:
 
     def __init__(self, hint1=None, expr1=None, hint2=None, expr2=None, style=None):
         self.hint1 = hint1
@@ -70,7 +70,7 @@ class PlotParser:
 
     def parse_single_group(self):
         
-        pg = PlottingGroup()
+        pg = PlottingPackage()
         self.token_stack = []
 
         self.shift_expr()
@@ -128,7 +128,7 @@ class PlotParser:
         self._add_plotgroup(pg)
 
     def parse_single_hist_group(self):
-        pg = PlottingGroup()
+        pg = PlottingPackage()
         pg.hint1 = self.cur_hint
         pg.expr1 = self.cur_xexpr
 
@@ -158,13 +158,13 @@ class PlotParser:
         elif ycols > 1:
             assert len(pg.source) == 1 or len(pg.source) == ycols
             for idx in range(ycols):
-                m_pg = PlottingGroup(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
                 m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
                 m_pg.ylabel = ylabels[idx]
                 m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
                 self.plot_groups.append(m_pg)
 
-    def _parse_y(self, pg:PlottingGroup):
+    def _parse_y(self, pg:PlottingPackage):
         
         self.shift_expr()
         if not self.next() or self.next() == ',':
@@ -182,7 +182,7 @@ class PlotParser:
         else:
             self._parse_group2(pg)
 
-    def _parse_group2(self, pg:PlottingGroup):
+    def _parse_group2(self, pg:PlottingPackage):
         m_tokens2 = self.m_tokens.copy()
         try:
             pg.style = parse_style(m_tokens2, ',', recog_comma=False, recog_class=False, raise_error=True)
@@ -198,7 +198,7 @@ class PlotParser:
             pg.expr2 = self.token_stack.pop()
             self.m_tokens = m_tokens2
             
-    def _add_plotgroup(self, pg:PlottingGroup):
+    def _add_plotgroup(self, pg:PlottingPackage):
 
         if isinstance(pg.hint2, sheet_util.SheetFile):
             pg.source = pg.hint2.filename.copy()
@@ -234,7 +234,7 @@ class PlotParser:
         elif xcols == 1 and ycols > 1:
             assert len(pg.source) == 1 or len(pg.source) == ycols
             for idx in range(ycols):
-                m_pg = PlottingGroup(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
                 m_pg.xdata = pg.xdata
                 m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
                 m_pg.xlabel = xlabels[0]
@@ -244,7 +244,7 @@ class PlotParser:
         elif xcols == ycols:
             assert len(pg.source) == 1 or len(pg.source) == ycols   # WARNING: assertion will fail when plotting all columns from wildcard
             for idx in range(ycols):
-                m_pg = PlottingGroup(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
                 m_pg.xdata = sheet_util.loc_col(pg.xdata, idx)
                 m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
                 m_pg.xlabel = xlabels[idx]
@@ -303,74 +303,3 @@ class PlotParser:
         evaler.load(expr, omit_dollar=True)
         return evaler.evaluate_with_hintvar(hintvar)
         
-
-def do_plot(m_state:state.GlobalState, plot_groups, keep_existed=False, labelfmt='%T [%F]', auto_range=None, chart_type='line'):
-    """
-    Do plotting on gca, create one if necessary.
-
-    plot_groups: List of PlottingGroup instance;
-    keep_existed: Don't clear gca;
-    label_fmt: Label format when plotting data from multiple files. %T=>title, %F=>filename;
-    auto_range: Set automatic range. Set `None` to use program default;
-    chart_type: line/bar/hist;
-    """
-
-    # create new figure if necessary
-    if m_state.cur_figurename is None:
-        m_state.create_figure()
-        m_state.refresh_style()
-
-    # handle append
-    if not keep_existed:
-        m_state.cur_subfigure().clear()
-
-    # add filename to data label?
-    has_multiple_files = len(set((pg.source for pg in plot_groups))) != 1
-    for pg in plot_groups:
-        m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source) if has_multiple_files else str(pg.ylabel)
-        m_xdata = sheet_util.flatten(pg.xdata)
-        m_ydata = sheet_util.flatten(pg.ydata)
-
-        if chart_type == 'line':
-            m_state.cur_subfigure().add_dataline((m_xdata, m_ydata), m_ylabel, pg.xlabel, pg.style)
-        elif chart_type == 'bar':
-            m_state.cur_subfigure().add_bar((m_xdata, m_ydata), m_ylabel, pg.xlabel, False, pg.style)
-        elif chart_type == 'hist':
-            pg.style.setdefault('bin', 10)
-            pg.style.setdefault('width', 1.0)
-            pg.style.setdefault('norm', 'Distribution')
-            m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source) if has_multiple_files else str(pg.ylabel)
-            m_state.cur_subfigure().add_bar(m_ydata, m_ylabel, pg.ylabel, True, pg.style)
-            # m_ylabel is not used for axis label.
-    
-    update_label(m_state)
-    update_range_parameter(m_state, auto_range)
-    m_state.cur_subfigure().is_changed = True
-
-
-def update_label(m_state:state.GlobalState):
-    """ Set automatic x/y label for gca.
-    """
-    m_subfig = m_state.cur_subfigure()
-    xlabels = set((d.get_style('xlabel') for d in m_subfig.datalines + m_subfig.bars))
-    
-    if len(xlabels) == 1:
-        m_state.cur_subfigure().axes[0].label.update_style({'text': xlabels.pop()})
-    if not m_subfig.datalines and not m_subfig.bars:
-        return
-    histogram_counts = len([b for b in m_subfig.bars if b.dynamic_bin])
-    if histogram_counts == 0:
-        ylabels = set((d.get_style('label') for d in m_subfig.datalines))
-    elif histogram_counts == len(m_subfig.datalines) + len(m_subfig.bars):
-        ylabels = {'Distribution'}  # The label "Distribution" is set only when all plots are histogram
-    else:
-        return
-    if len(ylabels) == 1:
-        m_subfig.axes[1].label.update_style({'text': ylabels.pop()})
-
-
-def update_range_parameter(m_state:state.GlobalState, auto_range=None):
-    """ Update vmin/vmax for axes in gca.
-    """
-    if auto_range or (auto_range is None and m_state.options['auto-adjust-range']):
-        m_state.cur_subfigure().update_style({'xrange':'auto', 'yrange':'auto'})

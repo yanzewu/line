@@ -69,6 +69,8 @@ class Subfigure(FigObject):
         if auto_colorid:
             element_queue[-1].update_style({'colorid': newidx})
         element_queue[-1].update_style(styles)
+        self.is_changed = True
+        return element_queue[-1]
 
     def add_dataline(self, data, label, xlabel, style_dict):
 
@@ -79,25 +81,26 @@ class Subfigure(FigObject):
         else:
             self.update_colorid()
         self.datalines[-1].update_style(style_dict)
+        return self.datalines[-1]
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 
-        self._add_element(Bar, 'bar', self.bars, True, style_dict,
+        return self._add_element(Bar, 'bar', self.bars, True, style_dict,
             data, label, xlabel, dynamic_bin)
 
     def add_drawline(self, start_pos, end_pos, style_dict):
         
-        self._add_element(DrawLine, 'drawline', self.drawlines, False, style_dict,
+        return self._add_element(DrawLine, 'drawline', self.drawlines, False, style_dict,
             start_pos, end_pos)
 
     def add_polygon(self, data, style_dict):
 
-        self._add_element(Polygon, 'polygon', self.polygons, True, style_dict,
+        return self._add_element(Polygon, 'polygon', self.polygons, True, style_dict,
             data)
 
     def add_text(self, text, pos, style_dict):
         
-        self._add_element(Text, 'text', self.texts, False, style_dict, 
+        return self._add_element(Text, 'text', self.texts, False, style_dict, 
             text, pos)
     
     def remove_element(self, element):
@@ -135,6 +138,27 @@ class Subfigure(FigObject):
         self.texts.clear()
         for i in range(4):
             self.axes[i].label.update_style({'text': ''})
+
+    def fill(self, line1, line2, **styles):
+        """ Fill the region horizontally between two datalines, or a dataline and a number.
+        Args:
+            line1: `element.DataLine` instance;
+            line2: `element.DataLine` instance or number;
+            styles: styles passed to the polygon.
+        """
+        if line2 is None:
+            line2 = self.axes[1].get_style('tickpos')[0]
+
+        if isinstance(line2, DataLine):
+            return self.add_polygon(((
+                np.concatenate((line1.x, np.flip(line2.x)))),
+                np.concatenate((line1.y, np.flip(line2.y)))),
+                styles)
+        else:
+            return self.add_polygon(((
+                np.concatenate((line1.x, np.flip(line1.x)))),
+                np.concatenate((line1.y, np.ones_like(line1.x) * line2))),
+                styles)
 
     def get_axes_coord(self, d, axis=0, side='left'):
 
