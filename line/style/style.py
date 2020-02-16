@@ -104,7 +104,7 @@ def str2color(s):
 
     if len(s) == 1:
         c = ShortColorAlias[s]
-        return Color.__dict__[VisualColors.get(c,c)]
+        return str2color(VisualColors.get(c,c))
 
     if s.startswith('#'):
         s = s[1:]

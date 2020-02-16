@@ -3,6 +3,7 @@ from . import FigObject
 from . import errors
 
 from .component import *
+from .component import _set_font
 
 class Subfigure(FigObject):
 
@@ -22,7 +23,8 @@ class Subfigure(FigObject):
             'rrange': lambda s,v:self.axes[2].update_style({'range': v}),
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
-            'yscale': lambda s,v:self.axes[1].update_style({'scale': v})
+            'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
+            'font': _set_font
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -32,6 +34,7 @@ class Subfigure(FigObject):
             'yrange': lambda x:self.axes[1].get_style('range'),
             'rrange': lambda x:self.axes[2].get_style('range'),
             'trange': lambda x:self.axes[3].get_style('range'),
+            'font': lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
         })
 
         self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]

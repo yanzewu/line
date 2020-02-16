@@ -44,6 +44,21 @@ def lookup_raw(m_tokens, idx=0, ret_string=False):
 
     return m_tokens[idx] if len(m_tokens) > idx else ('' if ret_string else None)
 
+def test_token_inc(m_tokens, expr):
+
+    do_inc = False
+    if len(m_tokens) > 0:
+        if callable(expr):
+            do_inc = expr(lookup(m_tokens))
+        elif isinstance(expr, tuple) or isinstance(expr, list):
+            do_inc = lookup(m_tokens) in expr
+        else:
+            do_inc = (lookup(m_tokens) == expr)
+    if do_inc:
+        m_tokens.popleft()
+    return do_inc
+    
+
 def skip_tokens(m_tokens, termflag):
     """ Skip tokens until the end or termflag is meet (included)
     """

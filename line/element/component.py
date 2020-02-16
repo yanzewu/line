@@ -191,9 +191,9 @@ class Text(FigObject):
     def __init__(self, text, pos, name):
 
         super().__init__('text', name, {
-            'font':self._set_font
+            'font':_set_font
         }, {
-            'font':lambda x:x['fontfamily']
+            'font':lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
         })
         self.update_style({'text':text, 'pos':pos})
 
@@ -206,9 +206,9 @@ class Label(FigObject):
     def __init__(self, name):
 
         super().__init__('label', name, {
-            'font':self._set_font
+            'font':_set_font
         }, {
-            'font':lambda x:x['fontfamily']
+            'font':lambda x: '%s,%d' % (x['fontfamily'], x['fontsize'])
         })
 
     def _set_font(self, m_style, value):
@@ -219,3 +219,9 @@ class Label(FigObject):
 def _set_color(m_style, value):
     m_style['linecolor'] = value
     m_style['edgecolor'] = value
+
+
+def _set_font(m_style, value):
+    m_style['fontfamily'] = value[0]
+    if value[1] is None:
+        m_style['fontsize'] = value[1]

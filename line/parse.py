@@ -48,8 +48,48 @@ def parse_column(m_tokens):
     return column_expr
 
 
+def parse_selection_and_style_with_default(m_tokens, default_selection):
+    
+    if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and \
+        lookup(m_tokens, 1) != ',' and (
+        not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
+        (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
+        # the nasty cases... either not a style keyword or not enough style parameters
+        # that treated as value
+
+        selection = default_selection
+    else:
+        selection = parse_style_selector(m_tokens)
+
+    if lookup(m_tokens) == 'clear':
+        get_token(m_tokens)
+        assert_no_token(m_tokens)
+        style_list = css.ResetStyle()
+        add_class = []
+        remove_class = []
+    else:
+        style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
+
+    return selection, style_list, add_class, remove_class
+    
+
 def parse_style_selector(m_tokens):
-    tokenlist = parse_token_with_comma(m_tokens)
+
+    tokenlist = []
+    while len(m_tokens) > 0:
+        v1 = get_token(m_tokens)
+        if test_token_inc(m_tokens, '='):
+            tokenlist.append('%s=%s' % (v1, get_token(m_tokens)))
+        elif test_token_inc(m_tokens, ':'):
+            v2 = get_token(m_tokens)
+            if test_token_inc(m_tokens, '='):
+                tokenlist.append('%s:%s=%s' % (v1, v2, get_token(m_tokens)))
+        else:
+            tokenlist.append(v1)
+        
+        if not test_token_inc(m_tokens, ','):
+            break
+
     return [parse_single_style_selector(t) for t in tokenlist]
     
 
@@ -58,9 +98,11 @@ def parse_single_style_selector(t):
     if ':' in t:
         typename, attr = t.split(':', 1)
         name, val = attr.split('=')
-        return css.TypeStyleSelector(t, name, translate_style_val(name, val))
+        name = keywords.style_alias.get(name, name)
+        return css.TypeStyleSelector(typename, name, translate_style_val(name, val))
     elif '=' in t:
-        name, val = attr.split('=')
+        name, val = t.split('=')
+        name = keywords.style_alias.get(name, name)
         return css.StyleSelector(name, translate_style_val(name, val))
     elif '.' in t[1:]:
         if t[0] != '.':

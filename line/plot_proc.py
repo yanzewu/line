@@ -3,6 +3,7 @@ import numpy as np
 
 from . import state
 from . import sheet_util
+from . import io_util
 
 from .parse import *
 from . import expr_proc
@@ -299,7 +300,10 @@ class PlotParser:
         if expr.isdigit():
             expr = '$' + expr
         if self._is_quoted(expr):
-            expr = 'load(' + expr + ')'
+            if hintvar is None or io_util.file_or_wildcard_exist(strip_quote(expr)):
+                expr = 'load(%s)' % expr
+            else:
+                expr = 'col(%s)' % expr
         evaler.load(expr, omit_dollar=True)
         return evaler.evaluate_with_hintvar(hintvar)
         

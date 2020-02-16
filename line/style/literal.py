@@ -40,8 +40,11 @@ def translate_style_val(style_name:str, style_val:str):
             return style.PointType[style_val.upper()]
 
     elif style_name == 'font':
-        fontname, fontsize = style_val.split(',')
-        return fontname, stod(fontsize)
+        if ',' in style_val:
+            fontname, fontsize = style_val.split(',')
+            return fontname, stod(fontsize)
+        else:
+            return style_val, None
 
     elif style_name == 'orient':
         if style_val not in ('in', 'out'):

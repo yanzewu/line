@@ -55,6 +55,10 @@ def init_global_state(m_state):
     with open(os.path.join(style_dir, 'defaults.d.css')) as f:
         m_state.custom_stylesheet = css.load_css(f)
 
+    for d, v in m_state.custom_stylesheet.data.items():
+        if isinstance(d, (css.ClassNameSelector, css.ClassSelector, css.ClassStyleSelector, css.ClassTypeSelector)):
+            m_state.class_stylesheet.data[d] = v
+
     for selector, style in m_state.default_stylesheet.data.items():
         default_style_entries[selector.typename] = set(style)
 

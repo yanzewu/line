@@ -36,6 +36,14 @@ plot example/test-data.txt $2+2, (sin($2)+sin($3)*col('y2'))
 plot example/test-data.txt col(2), col('y2')
 plot example/test-data.txt load('example/test-data.txt')
 
+# wildcard and batch
+plot test/dataload/batch*.txt t:y1
+plot load('test/dataload/batch1.txt', 'test/dataload/batch2.txt')
+$d = load('test/dataload/batch1.txt', 'test/dataload/batch2.txt')
+plot d t:y1
+
+plot test/dataload/titles.txt t:'y(a)', t:'(b)', t:"'c'"
+
 # variable
 $a = load('example/test-data.txt')
 $b = a[2]

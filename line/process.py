@@ -380,11 +380,7 @@ def parse_and_process_group(m_state:state.GlobalState, m_tokens:deque):
 def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `set` command.
     """
-    # LL(2)
-    
-    if lookup(m_tokens) == 'option':
-        get_token(m_tokens)
-
+    if test_token_inc(m_tokens, 'option'):
         while len(m_tokens) > 0:
             opt = get_token(m_tokens)
             arg = get_token(m_tokens)
@@ -400,90 +396,46 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             except ValueError:
                 raise LineParseError('Invalid value for %s: "%s"' % (opt, arg))
 
-    elif lookup(m_tokens) == 'default':
-        get_token(m_tokens)
+    elif test_token_inc(m_tokens, 'default'):
+        selection = parse_style_selector(m_tokens)
+        for s in selection:
+            if not isinstance(s, css.TypeSelector):
+                raise LineParseError('Only element names (e.g. figure, subfigure) are allowed')
+        style_list = parse_style(m_tokens)
+        m_state.default_stylesheet.update(css.StyleSheet(selection, style_list))
 
-        if keywords.is_style_keyword(lookup(m_tokens)) and \
-            lookup(m_tokens, 1) != ',' and (
-            not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
-            (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
-
-            style_list = parse_style(m_tokens)
-            selection = css.NameSelector('subfigure')
-            # TODO automatically select candidate
-        else:
-            selection = parse_style_selector(m_tokens)
-            for s in selection:
-                if not isinstance(s, css.TypeSelector):
-                    raise LineParseError('Only element names (e.g. figure, subfigure) are allowed')
-            style_list = parse_style(m_tokens)
-
-        ss = css.StyleSheet(selection, style_list)
-        m_state.default_stylesheet.update(ss)
-
-    elif lookup(m_tokens) == 'palette':
-        get_token(m_tokens)
-        if len(m_tokens) == 2:
-            target = get_token(m_tokens)
-        else:
-            target = 'line'
+    elif test_token_inc(m_tokens, ('palette', 'palettes')):
+        target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
         try:
             m_palette = palette.get_palette(palette_name)
         except KeyError:
             raise LineProcessError('Palette "%s" does not exist' % palette_name)
-        palette.palette2stylesheet(m_palette, target).apply_to(m_state.cur_subfigure())
-        m_state.cur_subfigure().is_changed = True
-
-    else:
-        has_updated = False
-
-        # Setting cur_subfigure, recursively
-        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and \
-            lookup(m_tokens, 1) != ',' and (
-            not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
-            (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
-            # the nasty cases... either not a style keyword or not enough style parameters
-            # that treated as value
-
-            selection = css.NameSelector('gca')
-            style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
         else:
-            selection = parse_style_selector(m_tokens)
-            if lookup(m_tokens) == 'clear':
-                get_token(m_tokens)
-                assert_no_token(m_tokens)
-                style_list = css.ResetStyle()
-                add_class = []
-                remove_class = []
-            else:
-                style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
-            
-        ss = css.StyleSheet(selection, style_list)
-        has_updated = process_set_style(m_state, ss, add_class, remove_class)
-
-        if has_updated:
+            palette.palette2stylesheet(m_palette, target).apply_to(m_state.cur_subfigure())
+            m_state.cur_subfigure().is_changed = True
+    else:
+        selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
+            m_tokens, css.NameSelector('gca')
+        )
+        if m_state.apply_styles(
+            css.StyleSheet(selection, style_list), add_class, remove_class):
             m_state.cur_figure().is_changed = True
         else:
             warn('No style is set')
-
 
 def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `show` command.
     """
 
-    element_name = lookup(m_tokens)
-
-    if element_name == 'currentfile':
-        get_token(m_tokens)
+    if test_token_inc(m_tokens, 'currentfile'):
         print('File saved:', m_state.cur_save_filename)
 
-    elif element_name == 'pwd':
+    elif test_token_inc(m_tokens, 'pwd'):
         print(os.getcwd())
 
-    elif element_name in ('option',  'options'):
-        get_token(m_tokens)
+    elif test_token_inc(m_tokens, ('option',  'options')):
         if len(m_tokens) == 0:
             print('OPTION                          VALUE')
             print('------                          -----')
@@ -493,9 +445,8 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             print(m_state.options[get_token(m_tokens)])
             assert_no_token(m_tokens)
 
-    elif element_name in ('palette', 'palettes'):
-        palette_names = list(palette.PALETTES)
-        palette_names.sort()
+    elif test_token_inc(m_tokens, ('palette', 'palettes')):
+        palette_names = sorted(palette.PALETTES)
         for i in range(8):
             print(' '.join(('%-15s' % palette_names[n] for n in range(8*i, min(8*i+8, len(palette_names))))))
 
@@ -503,7 +454,10 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         if not m_state.is_interactive:
             m_state.refresh_style(True)
 
-        selection = parse_style_selector(m_tokens)
+        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != ',' and len(m_tokens) <= 2:
+            selection = css.NameSelector('gca')
+        else:
+            selection = parse_style_selector(m_tokens)
         ss = css.StyleSheet(selection, None)
         elements = ss.select(m_state.cur_figure())
         
@@ -562,25 +516,6 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
     else:
         for line1, line2 in fill_between:
             m_state.cur_subfigure().fill(line1, line2, **style_dict)
-
-
-def process_set_style(m_state, style_sheet, add_class_list, remove_class_list):
-    
-    has_updated = style_sheet.apply_to(m_state.cur_figure())
-
-    if len(add_class_list) > 0 or len(remove_class_list) > 0:
-
-        selection = style_sheet.select(m_state.cur_figure())
-        if selection is not None:
-            for s in selection:
-                for c in add_class_list:
-                    s.add_class(c)
-                for c in remove_class_list:
-                    s.remove_class(c)
-
-        has_updated = m_state.class_stylesheet.apply_to(m_state.cur_figure()) or has_updated
-
-    return True
 
 
 def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):

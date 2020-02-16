@@ -97,3 +97,41 @@ class GlobalState:
             self.create_figure()
             self.cur_figure().is_changed = True
 
+    def apply_styles(self, style_sheet:css.StyleSheet, adding_classes=[], removing_classes=[], set_all_figures=False, set_all_subfigures=False):
+        """ Apply style_sheet to figures.
+        Args:
+            style_sheet: `css.StyleSheet` instance;
+            adding_classes: List of str; The style class names to be added;
+            removing_classes: List of str; The style class names to be removed;
+            set_all_figures: If `False`, only current figure will be set. Otherwise the stylesheet will be apply
+                to all figures and subfigures.
+            set_all_subfigures: If `False`, only the current subfigure will be set. Not used if `set_all_figures' are set.
+        Returns:
+            Return `True` if the figure has been updated.
+        """
+        fig_list = [self.cur_figure()] if not set_all_figures else self.figures
+        has_updated = False
+
+        if set_all_figures or set_all_subfigures:
+            for fig in fig_list:
+                fig.set_dynamical = False
+
+        for fig in fig_list:
+            has_updated = style_sheet.apply_to(fig) or has_updated
+
+        if len(adding_classes) > 0 or len(removing_classes) > 0:
+            for fig in fig_list:
+                selection = style_sheet.select(fig)
+                if selection:
+                    for s in selection:
+                        for c in adding_classes:
+                            s.add_class(c)
+                        for c in removing_classes:
+                            s.remove_class(c)
+                has_updated = self.class_stylesheet.apply_to(fig) or has_updated
+
+        if set_all_figures or set_all_subfigures:
+            for fig in fig_list:
+                fig.set_dynamical = True
+
+        return has_updated
