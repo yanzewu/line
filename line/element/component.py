@@ -90,11 +90,25 @@ class DataLine(FigObject):
         self.y = data[1]
 
         super().__init__('line', name, {
-            'color':_set_color
+            'color':_set_color,
+            'label':self._set_label,
         })
         self.update_style({
             'label':label, 'xlabel':xlabel, 'skippoint':1
         })
+
+    def _set_label(self, m_style, label):
+        if label.startswith('!'):
+            try:
+                pattern, repl = label[1:].split('>')
+            except ValueError:
+                raise errors.LineParseError('Invalid label formattor: %s' % label)
+            repl = re.sub(r'\%N', self.name[4:], repl)
+            matcher = re.match(pattern, m_style['label'])
+            if matcher:
+                m_style['label'] = re.sub(r'\$(\d+)', lambda x:matcher.group(int(x.group(1))), repl)
+        else:
+            m_style['label'] = label
 
 
 class Bar(FigObject):

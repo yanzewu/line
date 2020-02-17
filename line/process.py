@@ -13,6 +13,8 @@ from . import state
 from . import plot
 from . import cmd_handle
 
+from . import group_proc
+
 from .style import css
 from .style import palette
 
@@ -370,7 +372,7 @@ def parse_and_process_group(m_state:state.GlobalState, m_tokens:deque):
     if group_descriptor == 'clear':
         m_state.cur_subfigure().update_style({'group':None})
     else:
-        m_state.cur_subfigure().update_style({'group': parse_group(group_descriptor)})
+        m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_descriptor)})
         logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
 
     m_state.cur_subfigure().update_colorid()
@@ -465,18 +467,16 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             warn('No element to show')
             return
 
-        # show all styles
         if len(m_tokens) == 0:
             for e in elements:
                 print(e.name + ':')
                 print('\n'.join(('%s =\t%s' % item for item in e.computed_style.items())))
-
-        # show specified style
         else:
             for style_name in m_tokens:
                 style_name = keywords.style_alias.get(style_name, style_name)
-                if style_name not in keywords.style_keywords:
+                if style_name not in e.computed_style and style_name not in keywords.style_keywords:
                     warn('Skip invalid style "%s"' % style_name)
+                    continue
                 print('%s:' % style_name)
                 print('\n'.join(('%s\t%s' % (e.name, e.computed_style.get(style_name, '<None>')) 
                     for e in elements)))

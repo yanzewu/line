@@ -87,7 +87,7 @@ plot cos(x)
 
 figure 3
 $y2=x
-plot example/test-data.txt y2,$y2+0.1,$y2+0.2,$y2+0.3,$y2+0.4
+plot example/test-data.txt y2,$y2+0.1,$y2+0.2,$y2+0.3,$y2+0.4,$y2+0.5,$y2+0.6
 group ABCBC...0
 set line +pairdash
 set palette lighter

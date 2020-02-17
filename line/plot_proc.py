@@ -4,6 +4,7 @@ import numpy as np
 from . import state
 from . import sheet_util
 from . import io_util
+from . import errors
 
 from .parse import *
 from . import expr_proc
@@ -253,7 +254,7 @@ class PlotParser:
                 m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
                 self.plot_groups.append(m_pg)
         else:
-            raise LineProcessError("Column number not match: x:%d, y:%d" % (self._cols(pg.xdata, self._cols(pg.ydata))))
+            raise errors.LineProcessError("Column number not match: x:%d, y:%d" % (sheet_util.cols(pg.xdata), sheet_util.cols(pg.ydata)))
 
     def shift_expr(self):
         if self._must_be_expr(self.next(), None):

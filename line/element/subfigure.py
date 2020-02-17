@@ -174,46 +174,7 @@ class Subfigure(FigObject):
     def update_colorid(self):
         """ refresh colorid and groupid for each line.
         """
-        prefix, repeator, suffix, is_direct_repeat = self.get_style('group')
-        # they are all list of ints
-
-        cidx_refnum = [1] * (max(prefix+repeator+suffix)+1)   # occurrence of colorid
-        colorids = []
-        groupids = []
-
-        for idx, cidx in enumerate(prefix):
-            colorids.append(cidx)
-            if cidx != 0:
-                groupids.append(cidx_refnum[cidx])
-                cidx_refnum[cidx] += 1
-            else:
-                groupids.append(0)
-
-        if repeator and len(self.datalines) > len(prefix) + len(suffix):
-            if is_direct_repeat:
-                for idx in range(len(prefix), len(self.datalines) - len(suffix)):
-                    cidx = repeator[(idx - len(prefix))%len(repeator)]
-                    colorids.append(cidx)
-                    if cidx != 0:
-                        groupids.append(cidx_refnum[cidx])
-                        cidx_refnum[cidx] += 1
-                    else:
-                        groupids.append(0)
-            else:
-                cidx = colorids[-1]
-                for idx in range(len(prefix), len(self.datalines) - len(suffix)):
-                    groupids.append((idx - len(prefix))%len(repeator) + 1)
-                    colorids.append(cidx + (idx - len(prefix))//len(repeator) + 1)
-
-        if suffix:
-            for idx in range(max(len(prefix), len(self.datalines)-len(suffix)), len(self.datalines)):
-                cidx = suffix[idx - len(self.datalines) + len(suffix)]
-                colorids.append(cidx)
-                if cidx != 0:
-                    groupids.append(cidx_refnum[cidx])
-                    cidx_refnum[cidx] += 1
-                else:
-                    groupids.append(0)
+        colorids, groupids = self.get_style('group').generate_ids(len(self.datalines))
 
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
