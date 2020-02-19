@@ -474,7 +474,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         else:
             for style_name in m_tokens:
                 style_name = keywords.style_alias.get(style_name, style_name)
-                if style_name not in e.computed_style and style_name not in keywords.style_keywords:
+                if style_name not in keywords.style_keywords:
                     warn('Skip invalid style "%s"' % style_name)
                     continue
                 print('%s:' % style_name)

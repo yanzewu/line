@@ -178,19 +178,34 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
         if ufunc.nin == 1:
+            ret = SheetFile([ufunc(d, **kwargs) for d in inputs[0].data], inputs[0].filename)
 
-            m_out = []
-            
-            for d in self.data:
-                m_inputs = [d] + list(inputs[1:])
-                m_out.append(ufunc(*m_inputs, **kwargs))
-            return SheetFile(m_out, self.filename)
+        elif ufunc.nin == 2 and (isinstance(inputs[0], (int, float)) or isinstance(inputs[1], (int, float))):
+            if isinstance(inputs[0], (int, float)):
+                ret = SheetFile([ufunc(inputs[0], d) for d in inputs[1].data], inputs[1].filename)
+            elif isinstance(inputs[1], (int, float)):
+                ret = SheetFile([ufunc(d, inputs[1]) for d in inputs[0].data], inputs[0].filename)
+
+        elif ufunc.nin == 2 and (isinstance(inputs[0], SheetFile) and isinstance(inputs[1], SheetFile)
+            and inputs[0].filename == inputs[1].filename):
+            assert inputs[1].shape == inputs[0].shape
+            ret = SheetFile([ufunc(a, b) for a, b in zip(inputs[0].data, inputs[1].data)], inputs[0].filename)
+
         else:
             m_inputs = []
             for i in inputs:
                 m_inputs.append(i.to_numpy() if isinstance(i, SheetFile) else i)
 
             return getattr(ufunc, method)(*m_inputs, **kwargs)
+
+        # rename columns
+        for d in ret.data:
+            if len(d.columns) == 1:
+                d.columns = ('<expr>',)
+            else:
+                d.columns = ['<expr:%d>' % i for i in range(len(d.columns))]
+
+        return ret
 
 
 def load_file(*filenames, allow_wildcard=True, **kwargs):
@@ -413,14 +428,26 @@ def columns(mat, title_sub='%d'):
     """
     
     if isinstance(mat, pandas.DataFrame):
-        return mat.columns
+        return _make_cols(mat.columns, title_sub)
     elif isinstance(mat, SheetFile):
-        return mat.columns()
+        return _make_cols(mat.columns(), title_sub)
     elif title_sub is not None:
-        return [title_sub % (i+1) for i in range(cols(mat))]
+        return _make_cols(list(range(cols(mat))), '%d')
     else:
         return None
 
+
+def _make_cols(columns_, title_sub):
+
+    if len(columns_) == 0:
+        return
+    if isinstance(columns_[0], int):
+        if '%d' in title_sub:
+            return [title_sub % (c+1) for c in columns_]
+        else:
+            return [title_sub] * len(columns_)
+    else:
+        return [str(c) for c in columns_]
 
 def cols(mat):
     """ Return number of columns of 1D and 2D array.

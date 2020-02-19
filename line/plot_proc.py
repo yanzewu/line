@@ -1,4 +1,5 @@
 
+import re
 import numpy as np
 
 from . import state
@@ -211,21 +212,29 @@ class PlotParser:
             pg.xdata = pg.xdata.flatten()
         if isinstance(pg.ydata, sheet_util.SheetFile):
             pg.ydata = pg.ydata.flatten()
+        elif len(pg.ydata.shape) == 3:
+            if pg.ydata.shape[2] == 1:
+                pg.ydata = pg.ydata[:,:,0]
+            elif pg.ydata.shape[1] == 1:
+                pg.ydata = pg.ydata[:,0,:]
 
         xcols = sheet_util.cols(pg.xdata)
         ycols = sheet_util.cols(pg.ydata)
+        expr1_str = pg.expr1 if pg.expr1 else ''
+        expr2_str = pg.expr2 if pg.expr2 else ''
         if xcols == 1:
-            xlabels = sheet_util.columns(pg.xdata, None)
-            if xlabels is None:
-                xlabels = [pg.expr1 if pg.expr1 else '']
+            xlabels = sheet_util.columns(pg.xdata, expr1_str)
         else:
-            xlabels = sheet_util.columns(pg.xdata, (pg.expr1 if pg.expr1 else '') + '[%d]')
+            xlabels = sheet_util.columns(pg.xdata, expr1_str + '[%d]')
         if ycols == 1:
-            ylabels = sheet_util.columns(pg.ydata, None)
-            if ylabels is None:
-                ylabels = [pg.expr2 if pg.expr2 else '']
+            ylabels = sheet_util.columns(pg.ydata, expr2_str)
         else:
-            ylabels = sheet_util.columns(pg.ydata, (pg.expr2 if pg.expr2 else '') + '[%d]')
+            ylabels = sheet_util.columns(pg.ydata, expr2_str + '[%d]')
+
+        for i in range(len(xlabels)):
+            xlabels[i] = self._format_label(xlabels[i], expr1_str)
+        for i in range(len(ylabels)):
+            ylabels[i] = self._format_label(ylabels[i], expr2_str)
 
         # split columns
         if xcols == 1 and ycols == 1:
@@ -295,6 +304,12 @@ class PlotParser:
 
     def _is_quoted(self, expr):
         return expr.startswith('\'') or expr.startswith('"')
+
+    def _format_label(self, label, repl):
+        return re.sub(r'\$(\d+)', r'col(\1)', 
+            re.sub(r'\<expr(\d+)\>', repl + r'[\1]', label
+                ).replace('<expr>', repl)
+            ).replace('$', '')
 
     def evaluate(self, hintvar, expr):
         evaler = expr_proc.ExprEvaler(self.m_state.variables, self.m_state.file_caches)

@@ -14,7 +14,7 @@ class PlottingGroup:
         self.style = kwargs.get('style', {})
 
 
-def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%T [%F]', auto_range=None, chart_type='line'):
+def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%F:%T', auto_range=None, chart_type='line'):
     """
     Do plotting on gca, create one if necessary.
 
