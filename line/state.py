@@ -57,6 +57,7 @@ class GlobalState:
             self.cur_figurename = '1'
         self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
         self.custom_stylesheet.apply_to(self.cur_figure(), 0)
+        return self.cur_figure()
 
     def create_subfigure(self, name):
         """ Return a new Subfigure instance with basic setup and default style applied.

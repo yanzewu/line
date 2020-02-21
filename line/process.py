@@ -1,5 +1,4 @@
 
-import itertools
 import logging
 from collections import deque
 import os
@@ -10,11 +9,11 @@ from . import defaults
 from . import keywords
 from . import io_util
 from . import state
-from . import plot
+from . import backend
 from . import cmd_handle
-
 from . import group_proc
 
+from .positioning import split
 from .style import css
 from .style import palette
 
@@ -147,17 +146,19 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'split':
         hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
         assert_no_token(m_tokens)
-        process_split(m_state, hsplitnum, vsplitnum)
+        split.split_figure(m_state.cur_figure(), hsplitnum, vsplitnum, m_state.options['resize-when-split'])
 
     elif command == 'hsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, splitnum, m_state.cur_figure().attr('split')[1])
+        split.split_figure(m_state.cur_figure(), splitnum, 
+            m_state.cur_figure().attr('split')[1], m_state.options['resize-when-split'])
 
     elif command == 'vsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, m_state.cur_figure().attr('split')[0], splitnum)
+        split.split_figure(m_state.cur_figure(), m_state.cur_figure().attr('split')[0],
+            splitnum, m_state.options['resize-when-split'])
 
     # select or create figure
     elif command == 'figure':
@@ -231,7 +232,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'quit':
         if m_state.options['display-when-quit'] and not m_state.is_interactive:
-            plot.show(m_state)
+            backend.show(m_state)
 
         if m_state.options['prompt-save-when-quit']:
             if len(m_state.figures) == 1:
@@ -244,7 +245,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
                 if io_util.query_cond('Save figure %s? ' % name, do_prompt, False):
                     process_save(m_state, '')
                 if m_state.is_interactive:
-                    plot.close_figure(m_state)
+                    backend.close_figure(m_state)
 
         return True
 
@@ -289,7 +290,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         redraw_cur_figure(m_state)
 
     if do_focus_up:
-        plot.update_focus_figure(m_state)
+        backend.update_focus_figure(m_state)
 
     return 0
 
@@ -297,13 +298,13 @@ def redraw_cur_figure(m_state:state.GlobalState):
 
     m_state.refresh_style(True)
     if m_state.cur_figure().is_changed:
-        plot.update_figure(m_state, True)
+        backend.update_figure(m_state, True)
         m_state.cur_figure().is_changed = False
         for m_subfig in m_state.cur_figure().subfigures:
             m_subfig.is_changed = False
 
     elif m_state.cur_subfigure().is_changed:
-        plot.update_subfigure(m_state)
+        backend.update_subfigure(m_state)
         m_state.cur_subfigure().is_changed = False 
 
 
@@ -518,52 +519,6 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
             m_state.cur_subfigure().fill(line1, line2, **style_dict)
 
 
-def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
-    """ Split current figure by certain grids.
-    Will remove additional subfigures if necessary.
-    """
-
-    if hsplitnum < 1 or vsplitnum < 1:
-        raise LineProcessError('Split number should be greater than 1, got %d' % max(hsplitnum, vsplitnum))
-
-    m_fig = m_state.cur_figure()
-    hsplit, vsplit = m_fig.attr('split')
-    hspacing, vspacing = m_fig.attr('spacing')
-
-    subfig_state_2d = []
-    for i in range(vsplitnum):
-        subfig_state_2d.append([])
-        for j in range(hsplitnum):
-            if i < vsplit and j < hsplit:
-                subfig_state_2d[i].append(m_fig.subfigures[i*hsplit + j])
-            else:
-                subfig_state_2d[i].append(m_state.create_subfigure('subfigure%d' % (i*hsplitnum + j)))
-
-            subfig_state_2d[i][j].update_style({'rpos': (
-                j * (1 + hspacing) / hsplitnum,
-                (vsplitnum - 1 - i) * (1 + vspacing) / vsplitnum
-                ), 
-                'rsize': (
-                1 / hsplitnum -  (1 - 1/hsplitnum) * hspacing,
-                1 / vsplitnum - (1 - 1/vsplitnum) * vspacing
-            )})
-    
-    m_fig.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
-    m_fig.is_changed = True
-    
-    if m_state.options['resize-when-split']:
-        split_old = m_fig.get_style('split')
-        size_old = m_fig.get_style('size')
-        m_fig.update_style({'size': [
-            np.round(size_old[0]*np.sqrt(hsplitnum/split_old[0] * split_old[1]/vsplitnum)), 
-            np.round(size_old[1]*np.sqrt(vsplitnum/split_old[1] * split_old[0]/hsplitnum))]
-            })
-
-    m_fig.update_style({'split': [hsplitnum, vsplitnum]})
-    if m_fig.cur_subfigure >= len(m_fig.subfigures):
-        m_fig.cur_subfigure = 0
-
-
 def process_save(m_state:state.GlobalState, filename:str):
     """ Saving current figure.
     """
@@ -584,12 +539,12 @@ def process_save(m_state:state.GlobalState, filename:str):
             warn('Canceled')
             return
 
-    plot.save_figure(m_state, filename)
+    backend.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
 
 def process_display(m_state:state.GlobalState):
     if not m_state.is_interactive:
-        plot.show(m_state)
+        backend.show(m_state)
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state.variables, m_state.file_caches)
@@ -600,7 +555,7 @@ def process_expr(m_state:state.GlobalState, expr):
 def process_load(m_state:state.GlobalState, filename):
     handler = cmd_handle.CMDHandler(m_state)
     is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
-    plot.finalize(m_state)
+    backend.finalize(m_state)
     
     cwd = os.getcwd()
 
@@ -618,4 +573,4 @@ def process_load(m_state:state.GlobalState, filename):
     handler.proc_file(full_filename)
     os.chdir(cwd)
     m_state.is_interactive = is_interactive
-    plot.initialize(m_state)
+    backend.initialize(m_state)

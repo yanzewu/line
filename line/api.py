@@ -4,7 +4,7 @@ import numpy as np
 
 from . import state
 from . import defaults
-from . import plot as _plot
+from . import backend as _plot
 from . import process
 
 m_state = None
@@ -29,7 +29,7 @@ def figure(name=None):
 def subfigure(*arg):
     
     if len(arg) == 1:
-        _process_command(['subfigure', str(arg)])
+        _process_command(['subfigure', str(arg[0])])
     elif len(arg) == 3:
         _process_command(['subfigure', str(arg[0]), ',', str(arg[1]), ',', str(arg[2])])
     else:

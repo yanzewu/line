@@ -58,4 +58,3 @@ class Figure(FigObject):
         self.backend = None
         for m_subfig in self.subfigures:
             m_subfig.backend = None
-

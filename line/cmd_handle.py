@@ -13,7 +13,7 @@ from . import process
 from . import completion
 from .errors import LineParseError, print_error
 from . import defaults
-from . import plot
+from . import backend
 
 logger = logging.getLogger('line')
 sh = logging.StreamHandler()
@@ -102,7 +102,7 @@ class CMDHandler:
             self.proc_lines(f.readlines())
 
     def proc_lines(self, lines):
-        plot.initialize(self.m_state)
+        backend.initialize(self.m_state)
         for line in lines:
             try:
                 ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
@@ -137,7 +137,7 @@ class CMDHandler:
                 self.input_loop()
                 self.m_state.is_interactive = False
 
-        plot.finalize(self.m_state)
+        backend.finalize(self.m_state)
 
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
@@ -187,11 +187,11 @@ class CMDHandler:
 
     def input_loop(self):
         self.init_input()
-        plot.initialize(self.m_state)
+        backend.initialize(self.m_state)
         ret = 0
         while ret == 0:
             ret = self.proc_input()
-        plot.finalize(self.m_state)
+        backend.finalize(self.m_state)
         self.finalize_input()
 
     def handle_line(self, line, token_buffer, token_begin_pos, execute=True):
