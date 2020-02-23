@@ -34,6 +34,9 @@ class Figure(FigObject):
             m_style['dpi'] = 150
         elif value == 'low':    # <= 1k
             m_style['dpi'] = 100
+        else:
+            m_style['dpi'] = value
+            return
         m_style['size'] = [
             defaults.default_figure_size_inches[0]*m_style['dpi'],
             defaults.default_figure_size_inches[1]*m_style['dpi']]

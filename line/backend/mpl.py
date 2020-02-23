@@ -62,7 +62,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
         for subfig in m_fig.subfigures:
             subfig.backend = None
     else:
-        m_fig.backend.dpi = dpi
+        #m_fig.backend.set_dpi(dpi)
         m_fig.backend.set_size_inches(*size_inches)
 
     m_plt_fig = m_fig.backend
@@ -80,18 +80,13 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
         padding = subfig.attr('padding')
 
         ax = subfig.backend
-        if ax is None:
-            ax = plt.Axes(
-                m_plt_fig,
-                scale((pos[0]+padding[0], pos[1]+padding[1], 
+        frame = scale((pos[0]+padding[0], pos[1]+padding[1], 
                 rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
-            )
+        if ax is None:
+            ax = plt.Axes(m_plt_fig, frame)
             subfig.backend = ax
         else:
-            ax.set_position((
-                scale((pos[0]+padding[0], pos[1]+padding[1], 
-                rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
-            ))
+            ax.set_position(frame)
 
         m_plt_fig.add_axes(ax)
         logger.debug('Subfigure found at %s' % str(ax.get_position().bounds))

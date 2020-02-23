@@ -146,19 +146,17 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'split':
         hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
         assert_no_token(m_tokens)
-        split.split_figure(m_state.cur_figure(), hsplitnum, vsplitnum, m_state.options['resize-when-split'])
+        process_split(m_state, hsplitnum, vsplitnum)
 
     elif command == 'hsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        split.split_figure(m_state.cur_figure(), splitnum, 
-            m_state.cur_figure().attr('split')[1], m_state.options['resize-when-split'])
+        process_split(m_state, splitnum, m_state.cur_figure().attr('split')[1])
 
     elif command == 'vsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        split.split_figure(m_state.cur_figure(), m_state.cur_figure().attr('split')[0],
-            splitnum, m_state.options['resize-when-split'])
+        process_split(m_state, m_state.cur_figure().attr('split')[0], splitnum)
 
     # select or create figure
     elif command == 'figure':
@@ -178,7 +176,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         
         if m_state.cur_figurename is None:
             m_state.create_figure()
-            redraw_cur_figure(m_state)
+            if m_state.is_interactive:
+                redraw_cur_figure(m_state)
 
         m_fig = m_state.cur_figure()
 
@@ -213,7 +212,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_subfigure().clear()
 
     elif command == 'replot':
-        if lookup(m_tokens, 1) == 'all':
+        if lookup(m_tokens, 0) == 'all':
             m_state.cur_figure().is_changed = True
         else:
             m_state.cur_subfigure().is_changed = True
@@ -457,7 +456,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
         if not m_state.is_interactive:
             m_state.refresh_style(True)
 
-        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != ',' and len(m_tokens) <= 2:
+        if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != ',' and len(m_tokens) < 2:
             selection = css.NameSelector('gca')
         else:
             selection = parse_style_selector(m_tokens)
@@ -517,6 +516,12 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
     else:
         for line1, line2 in fill_between:
             m_state.cur_subfigure().fill(line1, line2, **style_dict)
+
+
+def process_split(m_state:state.GlobalState, hsplitnum, vsplitnum):
+    split.split_figure(m_state.cur_figure(), hsplitnum, vsplitnum, m_state.options['resize-when-split'])
+    m_state.refresh_style(True)
+    split.align_subfigures(m_state.cur_figure(), 'axis')
 
 
 def process_save(m_state:state.GlobalState, filename:str):

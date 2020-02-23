@@ -49,7 +49,9 @@ class Axis(FigObject):
         get_ticks = scale.get_ticks_log if m_scale == 'log' else scale.get_ticks
 
         if m_range[0] is None or m_range[1] is None:
-            self.update_style({'tickpos': get_ticks(self.vmin, self.vmax)})
+            self.update_style({'tickpos': get_ticks(
+                self.vmin if m_range[0] is None else m_range[0], 
+                self.vmax if m_range[1] is None else m_range[1])})
         elif m_range[2] is None:
             self.update_style({'tickpos': get_ticks(m_range[0], m_range[1])})
         else:

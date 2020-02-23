@@ -103,7 +103,6 @@ def parse_group(group:str):
             if r1 == r2 and r1 > 1:
                 repeat_style = GroupDesc.REPEAT_GROUP
                 repeator = prefix[len(prefix)-r1:]
-            print(r1, r2)
 
         if repeat_style == GroupDesc.REPEAT_COLOR:
             prefix = prefix[:len(prefix)-len(repeator)]

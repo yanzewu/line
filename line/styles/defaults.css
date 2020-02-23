@@ -5,8 +5,8 @@
 figure {
     size: 1440, 960;
     dpi: 200;
-    margin: 0,0,0,0;
-    spacing: -0.05,-0.03;
+    margin: 0.02,0.02,0.02,0.02;
+    spacing: 0.02,0.02;
     split: 1,1;
 }
 
