@@ -2,7 +2,7 @@
 import numpy as np
 import re
 
-from .. import scale
+from ..graphing import scale
 
 from . import style
 from . import errors
@@ -29,9 +29,12 @@ class Axis(FigObject):
         return [self.label, self.tick, self.grid]
 
     def _set_range(self, m_style, value):
-        m_style['range'] = value
+        minpos = self.vmin if value[0] is None else value[0]
+        maxpos = self.vmax if value[1] is None else value[1]
+
+        m_style['range'] = (minpos, maxpos, value[2])
         if m_style == self.style[1]:
-            self._refresh_ticks(value, self.get_style('scale'))
+            self._refresh_ticks(m_style['range'], self.get_style('scale'))
 
     def _set_scale(self, m_style, value):
         m_style['scale'] = value
@@ -46,20 +49,13 @@ class Axis(FigObject):
         self.vmax = vmax
 
     def _refresh_ticks(self, m_range, m_scale):
-        get_ticks = scale.get_ticks_log if m_scale == 'log' else scale.get_ticks
+        minpos, maxpos, step = m_range
 
-        if m_range[0] is None or m_range[1] is None:
-            self.update_style({'tickpos': get_ticks(
-                self.vmin if m_range[0] is None else m_range[0], 
-                self.vmax if m_range[1] is None else m_range[1])})
-        elif m_range[2] is None:
-            self.update_style({'tickpos': get_ticks(m_range[0], m_range[1])})
-        else:
-            if m_scale == 'linear':
-                self.update_style({'tickpos': np.arange(m_range[0], m_range[1]+m_range[2]/10, m_range[2])})
-            elif m_scale == 'log':
-                numticks = int(1.0/m_range[2])
-                self.update_style({'tickpos': get_ticks(m_range[0], m_range[1], numticks)})
+        if m_scale == 'linear':
+            self.update_style({'tickpos': scale.get_ticks(minpos, maxpos, step)})
+        elif m_scale == 'log':
+            numticks = int(1.0/step) if step else None
+            self.update_style({'tickpos': scale.get_ticks_log(minpos, maxpos, numticks)})
 
 
 class Tick(FigObject):

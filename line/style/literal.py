@@ -92,7 +92,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     elif style_name in ('margin', 'padding'):
         vs = style_val.split(',')
-        return [stof(vs[i]) for i in range(4)]
+        return style.Padding([stof(vs[i]) for i in range(4)])
 
     # range
     elif style_name.endswith('range'):

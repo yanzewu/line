@@ -30,7 +30,8 @@ ylabel "This is ylabel"
 ylabel text "This is also ylabel"
 xlabel visible=false color=inherit
 xlabel on
-xrange 0:12
+xrange 0:12; xrange '0:' ;xrange ':12'; xrange ':'; xrange '::'; xrange '0::'; xrange ':2:'; xrange '::12'; xrange ':2:12'; xrange '0:2:'; xrange 0:2:12
+yrange 0:12; yrange '0:' ;yrange ':12'; yrange ':'; yrange '::'; yrange '0::'; yrange ':2:'; yrange '::12'; yrange ':2:12'; yrange '0:2:'; yrange 0:2:12
 
 xrange 0:1
 yscale log

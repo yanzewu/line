@@ -310,25 +310,25 @@ def _update_subfigure(m_subfig:state.Subfigure):
             zorder=m_style['zindex']
         )
 
-    x_interval = m_subfig.axes[0].attr('range')[2]
+    x_begin, x_end, x_interval = m_subfig.axes[0].attr('range')
     x_ticks = m_subfig.axes[0].attr('tickpos')
     ax.set_xticks(x_ticks)
-    ax.set_xbound(x_ticks[0], x_ticks[-1])
+    ax.set_xbound(x_begin, x_end)
 
-    y_interval = m_subfig.axes[1].attr('range')[2]
+    y_begin, y_end, y_interval = m_subfig.axes[1].attr('range')
     y_ticks = m_subfig.axes[1].attr('tickpos')
     ax.set_yticks(y_ticks)
-    ax.set_ybound(y_ticks[0], y_ticks[-1])
+    ax.set_ybound(y_begin, y_end)
 
     # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
-    if m_subfig.axes[0].attr('scale') == 'linear':
+    if m_subfig.axes[0].attr('scale') == 'linear' and m_subfig.axes[0].attr('range')[2] is None:
         ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=len(x_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
     elif m_subfig.axes[0].attr('scale') == 'log':
         x_subs = [1.0] + np.arange(int(x_interval*10), 10, int(x_interval*10), dtype=int).tolist() if x_interval else (1.0,)
         ax.xaxis.set_major_locator(ticker.LogLocator(subs=x_subs))
         ax.xaxis.set_minor_locator(ticker.LogLocator(subs=(1,5,)))
-    if m_subfig.axes[1].attr('scale') == 'linear':
-        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=4, steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
+    if m_subfig.axes[1].attr('scale') == 'linear' and m_subfig.axes[1].attr('range')[2] is None:
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=len(y_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
     elif m_subfig.axes[1].attr('scale') == 'log':
         y_subs = [1.0] + np.arange(int(y_interval*10), 10, int(y_interval*10), dtype=int).tolist() if y_interval else (1.0,)
         ax.yaxis.set_major_locator(ticker.LogLocator(subs=y_subs))

@@ -181,6 +181,11 @@ class Subfigure(FigObject):
 
     def update_range_param(self):
         datalist = self.datalines + self.bars
+        if not datalist:
+            for a in self.axes:
+                a._set_datarange(0, 1)
+            return
+            
         max_x = max([np.max(d.x) for d in datalist])
         min_x = min([np.min(d.x) for d in datalist])
         max_y = max([np.max(d.y) for d in datalist])

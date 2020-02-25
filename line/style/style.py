@@ -168,3 +168,48 @@ def str2pos(s):
             raise ValueError('Horizontal/vertical not match')
 
     return (m_v1, m_v2)
+
+
+class Padding:
+
+    def __init__(self, *args):
+        if len(args) == 1:
+            if isinstance(args[0], (int, float)):
+                self.data = [args[0]] * 4
+            elif len(args[0]) == 2:
+                self.data = [args[0][0], args[0][1], args[0][0], args[0][1]]
+            elif len(args[0]) == 4:
+                self.data = args[0]
+            else:
+                raise ValueError(args)
+        elif len(args) == 2:
+            self.data = [args[0], args[1], args[0], args[1]]
+        elif len(args) == 4:
+            self.data = [args[0], args[1], args[2], args[3]]
+        else:
+            raise ValueError(args)
+
+    def left(self):
+        return self.data[0]
+    
+    def bottom(self):
+        return self.data[1]
+
+    def right(self):
+        return self.data[2]
+
+    def top(self):
+        return self.data[3]
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+    def __setitem__(self, idx, val):
+        self.data[idx] = val
+
+    def width(self):
+        return 1 - self.data[0] - self.data[2]
+
+    def height(self):
+        return 1 - self.data[1] - self.data[3]
+
