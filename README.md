@@ -21,9 +21,7 @@ The package is written in pure python and is directly executable. To install it 
 
     pip install -e line
 
-## Quickstart
-
-The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference), [expressions](doc/doc.md#expressions) and [styles](doc/doc.md#styles).
+## Features
 
 The plotting grammar of Line is similar (but looser) with Gnuplot. The major differences are:
 - No quote for filename is needed if column entries are given. i.e. `plot 'filename' 1:2` in Gnuplot is equvalent to `plot filename 1:2` in Line;
@@ -31,6 +29,10 @@ The plotting grammar of Line is similar (but looser) with Gnuplot. The major dif
 - No requirement for frequent `replot`. The replotting is automatically done when there is anything changed (but certainly you can manually replot);
 - Uniform description of style elements. Line uses CSS model to select and modify element styles, therefore the syntax for getting/setting styles are simple and straightforward;
 - A better palette system. Setting palette only requires one command, and one can easily change the color order via modifying `groupid` or using `group` command.
+
+## Quickstart
+
+The full documentation can be found [here](doc/doc.md), which includes [command-line options](doc/doc.md#command-line-options), [command reference](doc/doc.md#command-reference), [expressions](doc/doc.md#expressions) and [styles](doc/doc.md#styles).
 
 ### Launch
 

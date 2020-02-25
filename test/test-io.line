@@ -10,7 +10,7 @@ show pwd
 # load
 
 cd example
-load plot.line
+load plot.line a
 cd ..
 
 # save

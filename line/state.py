@@ -23,8 +23,9 @@ class GlobalState:
         self.cur_save_filename = None
         self.is_interactive = None
 
-        self.variables = {'__varx': np.arange(-5, 5, 1)}
         self.file_caches = {}
+        self.arg_stack = []
+        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x]}
 
         self.options = {}   # Additional program options
 

@@ -8,6 +8,8 @@ remove ps=4
 show line label
 remove ps=2
 show line label
+text 123 top,left
+remove text1
 
 # line
 line 0,0 2,2 lc=red

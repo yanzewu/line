@@ -271,8 +271,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'load':
         filename = get_token(m_tokens)
-        assert_no_token(m_tokens)
-        process_load(m_state, filename)
+        process_load(m_state, filename, list(m_tokens))
 
     else:
         raise LineParseError('No command named "%s"' % command)
@@ -557,7 +556,7 @@ def process_expr(m_state:state.GlobalState, expr):
     logger.debug(evaler.expr)
     return evaler.evaluate()
 
-def process_load(m_state:state.GlobalState, filename):
+def process_load(m_state:state.GlobalState, filename, args):
     handler = cmd_handle.CMDHandler(m_state)
     is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
     backend.finalize(m_state)
@@ -575,7 +574,9 @@ def process_load(m_state:state.GlobalState, filename):
     if not full_filename:
         raise LineProcessError('Cannot open file "%s"' % filename)
 
+    m_state.arg_stack.append([filename] + args)
     handler.proc_file(full_filename)
+    m_state.arg_stack.pop()
     os.chdir(cwd)
     m_state.is_interactive = is_interactive
     backend.initialize(m_state)

@@ -196,7 +196,7 @@ See [Element Selector](#element-selector) for more details about selections. If 
 
 #### Abbrevation
 
-If the first parameter of set is one of "grid,hold,legend,palette,x/ylabel,x/yrange,x/yscale", then the "set" word can be omitted. Examples:
+If the first parameter of set is one of "grid,hold,legend,palette,x/ylabel,x/yrange,x/yscale,title", then the "set" word can be omitted. Examples:
 
     hold on # == set gca hold on
     grid on # == set gca grid visible=true
@@ -373,11 +373,11 @@ Usage:
 
 ### load
 ---
-Load an external script.
+Load an external script. Additional arguments may be passed.
 
 Usage:
 
-    load filename
+    load filename [args...]
 
 ### cd
 ---
@@ -441,6 +441,7 @@ hist | hist(x) (requires a column, returns a Nx2 matrix)
 load | load('filename')
 save | save('filename')
 col | col('column_name') (only available in plotting)
+arg | arg(index) (get args passed in shell or by 'load' command. Start from 0)
 
 ### Assigning
 

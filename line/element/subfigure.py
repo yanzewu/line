@@ -125,7 +125,7 @@ class Subfigure(FigObject):
             self.polygons.pop(idx)
             
         elif isinstance(element, Text):
-            idx = self.drawlines.index(element)
+            idx = self.texts.index(element)
             self.texts.pop(idx)
             
         else:

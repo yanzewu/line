@@ -46,6 +46,7 @@ Additional options can be shown by `line -e 'show option'`'''
 
     cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0) and
         defaults.default_options['delayed-init'])
+    cmd_handler.m_state.arg_stack.append(args)
 
     if len(args) == 0:
         cmd_handler.read_source()
@@ -53,15 +54,14 @@ Additional options can be shown by `line -e 'show option'`'''
         cmd_handler.input_loop()
     elif mode == 'script':
         cmd_handler.read_source()
-        for filename in args:
-            cmd_handler.proc_file(filename)
+        cmd_handler.proc_file(args[0])
     elif mode == 'eval':
         cmd_handler.read_source()
-        cmd_handler.proc_lines([' '.join(args)])
+        cmd_handler.proc_lines(args[0])
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
         cmd_handler.read_source()
-        line0 = 'plot ' + ' '.join(args)
+        line0 = 'plot ' + args[0]
         line0 = line0.replace('\\', '/')
         cmd_handler.proc_lines([line0])
         process_display(cmd_handler.m_state)

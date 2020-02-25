@@ -1,0 +1,5 @@
+
+$x = arg(1)
+$y = arg(0)
+print $x
+print $y
