@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.ticker as ticker
 import matplotlib.font_manager as font_manager
+import matplotlib.tight_layout as tight_layout
 
 from . import state
 from . import style
@@ -81,7 +82,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
         ax = subfig.backend
         frame = scale((pos[0]+padding[0], pos[1]+padding[1], 
-                rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
+            rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
         if ax is None:
             ax = plt.Axes(m_plt_fig, frame)
             subfig.backend = ax
@@ -93,7 +94,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
     if redraw_subfigures:
         for subfig in m_fig.subfigures:
-            _update_subfigure(subfig)
+            _update_subfigure(subfig, tight_layout.get_renderer(m_fig.backend))
             logger.debug('Updated subfigure %s' % subfig.name)
 
     #plt.show(block=False)
@@ -109,10 +110,10 @@ def update_subfigure(m_state:state.GlobalState):
         return
     
     logger.debug('Updating figure %s, subfigure %d' % (m_state.cur_figurename, m_state.cur_figure().cur_subfigure))
-    plt.figure(m_state.cur_figurename)
-    _update_subfigure(m_state.cur_subfigure())
+    fig = plt.figure(m_state.cur_figurename)
+    _update_subfigure(m_state.cur_subfigure(), tight_layout.get_renderer(fig))
 
-def _update_subfigure(m_subfig:state.Subfigure):
+def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
     ax = m_subfig.backend
     ax.cla()
@@ -376,6 +377,20 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         for t in legend.get_texts():
             t.set_fontfamily(m_style['fontfamily'])
+
+        m_subfig.legend.computed_style['frame'] = style.Rect(*legend.get_window_extent(renderer).bounds)
+    
+    tb_ax0 = ax.get_xaxis().get_tightbbox(renderer)
+    tb_ax1 = ax.get_yaxis().get_tightbbox(renderer)
+
+    m_subfig.axes[0].computed_style['frame'] = style.Rect(tb_ax0.bounds if tb_ax0 else (0,0,0,0))
+    m_subfig.axes[1].computed_style['frame'] = style.Rect(tb_ax1.bounds if tb_ax1 else (0,0,0,0))
+    m_subfig.axes[0].tick.computed_style['frame'] = [style.Rect(l.get_window_extent(renderer).bounds) for l in ax.get_xticklabels()]
+    m_subfig.axes[1].tick.computed_style['frame'] = [style.Rect(l.get_window_extent(renderer).bounds) for l in ax.get_yticklabels()]
+    m_subfig.axes[0].label.computed_style['frame'] = style.Rect(ax.xaxis.get_label().get_window_extent(renderer).bounds)
+    m_subfig.axes[1].label.computed_style['frame'] = style.Rect(ax.yaxis.get_label().get_window_extent(renderer).bounds)
+
+    m_subfig.computed_style['frame'] = style.Rect(*ax.get_window_extent(renderer).bounds)
 
 
 def save_figure(m_state:state.GlobalState, filename):

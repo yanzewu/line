@@ -13,6 +13,7 @@ from . import backend
 from . import cmd_handle
 from . import group_proc
 
+from .positioning import subfigure_arr
 from .positioning import split
 from .style import css
 from .style import palette
@@ -408,6 +409,11 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             m_tokens, css.NameSelector('gca')
         )
         m_state.update_local_stylesheet(css.StyleSheet(selection, style_list))
+
+    elif test_token_inc(m_tokens, 'compact'):
+        redraw_cur_figure(m_state)
+        for sf in m_state.cur_figure().subfigures:
+            sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
