@@ -1,30 +1,39 @@
 
-import collections
-import numpy as np
+import collections as _collections
 
-from . import state
-from . import defaults
 from . import backend as _plot
-from . import process
+from . import process as _process
 
-m_state = None
+_m_state = None
 
-def init_m_state():
 
-    global m_state
+def _init_state():
 
-    m_state = state.GlobalState()
-    defaults.init_global_state(m_state)
-    m_state.is_interactive = False
+    from . import state
+    from . import defaults
 
-    process.initialize()
+    global _m_state
+
+    _m_state = state.GlobalState()
+    defaults.init_global_state(_m_state)
+    _m_state.is_interactive = False
+    _process.initialize()
+
+
+def _get_state():
+    if _m_state is None:
+        _init_state()
+    
+    return _m_state
+
+
+def _process_command(command):
+    process.parse_and_process_command(_collections.deque(command), _get_state())
 
 
 def figure(name=None):
+    return _get_state().figure(name)
 
-    _process_command(['figure'] if not name else ['figure', str(name)])
-    return m_state.cur_figure()
-    
 
 def subfigure(*arg):
     
@@ -34,47 +43,71 @@ def subfigure(*arg):
         _process_command(['subfigure', str(arg[0]), ',', str(arg[1]), ',', str(arg[2])])
     else:
         raise ValueError(arg)
-    return m_state.cur_subfigure()
+    return _m_state.cur_subfigure()
 
 
-def plot(x, y, *args, **kwargs):
-    if not m_state:
-        init_m_state()
-    m_state.variables['__varmx'] = np.array(x)
-    m_state.variables['__varmy'] = np.array(y)
+def plot(*args, **kwargs):
+    """ Plot a new set of data.
+    Args:
+        x, y (at least one or both): Array-like object;
+        style_descriptor: Matlab-style descriptor, e.g. 'r-';
+    Kwargs: Style args for `DataLine'.
 
-    _args = ['plot', '$mx', ':', '$my'] + list(map(str, args))
-    for k, d in kwargs.items():
-        _args += [k, '=', str(d)]
+    Returns:
+        `element.DataLine' instance.
+    """
+    from . import dataview
 
-    _process_command(_args)
-    return m_state.cur_subfigure().datalines[-1]
+    return dataview.api.plot_line(_get_state(), *args, **kwargs)
+
+
+def bar(*args, **kwargs):
+
+    from . import dataview
+
+    return dataview.api.plot_bar(_get_state(), *args, **kwargs)
+
+
+def hist(*args, **kwargs):
+
+    from . import dataview
+
+    return dataview.api.plot_hist(_get_state(), *args, **kwargs)
+
+
+def fill(*args, **kwargs):
+
+    from . import dataview
+
+    return dataview.api.fill_h(_get_state(), *args, **kwargs)
+    
 
 def show():
-    if not m_state:
+    if not _m_state:
         return
-    _plot.initialize(m_state)
-    m_state.refresh_style(True)
-    process.process_display(m_state)
-    _plot.finalize(m_state)
+    _plot.initialize(_m_state)
+    _m_state.refresh_style(True)
+    _process.process_display(_m_state)
+    _plot.finalize(_m_state)
 
 
 def gcf():
-    return m_state.cur_figure(True)
+    return _m_state.gcf(True)
 
 
 def gca():
-    return m_state.cur_subfigure(True)
+    return _m_state.gca(True)
+
+
+def clear():
+    _m_state.gca().clear()
+
+
+def cla():
+    clear()
 
 
 def load_file(filename, *args, **kwargs):
     from . import sheet_util
 
     return sheet_util.load_file(filename, *args, **kwargs)
-
-def _process_command(command):
-
-    if not m_state:
-        init_m_state()
-
-    process.parse_and_process_command(collections.deque(command), m_state)

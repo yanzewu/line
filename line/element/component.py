@@ -84,8 +84,7 @@ class Legend(FigObject):
 class DataLine(FigObject):
 
     def __init__(self, data, label, xlabel, name):
-        self.x = data[0]
-        self.y = data[1]
+        self.data = data
 
         super().__init__('line', name, {
             'color':_set_color,
@@ -115,11 +114,10 @@ class Bar(FigObject):
 
         self.dynamic_bin = dynamic_bin
         if dynamic_bin:
-            assert not isinstance(data, tuple)
-            self.data_raw = data
-        else:
-            self.x = data[0]
-            self.y = data[1]
+            from ..dataview import datapack
+            assert isinstance(data, datapack.DistributionDataPack)
+
+        self.data = data
 
         super().__init__('bar', name, {
             'edgecolor': lambda s,v: s.update({'linecolor':v}),
@@ -129,7 +127,7 @@ class Bar(FigObject):
             'width': self._set_width,
         })
         self.update_style({
-            'label':label, 'xlabel':xlabel
+            'label':label, 'xlabel':xlabel, 'width':1.0
         })
 
     def _set_color(self, m_style, value):
@@ -141,34 +139,25 @@ class Bar(FigObject):
             raise LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['bin'] = value
-            if m_style == self.style[1]:
-                try:
-                    self._refresh_data(value, self.get_style('norm'))
-                except KeyError:
-                    pass
+            self.data.set_bins(value)
+            self._update_barwidth()
 
     def _set_norm(self, m_style, value):
         if not self.dynamic_bin:
             raise LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['norm'] = value
-            if m_style == self.style[1]:
-                try:
-                    self._refresh_data(self.get_style('bin'), value)
-                except KeyError:
-                    pass
+            self.data.set_norm(value)
 
-    def _refresh_data(self, bins, norm):
-        from ..sheet_util import histogram
-        _result = histogram(self.data_raw, bins=bins, norm=norm)
-        self.x = _result[:, 0]
-        self.y = _result[:, 1]
-        self.update_style({'barwidth':self.get_style('width')*(self.x[1]-self.x[0])})
+    def _update_barwidth(self):
+        self.update_style({
+            'barwidth':self.get_style('width')*(self.data.get_x()[1]-self.data.get_x()[0])
+            })
 
     def _set_width(self, m_style, width):
         m_style['width'] = width
-        if self.dynamic_bin and 'x' in self.__dict__:
-            m_style['barwidth'] = width*(self.x[1] - self.x[0])
+        if self.dynamic_bin:
+            self._update_barwidth()
         else:
             m_style['barwidth'] = width
 
@@ -186,8 +175,7 @@ class DrawLine(FigObject):
 class Polygon(FigObject):
 
     def __init__(self, data, name):
-        self.x = data[0]
-        self.y = data[1]
+        self.data = data
         super().__init__('polygon', name, {
             'edgecolor': lambda s,v: s.update({'linecolor':v}),
             'color':self._set_color

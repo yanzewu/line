@@ -41,6 +41,7 @@ class GlobalState:
 
         return self.figures[self.cur_figurename]
 
+    gcf = cur_figure
 
     def cur_subfigure(self, create_if_empty=False):
         """ Get current subfigure state
@@ -48,6 +49,8 @@ class GlobalState:
         m_fig = self.cur_figure(create_if_empty=create_if_empty)
 
         return m_fig.subfigures[m_fig.cur_subfigure]
+
+    gca = cur_subfigure
 
     def create_figure(self):
         """ Create a new figure with subfigure initialized.

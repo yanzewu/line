@@ -492,6 +492,8 @@ def parse_and_process_style(m_state:state.GlobalState, m_tokens):
 
 def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
     fill_between = []
+    find_dataline = lambda x: [d for d in m_state.cur_subfigure().datalines if d.name == x][0]
+
     while len(m_tokens) > 0:
         if keywords.is_style_keyword(lookup(m_tokens)):
             break
@@ -499,11 +501,10 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
         try:
             if '-' in token:
                 line1str, line2str = token.split('-', 1)
-                line1 = [d for d in m_state.cur_subfigure().datalines if d.name == line1str][0]
-                line2 = [d for d in m_state.cur_subfigure().datalines if d.name == line2str][0]
+                line1 = find_dataline(line1str)
+                line2 = find_dataline(line2str) if line2str.startswith('line') else float(line2str)
             else:
-                line1 = [d for d in m_state.cur_subfigure().datalines if d.name == token][0]
-                line2 = None
+                line1, line2 = find_dataline(token), None
         except IndexError:
             warn('Skip line "%s" as it does not exist' % token)
         else:
@@ -514,7 +515,7 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
         warn('No line to fill')
     else:
         for line1, line2 in fill_between:
-            m_state.cur_subfigure().fill(line1, line2, **style_dict)
+            dataview.api.fill_h(m_state, line1, line2, **style_dict)
 
 
 def process_split(m_state:state.GlobalState, hsplitnum, vsplitnum):

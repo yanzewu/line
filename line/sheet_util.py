@@ -471,5 +471,5 @@ def histogram(mat, bins=10, norm='pdf'):
     elif norm in ('Probability', 'probability', 'Prob', 'prob'):
         h = h / np.sum(h)
 
-    e = e[1:] + (e[1]-e[0])/2
+    e = e[1:] - (e[1]-e[0])/2
     return np.hstack((e[:, None], h[:, None]))

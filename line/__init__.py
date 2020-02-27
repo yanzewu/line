@@ -10,4 +10,4 @@ from . import backend
 from . import process
 
 
-from .api import figure, subfigure, plot, show, gcf, gca, load_file
+from .api import *

@@ -208,8 +208,8 @@ def _update_subfigure(m_subfig:state.Subfigure):
         m_style = dataline.computed_style
 
         ax.plot( 
-            dataline.x,
-            dataline.y,
+            dataline.data.get_x(),
+            dataline.data.get_y(),
             color=m_style['linecolor'],
             label=m_style['label'],
             linestyle=m_style['linetype'].to_str(),
@@ -229,8 +229,8 @@ def _update_subfigure(m_subfig:state.Subfigure):
         m_style = bar.computed_style
 
         ax.bar(
-            bar.x,
-            bar.y,
+            bar.data.get_x(),
+            bar.data.get_y(),
             alpha=m_style['alpha'],
             width=m_style['barwidth'],
             label=m_style['label'],
@@ -281,8 +281,8 @@ def _update_subfigure(m_subfig:state.Subfigure):
         m_style = polygon.computed_style
 
         ax.fill(
-            polygon.x,
-            polygon.y,
+            polygon.data.get_x(),
+            polygon.data.get_y(),
             alpha=m_style['alpha'],
             color=m_style['fillcolor'],
             edgecolor=m_style['linecolor'],

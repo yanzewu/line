@@ -84,12 +84,15 @@ class Subfigure(FigObject):
         else:
             self.update_colorid()
         self.datalines[-1].update_style(style_dict)
+        self._refresh_label()
         return self.datalines[-1]
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 
-        return self._add_element(Bar, 'bar', self.bars, True, style_dict,
+        r = self._add_element(Bar, 'bar', self.bars, True, style_dict,
             data, label, xlabel, dynamic_bin)
+        self._refresh_label()
+        return r
 
     def add_drawline(self, start_pos, end_pos, style_dict):
         
@@ -141,27 +144,7 @@ class Subfigure(FigObject):
         self.texts.clear()
         for i in range(4):
             self.axes[i].label.update_style({'text': ''})
-
-    def fill(self, line1, line2, **styles):
-        """ Fill the region horizontally between two datalines, or a dataline and a number.
-        Args:
-            line1: `element.DataLine` instance;
-            line2: `element.DataLine` instance or number;
-            styles: styles passed to the polygon.
-        """
-        if line2 is None:
-            line2 = self.axes[1].get_style('tickpos')[0]
-
-        if isinstance(line2, DataLine):
-            return self.add_polygon(((
-                np.concatenate((line1.x, np.flip(line2.x)))),
-                np.concatenate((line1.y, np.flip(line2.y)))),
-                styles)
-        else:
-            return self.add_polygon(((
-                np.concatenate((line1.x, np.flip(line1.x)))),
-                np.concatenate((line1.y, np.ones_like(line1.x) * line2))),
-                styles)
+        self.is_changed = True
 
     def get_axes_coord(self, d, axis=0, side='left'):
 
@@ -181,17 +164,22 @@ class Subfigure(FigObject):
 
     def update_range_param(self):
         datalist = self.datalines + self.bars
+    
         if not datalist:
-            for a in self.axes:
-                a._set_datarange(0, 1)
-            return
-            
-        max_x = max([np.max(d.x) for d in datalist])
-        min_x = min([np.min(d.x) for d in datalist])
-        max_y = max([np.max(d.y) for d in datalist])
-        min_y = min([np.min(d.y) for d in datalist])
-        if self.bars and min_y > 0:
-            min_y = 0.0
+            min_x, min_y, max_x, max_y = 0, 0, 1, 1
+        else:
+            min_x, min_y, max_x, max_y = np.inf, np.inf, -np.inf, -np.inf
+
+        for d in datalist:
+            x, y = d.data.get_x(), d.data.get_y()
+            if isinstance(d, Bar):
+                min_x = min(min_x, np.min(x) - d.get_style('barwidth')/2)
+                max_x = max(max_x, np.max(x) + d.get_style('barwidth')/2)
+                min_y = min(min_y, np.min(y), 0)
+                max_y = max(max_y, np.max(y))
+            else:
+                min_x, max_x = min(min_x, np.min(x)), max(max_x, np.max(x))
+                min_y, max_y = min(min_y, np.min(y)), max(max_y, np.max(y))
 
         self.axes[0]._set_datarange(min_x, max_x)
         self.axes[1]._set_datarange(min_y, max_y)
@@ -210,4 +198,26 @@ class Subfigure(FigObject):
         else:
             self.axes[1].update_style({'range':value})
 
-            
+    def _refresh_label(self):
+        """ Set automatic x/y label for gca.
+        """
+        if not self.datalines and not self.bars:
+            return
+
+        xlabels = set((d.get_style('xlabel') for d in self.datalines + self.bars))
+        histogram_counts = len([b for b in self.bars if b.dynamic_bin])
+
+        if len(xlabels) == 1:
+            self.axes[0].label.update_style({'text': xlabels.pop()})
+        # TODO: clear label if necessary
+
+        if histogram_counts == 0:
+            ylabels = set((d.get_style('label') for d in self.datalines))
+        elif histogram_counts == len(self.bars) and not self.datalines:
+            ylabels = {'Distribution'}  # The label "Distribution" is set only when all plots are histogram
+        else:
+            return
+
+        if len(ylabels) == 1:
+            self.axes[1].label.update_style({'text': ylabels.pop()})
+        
