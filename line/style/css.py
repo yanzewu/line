@@ -288,15 +288,19 @@ class StyleSheet:
                 selected.add(element)
         return selected
 
-    def update(self, other):
+    def update(self, other, overwrite_exist=False):
         """ Update style from other stylesheet.
+        If `overwrite_exist', replaces the exisiting selector.
         """
 
         for selector, style in other.data.items():
             if selector not in self.data:
                 self.data[selector] = style
             else:
-                has_updated = self.data[selector].update(style)
+                if overwrite_exist:
+                    self.data[selector] = style
+                else:
+                    self.data[selector].update(style)
 
 
 def compute_inheritance(stylable, parent_style={}):

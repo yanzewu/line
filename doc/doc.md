@@ -189,8 +189,9 @@ Example:
 
 See [Element Selector](#element-selector) for more details about selections. If no element is set, the style is applied to current subfigure.
 
-`set default` modifies default value of styles.
-
+Additional options for set:
+- `set default` modifies default value of styles, same as updating `default.css`.
+- `set future` (experimental) modifies the global stylesheet, same as updating `default.d.css`.
 - `set palette (type)` changes palette for certain figure elements (one of line (default),bar,polygon,drawline).
 - `set option` changes default options, e.g. `set option ignore-data-comment=true`.
 
@@ -590,7 +591,7 @@ format | string (indicator like '%f')
 groupid | int
 hold | 'on'/'off'/'true'/'false'
 hspacing | float
-label or t | string
+label or t | string. (Experimental) '!\[regex]>\[repl]' if starts with '!'
 length | float
 linetype or lt| '-'/'--'/'-.'/':'/'solid'/'dash'/'dot'/'dashdot'
 linewidth or lw| float

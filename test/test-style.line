@@ -84,6 +84,13 @@ set default line linecolor=red
 figure 2
 plot cos(x)
 
+# set future
+set future line lw=5
+set future .a.legend linecolor=red alpha=0.5 color=blue
+figure 4
+plot x
+set gca +a
+
 # group and palette
 
 figure 3

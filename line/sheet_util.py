@@ -74,11 +74,7 @@ class SheetFile(np.lib.mixins.NDArrayOperatorsMixin):
             else:
                 return self.get_column(idx-1)
         elif isinstance(idx, slice):
-            newidx = idx
-            if isinstance(newidx.start, int): newidx.start -= 1
-            if isinstance(newidx.stop, int): newidx.stop -= 1
-            if isinstance(newidx.step, int): newidx.step -= 1
-            return self.get_column(newidx)
+            return self.get_column(idx)
         elif isinstance(idx, tuple):
             return self.to_numpy()[idx]
         else:
@@ -432,7 +428,7 @@ def columns(mat, title_sub='%d'):
     elif isinstance(mat, SheetFile):
         return _make_cols(mat.columns(), title_sub)
     elif title_sub is not None:
-        return _make_cols(list(range(cols(mat))), '%d')
+        return _make_cols(list(range(cols(mat))), title_sub)
     else:
         return None
 

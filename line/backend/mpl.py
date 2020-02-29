@@ -177,10 +177,12 @@ def _update_subfigure(m_subfig:state.Subfigure):
     for xticklabel in ax.get_xmajorticklabels():
         xticklabel.set_fontfamily(tick_styles[0]['fontfamily'])
         xticklabel.set_fontsize(tick_styles[0]['fontsize'])
+        xticklabel.set_visible(tick_styles[0]['visible'])
 
     for yticklabel in ax.get_ymajorticklabels():
         yticklabel.set_fontfamily(tick_styles[1]['fontfamily'])
         yticklabel.set_fontsize(tick_styles[1]['fontsize'])
+        yticklabel.set_visible(tick_styles[1]['visible'])
 
     # tick format
     if 'formatter' in m_subfig.axes[0].tick.computed_style:

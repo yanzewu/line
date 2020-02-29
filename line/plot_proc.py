@@ -220,8 +220,8 @@ class PlotParser:
 
         xcols = sheet_util.cols(pg.xdata)
         ycols = sheet_util.cols(pg.ydata)
-        expr1_str = pg.expr1 if pg.expr1 else ''
-        expr2_str = pg.expr2 if pg.expr2 else ''
+        expr1_str = pg.expr1 if pg.expr1 else '%d'
+        expr2_str = pg.expr2 if pg.expr2 else '%d'
         if xcols == 1:
             xlabels = sheet_util.columns(pg.xdata, expr1_str)
         else:

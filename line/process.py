@@ -111,7 +111,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_show(m_state, m_tokens)
 
     elif command == 'style':
-        parse_and_process_style(m_state, m_tokens)
+        m_tokens.appendleft('global')
+        parse_and_process_set(m_state, m_tokens)
 
     elif command == 'line':
         x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
@@ -399,11 +400,14 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, 'default'):
         selection = parse_style_selector(m_tokens)
-        for s in selection:
-            if not isinstance(s, css.TypeSelector):
-                raise LineParseError('Only element names (e.g. figure, subfigure) are allowed')
         style_list = parse_style(m_tokens)
-        m_state.default_stylesheet.update(css.StyleSheet(selection, style_list))
+        m_state.update_default_stylesheet(css.StyleSheet(selection, style_list))
+
+    elif test_token_inc(m_tokens, 'future'):
+        selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
+            m_tokens, css.NameSelector('gca')
+        )
+        m_state.update_local_stylesheet(css.StyleSheet(selection, style_list))
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
@@ -479,15 +483,6 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
                 print('%s:' % style_name)
                 print('\n'.join(('%s\t%s' % (e.name, e.computed_style.get(style_name, '<None>')) 
                     for e in elements)))
-        
-
-def parse_and_process_style(m_state:state.GlobalState, m_tokens):
-    
-    classname = get_token(m_tokens)
-    style_list = parse_style(m_tokens)
-
-    ss = css.StyleSheet(css.ClassSelector(classname), style_list)
-    m_state.class_stylesheet.update(ss)
 
 
 def parse_and_process_fill(m_state:state.GlobalState, m_tokens):

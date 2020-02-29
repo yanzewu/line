@@ -54,7 +54,6 @@ class GlobalState:
 
     def create_figure(self):
         """ Create a new figure with subfigure initialized.
-        Used at the beginning or `figure` command.
         """
 
         if self.cur_figurename is None:
@@ -65,11 +64,27 @@ class GlobalState:
 
     def create_subfigure(self, name):
         """ Return a new Subfigure instance with basic setup and default style applied.
-        Will NOT put attach the subfigure to current figure.
+        Will NOT attach the subfigure to current figure.
         """
         subfig = Subfigure(name)
         self.custom_stylesheet.apply_to(subfig, 0)
         return subfig
+
+    def update_default_stylesheet(self, ss:css.StyleSheet):
+        for s in ss.data.keys():
+            if not isinstance(s, css.TypeSelector):
+                raise LineProcessError('Only element selectors are allowed')
+        self.default_stylesheet.update(ss)
+
+    def update_local_stylesheet(self, ss:css.StyleSheet):
+        """ Load a new stylesheet. Distributes the selectors into
+            custom_stylesheet and class_stylesheet.
+        """
+        self.custom_stylesheet.update(ss)
+        for d, v in self.custom_stylesheet.data.items():
+            if isinstance(d, (css.ClassNameSelector, css.ClassSelector, css.ClassStyleSelector, css.ClassTypeSelector)):
+                self.class_stylesheet.data[d] = v
+                
 
     def refresh_style(self, refresh_all_subfigure=False):
         """ Recompute style of children

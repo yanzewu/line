@@ -13,11 +13,8 @@ Features
 [LOW] Smart distinguish between filename and expression.
 [LOW] Errorbar support.
 [MID] Float position system.
-[LOW] Figure grid system.
-[LOW] Figure title.
 [LOW] Automatic style element lookup (not gca by default);
 [LOW] Viewmodel framework for style computation;
-[LOW] Programmable data title;
 [LOW] Adaptive padding (by fontsize);
 [LOW] Smart wildcard lookup (like in the shell);
 [LOW] Embeded python code;

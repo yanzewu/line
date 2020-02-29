@@ -103,7 +103,7 @@ class DataLine(FigObject):
             repl = re.sub(r'\%N', self.name[4:], repl)
             matcher = re.match(pattern, m_style['label'])
             if matcher:
-                m_style['label'] = re.sub(r'\$(\d+)', lambda x:matcher.group(int(x.group(1))), repl)
+                m_style['label'] = re.sub(r'(?<!\\)\$(\d+)', lambda x:matcher.group(int(x.group(1))), repl)
         else:
             m_style['label'] = label
 
