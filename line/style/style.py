@@ -179,7 +179,7 @@ class Padding:
             elif len(args[0]) == 2:
                 self.data = [args[0][0], args[0][1], args[0][0], args[0][1]]
             elif len(args[0]) == 4:
-                self.data = args[0]
+                self.data = list(args[0])
             else:
                 raise ValueError(args)
         elif len(args) == 2:

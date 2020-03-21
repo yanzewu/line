@@ -106,6 +106,7 @@ extended_set_keywords = {
     'xlabel', 'ylabel',
     'xrange', 'yrange',
     'xscale', 'yscale',
+    'style'
 }
 
 def is_style_keyword(token):

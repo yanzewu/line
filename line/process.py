@@ -110,10 +110,6 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'show':
         parse_and_process_show(m_state, m_tokens)
 
-    elif command == 'style':
-        m_tokens.appendleft('global')
-        parse_and_process_set(m_state, m_tokens)
-
     elif command == 'line':
         x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
         
@@ -403,7 +399,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         style_list = parse_style(m_tokens)
         m_state.update_default_stylesheet(css.StyleSheet(selection, style_list))
 
-    elif test_token_inc(m_tokens, 'future'):
+    elif test_token_inc(m_tokens, ('future', 'style')):
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
             m_tokens, css.NameSelector('gca')
         )
@@ -411,6 +407,10 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
+        target_style = 'color'
+        if target == 'point':
+            target = 'line'
+            target_style = 'fillcolor'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
         try:
@@ -418,7 +418,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         except KeyError:
             raise LineProcessError('Palette "%s" does not exist' % palette_name)
         else:
-            palette.palette2stylesheet(m_palette, target).apply_to(m_state.cur_subfigure())
+            palette.palette2stylesheet(m_palette, target, target_style).apply_to(m_state.cur_subfigure())
             m_state.cur_subfigure().is_changed = True
     else:
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(

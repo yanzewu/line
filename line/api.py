@@ -28,7 +28,7 @@ def _get_state():
 
 
 def _process_command(command):
-    process.parse_and_process_command(_collections.deque(command), _get_state())
+    _process.parse_and_process_command(_collections.deque(command), _get_state())
 
 
 def figure(name=None):
@@ -105,6 +105,10 @@ def clear():
 
 def cla():
     clear()
+
+
+def save(filename):
+    _process.process_save(_get_state(), filename)
 
 
 def load_file(filename, *args, **kwargs):

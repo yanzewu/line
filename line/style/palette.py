@@ -39,15 +39,15 @@ def load_intrinsic_palette():
     _load_colors_mpl()
 
 
-def palette2stylesheet(palette, target=None):
+def palette2stylesheet(palette, target=None, target_style='color'):
     """ Return css.StyleSheet object from list of colors.
     """
     ss = css.StyleSheet()
     for idx, color in enumerate(palette):
         if target:
-            ss.data[css.TypeStyleSelector(target, 'colorid', idx)] = css.Style(color=color)
+            ss.data[css.TypeStyleSelector(target, 'colorid', idx)] = css.Style(**{target_style: color})
         else:
-            ss.data[css.StyleSelector('colorid', idx)] = css.Style(color=color)
+            ss.data[css.StyleSelector('colorid', idx)] = css.Style(**{target_style: color})
     return ss
 
 
