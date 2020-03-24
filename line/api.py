@@ -28,7 +28,7 @@ def _get_state():
 
 
 def _process_command(command):
-    process.parse_and_process_command(_collections.deque(command), _get_state())
+    _process.parse_and_process_command(_collections.deque(command), _get_state())
 
 
 def figure(name=None):
@@ -82,6 +82,25 @@ def fill(*args, **kwargs):
     return dataview.api.fill_h(_get_state(), *args, **kwargs)
     
 
+def line(target1, target2, **kwargs):
+    _get_state().cur_subfigure(True).add_drawline(target1, target2, kwargs)
+
+
+def xline(x, **kwargs):
+    _get_state().cur_subfigure(True).add_drawline((x, None), (x, None), kwargs)
+
+
+def yline(y, **kwargs):
+    _get_state().cur_subfigure(True).add_drawline((None, y), (None, y), kwargs)
+
+
+def text(txt, pos, **kwargs):
+    from . import style
+
+    _get_state().cur_subfigure(True).add_text(
+        txt, style.str2pos(pos) if isinstance(pos, str) else pos, **kwargs)
+
+
 def show():
     if not _m_state:
         return
@@ -105,6 +124,10 @@ def clear():
 
 def cla():
     clear()
+
+
+def save(filename):
+    _process.process_save(_get_state(), filename)
 
 
 def load_file(filename, *args, **kwargs):

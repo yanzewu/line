@@ -116,6 +116,7 @@ class GlobalState:
         if fig_name not in self.figures:
             self.create_figure()
             self.cur_figure().is_changed = True
+        return self.cur_figure()
 
     def apply_styles(self, style_sheet:css.StyleSheet, adding_classes=[], removing_classes=[], set_all_figures=False, set_all_subfigures=False):
         """ Apply style_sheet to figures.

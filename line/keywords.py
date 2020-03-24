@@ -71,6 +71,7 @@ command_keywords = {
     'display',
     'figure',
     'fill',
+    'fit',
     'group',
     "hist",
     'input',
@@ -106,6 +107,7 @@ extended_set_keywords = {
     'xlabel', 'ylabel',
     'xrange', 'yrange',
     'xscale', 'yscale',
+    'style'
 }
 
 def is_style_keyword(token):

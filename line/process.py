@@ -99,11 +99,28 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'hist':
         parse_and_process_hist(m_state, m_tokens)
 
+    elif command == 'fit':
+        selection = parse_style_selector(m_tokens)
+        elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
+        if lookup(m_tokens) in ('linear', 'quad', 'exp', 'prop'):
+            function = get_token(m_tokens)
+        else:
+            function = 'linear'
+        style_dict = parse_style(m_tokens)
+
+        if not elements:
+            warn('No line is fitted')
+        else:
+            for e in elements:
+                dataview.api.fit(m_state, e, function=function, labelfmt=style_dict.pop('label', 'Fit %T'), **style_dict)
+
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)
 
     elif command == 'group':
-        parse_and_process_group(m_state, m_tokens)
+        group_desc = get_token(m_tokens)
+        assert_no_token(m_tokens)
+        process_group(m_state, group_desc)
 
     elif command == 'set':
         parse_and_process_set(m_state, m_tokens)
@@ -111,25 +128,18 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'show':
         parse_and_process_show(m_state, m_tokens)
 
-    elif command == 'style':
-        m_tokens.appendleft('global')
-        parse_and_process_set(m_state, m_tokens)
-
     elif command == 'line':
         x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
         
         m_state.cur_subfigure().add_drawline((x1,y1), (x2,y2), parse_style(m_tokens))
-        m_state.cur_subfigure().is_changed = True
 
     elif command == 'hline':
         y = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((None,y), (None,y), parse_style(m_tokens))
-        m_state.cur_subfigure().is_changed = True
 
     elif command == 'vline':
         x = stof(get_token(m_tokens))
         m_state.cur_subfigure().add_drawline((x,None), (x,None), parse_style(m_tokens))
-        m_state.cur_subfigure().is_changed = True
 
     elif command == 'fill':
         parse_and_process_fill(m_state, m_tokens)
@@ -142,8 +152,6 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             m_state.cur_subfigure().add_text(text, style.str2pos(token1 + ',' + get_token(m_tokens)), parse_style(m_tokens))
         else:
             m_state.cur_subfigure().add_text(text, style.str2pos(token1), {**parse_style(m_tokens), **{'coord':'axis'}})
-
-        m_state.cur_subfigure().is_changed = True
 
     elif command == 'split':
         hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
@@ -364,20 +372,13 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     for e in elements:
         m_state.cur_subfigure().remove_element(e)
 
-    m_state.cur_subfigure().is_changed = True
 
-
-def parse_and_process_group(m_state:state.GlobalState, m_tokens:deque):
-    group_descriptor = get_token(m_tokens)
-    assert_no_token(m_tokens)
-    if group_descriptor == 'clear':
+def process_group(m_state:state.GlobalState, group_desc):
+    if group_desc == 'clear':
         m_state.cur_subfigure().update_style({'group':None})
     else:
-        m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_descriptor)})
+        m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_desc)})
         logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
-
-    m_state.cur_subfigure().update_colorid()
-    m_state.cur_subfigure().is_changed = True
 
 
 def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
@@ -404,7 +405,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         style_list = parse_style(m_tokens)
         m_state.update_default_stylesheet(css.StyleSheet(selection, style_list))
 
-    elif test_token_inc(m_tokens, 'future'):
+    elif test_token_inc(m_tokens, ('future', 'style')):
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
             m_tokens, css.NameSelector('gca')
         )
@@ -417,6 +418,10 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
+        target_style = 'color'
+        if target == 'point':
+            target = 'line'
+            target_style = 'fillcolor'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
         try:
@@ -424,7 +429,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         except KeyError:
             raise LineProcessError('Palette "%s" does not exist' % palette_name)
         else:
-            palette.palette2stylesheet(m_palette, target).apply_to(m_state.cur_subfigure())
+            palette.palette2stylesheet(m_palette, target, target_style).apply_to(m_state.cur_subfigure())
             m_state.cur_subfigure().is_changed = True
     else:
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(

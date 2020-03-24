@@ -4,6 +4,7 @@ import numpy as np
 
 from . import plot
 from . import fill
+from . import fit as fit_
 from ..parse import parse_style_descriptor, build_line_style
 
 
@@ -24,11 +25,14 @@ def fill_h(m_state, obj1, obj2=None, **kwargs):
     """
 
     if obj2 is None:
-        fill.fill_h(m_state, obj1.data, None, **kwargs)
+        return fill.fill_h(m_state, obj1.data, None, **kwargs)
     elif isinstance(obj2, (int, float)):
-        fill.fill_h(m_state, obj1.data, obj2, **kwargs)
+        return fill.fill_h(m_state, obj1.data, obj2, **kwargs)
     else:
-        fill.fill_h(m_state, obj1.data, obj2.data, **kwargs)  
+        return fill.fill_h(m_state, obj1.data, obj2.data, **kwargs)  
+
+def fit(m_state, target, **kwargs):
+    return fit_.fit_dataline(m_state.cur_subfigure(), target, **kwargs)
 
 
 def _plot(m_state, chart_type, assembler, *args, labelfmt='%T', auto_range=None, xlabel='', ylabel='', source='', **kwargs):

@@ -38,6 +38,18 @@ remove polygon1
 
 display
 
+# fit
+
+clear
+hold on
+plot x**2 rs
+hist 'example/hist-data.txt'
+fit line1,bar1 quad
+plot exp(x)
+fit line4 exp label='%T %N $%E$'
+
+display
+
 # clear
 clear
 display

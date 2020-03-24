@@ -24,7 +24,8 @@ class Subfigure(FigObject):
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
-            'font': _set_font
+            'font': _set_font,
+            'group': self._set_group,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -71,21 +72,32 @@ class Subfigure(FigObject):
         )
         if auto_colorid:
             element_queue[-1].update_style({'colorid': newidx})
-        element_queue[-1].update_style(styles)
+        if styles:
+            element_queue[-1].update_style(styles)
         self.is_changed = True
         return element_queue[-1]
 
-    def add_dataline(self, data, label, xlabel, style_dict):
-
-        self._add_element(DataLine, 'line', self.datalines, False, {},
-            data, label, xlabel)
+    def _refresh_colorid(self):
         if not self.computed_style or not self.attr('group'):
             self.datalines[-1].update_style({'colorid':len(self.datalines), 'groupid':1})
         else:
             self.update_colorid()
+
+    def add_dataline(self, data, label, xlabel, style_dict):
+        r = self._add_element(DataLine, 'line', self.datalines, False, {},
+            data, label, xlabel)
+        self._refresh_colorid()
         self.datalines[-1].update_style(style_dict)
         self._refresh_label()
-        return self.datalines[-1]
+        return r
+
+    def add_smartdataline(self, data, label, xlabel, style_dict):
+        r = self._add_element(SmartDataLine, 'line', self.datalines, False, {},
+            data, label, xlabel)
+        self._refresh_colorid()
+        self.datalines[-1].update_style(style_dict)
+        self._refresh_label()
+        return r            
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 
@@ -134,6 +146,8 @@ class Subfigure(FigObject):
         else:
             raise errors.LineProcessError('Cannot remove element: "%s"' % element.name)
 
+        self.is_changed = True
+
     def clear(self):
         """ Clear lines and texts but keep style.
         """
@@ -161,6 +175,7 @@ class Subfigure(FigObject):
 
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
+        self.is_changed = True
 
     def update_range_param(self):
         datalist = self.datalines + self.bars
@@ -197,6 +212,10 @@ class Subfigure(FigObject):
             self.axes[1].update_style({'range':(None,None,None)})
         else:
             self.axes[1].update_style({'range':value})
+
+    def _set_group(self, m_style, value):
+        m_style['group'] = value
+        self.update_colorid()
 
     def _refresh_label(self):
         """ Set automatic x/y label for gca.
