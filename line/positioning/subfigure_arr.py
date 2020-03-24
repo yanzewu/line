@@ -19,15 +19,16 @@ def get_compact_subfigure_padding(subfigure):
     fig_size_h = subfig_size.width / (rsize[0] - padding[0] - padding[2])
     fig_size_v = subfig_size.height / (rsize[1] - padding[1] - padding[3])
 
-    padding_left = 10 + max(offset_left, subfigure.axes[1].attr('frame').width)
-    padding_bottom = 10 + max(offset_bottom, subfigure.axes[0].attr('frame').height)
-    padding_right = 10 + offset_right
-    padding_top = 10 + offset_top
+    title_h = subfigure.title.attr('frame').height if subfigure.title.attr('visible') and subfigure.title.attr('text') else 0
+    legend_offset = _get_legend_offset(subfigure, subfigure.legend)
 
-    # TODO add title and legend
+    padding_left = 10 + max(offset_left, subfigure.axes[1].attr('frame').width, legend_offset[0])
+    padding_bottom = 10 + max(offset_bottom, subfigure.axes[0].attr('frame').height, legend_offset[1])
+    padding_right = 10 + max(offset_right, legend_offset[2])
+    padding_top = 10 + max(offset_top, title_h, legend_offset[3])
 
-    return (padding_left / fig_size_h, padding_bottom / fig_size_v, 
-        padding_right / fig_size_h, padding_top / fig_size_v)
+    return [padding_left / fig_size_h, padding_bottom / fig_size_v, 
+        padding_right / fig_size_h, padding_top / fig_size_v]
 
 
 def _get_label_and_tick_size(subfigure, axis):
@@ -75,3 +76,14 @@ def _get_outmost_ticklabel_offset(subfigure, axis):
             break
 
     return inner_offset, outer_offset
+
+
+def _get_legend_offset(subfigure, legend):
+
+    if not subfigure.legend.attr('visible'):
+        return 0,0,0,0
+
+    sf = subfigure.attr('frame')
+    lf = legend.attr('frame')
+
+    return max(0, sf.left() - lf.left()), max(0, sf.bottom() - lf.bottom()), max(0, lf.right() - sf.right()), max(0, lf.top() - sf.top())

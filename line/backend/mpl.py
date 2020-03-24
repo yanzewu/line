@@ -120,10 +120,11 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
     ax.set_visible(m_subfig.attr('visible'))
     ax.set_frame_on(True)
 
-    ax.set_title(m_subfig.computed_style['title'],
-        fontsize=m_subfig.computed_style['fontsize'],
-        fontfamily=m_subfig.computed_style['fontfamily']
-    )
+    if m_subfig.title.attr('text') and m_subfig.title.attr('visible'):
+        ax.set_title(m_subfig.title.attr('text'),
+            fontsize=m_subfig.title.attr('fontsize'),
+            fontfamily=m_subfig.title.attr('fontfamily')
+        )
 
     # axis
     for i, d in enumerate(('bottom', 'left', 'right', 'top')):
@@ -391,6 +392,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
     m_subfig.axes[1].label.computed_style['frame'] = style.Rect(ax.yaxis.get_label().get_window_extent(renderer).bounds)
 
     m_subfig.computed_style['frame'] = style.Rect(*ax.get_window_extent(renderer).bounds)
+    m_subfig.title.computed_style['frame'] = style.Rect(ax.title.get_window_extent(renderer).bounds)
 
 
 def save_figure(m_state:state.GlobalState, filename):

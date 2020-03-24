@@ -26,6 +26,7 @@ class Subfigure(FigObject):
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
             'font': _set_font,
             'group': self._set_group,
+            'title': lambda s,v: self.title.update_style({'text': v}),
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -40,6 +41,7 @@ class Subfigure(FigObject):
 
         self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]
         self.legend = Legend('legend')
+        self.title = Text('', (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP), 'title')
 
         self.datalines = [] # datalines
         self.bars = []
@@ -60,7 +62,7 @@ class Subfigure(FigObject):
         return name == 'gca' or self.name == name
 
     def get_children(self):
-        return self.axes + [self.legend] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
+        return self.axes + [self.legend] + [self.title] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
 
     def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
         
