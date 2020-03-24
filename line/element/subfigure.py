@@ -71,21 +71,32 @@ class Subfigure(FigObject):
         )
         if auto_colorid:
             element_queue[-1].update_style({'colorid': newidx})
-        element_queue[-1].update_style(styles)
+        if styles:
+            element_queue[-1].update_style(styles)
         self.is_changed = True
         return element_queue[-1]
 
-    def add_dataline(self, data, label, xlabel, style_dict):
-
-        self._add_element(DataLine, 'line', self.datalines, False, {},
-            data, label, xlabel)
+    def _refresh_colorid(self):
         if not self.computed_style or not self.attr('group'):
             self.datalines[-1].update_style({'colorid':len(self.datalines), 'groupid':1})
         else:
             self.update_colorid()
+
+    def add_dataline(self, data, label, xlabel, style_dict):
+        r = self._add_element(DataLine, 'line', self.datalines, False, {},
+            data, label, xlabel)
+        self._refresh_colorid()
         self.datalines[-1].update_style(style_dict)
         self._refresh_label()
-        return self.datalines[-1]
+        return r
+
+    def add_smartdataline(self, data, label, xlabel, style_dict):
+        r = self._add_element(SmartDataLine, 'line', self.datalines, False, {},
+            data, label, xlabel)
+        self._refresh_colorid()
+        self.datalines[-1].update_style(style_dict)
+        self._refresh_label()
+        return r            
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 

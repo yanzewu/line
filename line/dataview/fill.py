@@ -15,7 +15,7 @@ def fill_h(m_state, dp1:datapack.DataPack, dp2, **kwargs):
     if dp2 is None:
         dp2 = subfig.axes[1].get_style('range')[0]
 
-    subfig.add_polygon(_fill_polygon(dp1, dp2), kwargs)
+    return subfig.add_polygon(_fill_polygon(dp1, dp2), kwargs)
 
 
 def _fill_polygon(dp1, dp2):

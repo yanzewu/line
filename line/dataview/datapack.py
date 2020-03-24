@@ -76,3 +76,24 @@ class DistributionDataPack(DataPack):
     def update(self, newdata):
         self.data = newdata
         self._refresh()
+
+
+class EvaluatableDataPack(DataPack):
+
+    def __init__(self, myfunc, x=[0]):
+        self.myfunc = myfunc
+        self.data = x
+        self._refresh()
+
+    def get_x(self):
+        return self.data
+
+    def get_y(self):
+        return self._cache_y
+
+    def _refresh(self):
+        self._cache_y = self.myfunc(self.data)
+
+    def update(self, new_x):
+        self.data = new_x
+        self._refresh()

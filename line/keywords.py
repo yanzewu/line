@@ -71,6 +71,7 @@ command_keywords = {
     'display',
     'figure',
     'fill',
+    'fit',
     'group',
     "hist",
     'input',

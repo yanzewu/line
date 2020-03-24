@@ -108,6 +108,24 @@ class DataLine(FigObject):
             m_style['label'] = label
 
 
+class SmartDataLine(FigObject):
+
+    def __init__(self, data, label, xlabel, name):
+        self.data = data
+
+        super().__init__('line', name, {
+            'color':_set_color,
+            'range':self._set_range,
+        })
+        self.update_style({
+            'label':label, 'xlabel':xlabel
+        })
+
+    def _set_range(self, m_style, value):
+        step_ = value[2] if value[2] else (value[1] - value[0])/100
+        self.data.update(np.arange(value[0], value[1] + step_, step_))
+
+
 class Bar(FigObject):
 
     def __init__(self, data, label, xlabel, dynamic_bin, name):

@@ -38,6 +38,16 @@ remove polygon1
 
 display
 
+# fit
+
+clear
+hold on
+plot x**2 rs
+hist 'example/hist-data.txt'
+fit line1,bar1 quad
+
+display
+
 # clear
 clear
 display

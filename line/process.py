@@ -98,6 +98,21 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'hist':
         parse_and_process_hist(m_state, m_tokens)
 
+    elif command == 'fit':
+        selection = parse_style_selector(m_tokens)
+        elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
+        if lookup(m_tokens) in ('linear', 'quad'):
+            function = get_token(m_tokens)
+        else:
+            function = 'linear'
+        style_dict = parse_style(m_tokens)
+
+        if not elements:
+            warn('No line is fitted')
+        else:
+            for e in elements:
+                dataview.api.fit(m_state, e, function=function, **style_dict)
+
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)
 
