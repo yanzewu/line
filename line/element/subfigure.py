@@ -24,7 +24,8 @@ class Subfigure(FigObject):
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
-            'font': _set_font
+            'font': _set_font,
+            'group': self._set_group,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -145,6 +146,8 @@ class Subfigure(FigObject):
         else:
             raise errors.LineProcessError('Cannot remove element: "%s"' % element.name)
 
+        self.is_changed = True
+
     def clear(self):
         """ Clear lines and texts but keep style.
         """
@@ -172,6 +175,7 @@ class Subfigure(FigObject):
 
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
+        self.is_changed = True
 
     def update_range_param(self):
         datalist = self.datalines + self.bars
@@ -208,6 +212,10 @@ class Subfigure(FigObject):
             self.axes[1].update_style({'range':(None,None,None)})
         else:
             self.axes[1].update_style({'range':value})
+
+    def _set_group(self, m_style, value):
+        m_style['group'] = value
+        self.update_colorid()
 
     def _refresh_label(self):
         """ Set automatic x/y label for gca.
