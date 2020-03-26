@@ -131,6 +131,6 @@ def save(filename):
 
 
 def load_file(filename, *args, **kwargs):
-    from . import sheet_util
+    from . import model
 
-    return sheet_util.load_file(filename, *args, **kwargs)
+    return model.load_file(filename, *args, **kwargs)

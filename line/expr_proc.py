@@ -4,7 +4,8 @@ import logging
 import numpy as np
 import pandas as pd
 
-from . import sheet_util
+from . import stat_util
+from . import model
 from .errors import LineParseError, LineProcessError, print_error
 
 _VAR_EXPR = re.compile(r'\$[_0-9a-zA-Z\*\?\.]+\b')
@@ -34,9 +35,9 @@ class ExprEvaler:
             'tp': np.transpose,
             'range':np.arange,
             'linspace':np.linspace,
-            'hist': sheet_util.histogram,
-            'load': sheet_util.load_file,
-            'save': sheet_util.save_file,
+            'hist': stat_util.histogram,
+            'load': model.load_file,
+            'save': model.save_file,
             'col':None,
             'hint':None
         }
@@ -65,7 +66,7 @@ class ExprEvaler:
         for v in _INNVAR_EXPR.findall(self.expr):
             if v not in self.m_globals and v not in self.m_file_caches:
                 try:
-                    self.m_file_caches[v] = sheet_util.load_file(self.strip_var(v))
+                    self.m_file_caches[v] = model.load_file(self.strip_var(v))
                 except IOError:
                     raise LineProcessError('Undefined variable: "%s"' % v)
         return self._eval()
@@ -78,7 +79,7 @@ class ExprEvaler:
             return self.m_file_caches[v]
         else:
             try:
-                self.m_file_caches[v] = sheet_util.load_file(self.strip_var(v))
+                self.m_file_caches[v] = model.load_file(self.strip_var(v))
                 return self.m_file_caches[v]
             except IOError:
                 raise LineProcessError('Undefined variable: "%s"' % self.strip_var(v))
@@ -94,17 +95,16 @@ class ExprEvaler:
         else:
             self.hintvalue = None
 
-        self.m_locals['col'] = lambda x: sheet_util.loc_col_str(self.hintvalue, x) if isinstance(x, str) \
-            else sheet_util.loc_col(self.hintvalue, x)
+        self.m_locals['col'] = lambda x: model.util.loc_col_str(self.hintvalue, str(x))
         self.m_locals['hint'] = lambda: self.hintvalue
       
         for v in _INNVAR_EXPR.findall(self.expr):
             if v not in self.m_globals and v not in self.m_file_caches:
                 try:
-                    self.m_file_caches[v] = sheet_util.load_file(self.strip_var(v))
+                    self.m_file_caches[v] = model.load_file(self.strip_var(v))
                 except IOError:
                     try:
-                        self.m_locals[v] = sheet_util.loc_col_str(self.hintvalue, self.strip_var(v))
+                        self.m_locals[v] = model.util.loc_col_str(self.hintvalue, self.strip_var(v))
                     except IndexError:
                         if self.strip_var(v).isdigit():
                             raise LineProcessError('Index out of bounds: %s' % self.strip_var(v))
@@ -116,6 +116,7 @@ class ExprEvaler:
         _m_globals = self.FUNCTIONS.copy()
         _m_globals.update(self.m_file_caches)
         _m_globals.update(self.m_globals)
+        _m_globals.update({'__builtins__': None})
         return eval(self.expr, _m_globals, self.m_locals)
 
     def strip_var(self, varname):
