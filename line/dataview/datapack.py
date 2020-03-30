@@ -54,7 +54,7 @@ class DistributionDataPack(DataPack):
         self._refresh()
         
     def _refresh(self):
-        from ..sheet_util import histogram
+        from ..stat_util import histogram
         self._cache = histogram(self.data, self.bins, self.norm)
 
     def set_bins(self, bins):

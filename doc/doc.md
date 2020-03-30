@@ -401,6 +401,57 @@ Related options:
 - --prompt-save-when-quit=true/false: Prompt to save current figure when quitting. (Default: false).
 - --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
 
+### for
+---
+
+Initiate a for loop.
+
+Usage:
+
+    for [variable] = [expression] do (command)
+        (commands ...)
+    done
+
+Args:
+    - variable: string, with or without the dollar mark;
+    - expression: An [expression](#expressions) string.
+    - command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+
+The expression must yield an iterable object (such as list or array) or string. In the latter case, the loop
+variables are the split results of the string.
+
+
+### let
+---
+
+Define a variable or function.
+
+Usage:
+
+    let [variable] = [expression]
+    let [function] = do (command)
+        (commands...)
+    done
+
+Args:
+    - variable/function: string, with or without the dollar mark;
+    - expression: An [expression](#expressions) string.
+    - command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+
+The function defined by `do` is similar to a function in shell, which is merely a set of code snippet.
+
+
+### call
+---
+
+Call a function.
+
+Usage:
+
+    call [function]
+
+The function must be defined by `let` command.
+
 
 ## Expressions
 

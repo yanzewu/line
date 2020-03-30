@@ -10,6 +10,7 @@ import threading
 
 from . import state
 from . import process
+from . import vm
 from . import completion
 from .errors import LineParseError, print_error
 from . import defaults
@@ -33,6 +34,7 @@ class CMDHandler:
 
     RET_EXIT = 1
     RET_CONTINUE = 2
+    RET_USERERROR = 3
 
     _debug = False
     _input_inited = False
@@ -53,6 +55,7 @@ class CMDHandler:
 
         if m_state is None:
             self.m_state = state.GlobalState()
+            self.m_state._vmhost = vm.VMHost(CMDHandler._debug)
             defaults.init_global_state(self.m_state)
             process.initialize()
         else:
@@ -103,35 +106,38 @@ class CMDHandler:
 
     def proc_lines(self, lines):
         backend.initialize(self.m_state)
-        for line in lines:
+        for j, line in enumerate(lines):
             try:
-                ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
+                ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, j)
             except Exception as e:
                 if self._debug:
                     raise
                 else:
-                    if self.token_begin_pos:
-                        token_pos = self.token_begin_pos[-len(self.token_buffer)-1 if len(self.token_buffer) < len(self.token_begin_pos) else 0]
-                    else:
-                        token_pos = 0
-                    if self._filename:
-                        print('"%s", line %d, col %d (near "%s"):' % (self._filename, lines.index(line)+1, token_pos+1, line[token_pos:token_pos+5].strip('\n')),
-                            file=sys.stderr)
-                    else:
-                        print('line %d, col %d (near "%s"):' % (lines.index(line)+1, token_pos+1, line[token_pos:token_pos+5].strip('\n')), file=sys.stderr)
-
                     print_error(e)
-                    self.token_buffer.clear()
-                    self.token_begin_pos.clear()
-                    return
+                    break
             else:
                 if ret == 0:
-                    self.token_buffer.clear()
-                    self.token_begin_pos.clear()
+                    pass
                 elif ret == self.RET_EXIT:
                     break
                 elif ret == self.RET_CONTINUE:
                     continue
+                elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
+                    dbg_info = ret[1]
+                    print('%sline %d, col %d (near "%s")' % (
+                        ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
+                        dbg_info.lineid + 1,
+                        dbg_info.token_pos + 1,
+                        lines[dbg_info.lineid][dbg_info.token_pos:dbg_info.token_pos+5].strip('\n')
+                    ), file=sys.stderr)
+                    # FIXME here lineid is constant; cannot handle the case of multiple \\
+                    print_error(ret[2])
+                    break
+                else:
+                    print('Undefined return:', ret)
+
+                self.token_buffer.clear()
+                self.token_begin_pos.clear()
             
             if self.m_state.is_interactive:
                 self.input_loop()
@@ -157,24 +163,34 @@ class CMDHandler:
             if self._debug:
                 raise
             else:
-                if self.token_begin_pos:
-                    token_pos = self.token_begin_pos[-len(self.token_buffer)-1 if len(self.token_buffer) < len(self.token_begin_pos) else 0]
-                else:
-                    token_pos = 0
-                print(' ' * (len(ps) + token_pos) + '^')
                 print_error(e)
                 self.token_buffer.clear()
                 self.token_begin_pos.clear()
                 return 0            
         else:
             if ret == 0:
-                self.token_buffer.clear()
-                self.token_begin_pos.clear()
-                return 0
+                pass
             elif ret == self.RET_EXIT:
                 return 1
             elif ret == self.RET_CONTINUE:
                 return self.proc_input(self.PS2)
+            elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
+                dbg_info = ret[1]
+                if dbg_info.lineid == 0:
+                    print(' ' * (len(ps) + dbg_info.token_pos) + '^')
+                else:
+                    print('%sline %d, col %d' % (
+                        ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
+                        dbg_info.lineid + 1,
+                        dbg_info.token_pos + 1,
+                    ), file=sys.stderr)
+                print_error(ret[2])
+            else:
+                print('Undefined return:', ret)
+
+            self.token_buffer.clear()
+            self.token_begin_pos.clear()
+            return 0
 
     def get_input_cache(self):
         self.init_input()
@@ -194,7 +210,7 @@ class CMDHandler:
         backend.finalize(self.m_state)
         self.finalize_input()
 
-    def handle_line(self, line, token_buffer, token_begin_pos, execute=True):
+    def handle_line(self, line, token_buffer, token_begin_pos, execute=True, lineid=0):
         """ Preprocessing and execute
         """
         logger.debug('Handle input line: %s' % line)
@@ -231,7 +247,9 @@ class CMDHandler:
                         raise LineParseError('Character after "\\"')
                 elif char == ';':
                     if execute:
-                        ret = process.parse_and_process_command(self.token_buffer, self.m_state)
+                        ret = self.m_state._vmhost.process(self.m_state, self.token_buffer, 
+                            vm.LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
+                        #ret = process.parse_and_process_command(self.token_buffer, self.m_state)
                         if ret != 0:
                             return ret
                         else:
@@ -245,7 +263,9 @@ class CMDHandler:
                 raise RuntimeError()
 
         if execute:
-            return process.parse_and_process_command(self.token_buffer, self.m_state)
+            return self.m_state._vmhost.process(self.m_state, self.token_buffer, 
+                vm.LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
+            # return process.parse_and_process_command(self.token_buffer, self.m_state)
         else:
             return 0
 

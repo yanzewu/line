@@ -3,3 +3,23 @@ $x = arg(1)
 $y = arg(0)
 print $x
 print $y
+
+$a = load('example/test-data.txt')
+$b = a[2]
+
+# String index
+$a['t']
+$a['y1']
+$a['t'] + $a['y1']
+
+# Numerical index
+$a[0]
+$a[1]
+
+# Slicing
+$a[:, 2]
+$a[:, 0]
+$a[:, 't']
+$a[1:5, 0]
+$a[1, 0]
+$a[1:5, 't']
