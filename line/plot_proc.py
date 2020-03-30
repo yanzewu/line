@@ -3,7 +3,7 @@ import re
 import numpy as np
 
 from . import state
-from . import sheet_util
+from . import model
 from . import io_util
 from . import errors
 
@@ -36,7 +36,10 @@ class PlottingPackage:
         )
 
     def _repl_sheet(self, s):
-        return '%s[%s]' % (type(s), s.shape) if s is not None else 'None'
+        if isinstance(s, model.SheetCollection):
+            return type(s)
+        else:
+            return '%s[%s]' % (type(s), s.shape) if s is not None else 'None'
 
 
 class PlotParser:
@@ -118,14 +121,16 @@ class PlotParser:
         pg.ydata = self.evaluate(pg.hint2, pg.expr2)
         # missing x index
         if pg.expr1 is None:
-            # file: take first column as index, unless specified explicitly
+            # file: take first column as index, unless not possible
             if self._is_quoted(pg.expr2):
-                pg.xdata = np.arange(pg.ydata.shape[0]) if sheet_util.cols(pg.ydata) == 1 else pg.ydata.get_column(0)
-                if sheet_util.cols(pg.ydata) > 1:
-                    pg.ydata = pg.ydata.get_column(slice(1,None))
+                if model.util.cols(pg.ydata) == 1:
+                    pg.xdata = model.util.get_index(pg.ydata)
+                else:
+                    pg.xdata = pg.ydata[:, 0]
+                    pg.ydata = pg.ydata[:, 1:]
             # others: use sequence as index
             else:
-                pg.xdata = np.arange(pg.ydata.shape[0])
+                pg.xdata = model.util.get_index(pg.ydata)
 
         logger.debug('New plotting group: ' + str(pg))
         self._add_plotgroup(pg)
@@ -141,31 +146,22 @@ class PlotParser:
         pg.ydata = self.evaluate(pg.hint2, pg.expr2)
         logger.debug('New histogram group: ' + str(pg))
 
-        if isinstance(pg.hint2, sheet_util.SheetFile):
-            pg.source = pg.hint2.filename.copy()
-        else:
-            pg.source = [pg.hint2 if pg.hint2 else pg.expr2]
+        pg.source = [pg.hint2 if pg.hint2 else pg.expr2]
         
-        ycols = sheet_util.cols(pg.ydata)
+        ycols = model.util.cols(pg.ydata)
         if ycols == 1:
-            ylabels = sheet_util.columns(pg.ydata, None)
+            ylabels = model.util.columns(pg.ydata, None)
             if ylabels is None:
                 ylabels = [pg.expr2 if pg.expr2 else '']
         else:
-            ylabels = sheet_util.columns(pg.ydata, (pg.expr2 if pg.expr2 else '') + '[%d]')
+            ylabels = model.util.columns(pg.ydata, (pg.expr2 if pg.expr2 else '') + '[%d]')
 
-        if ycols == 1:
-            pg.source = pg.source[0]
-            pg.ylabel = ylabels[0]
-            self.plot_groups.append(pg)
-        elif ycols > 1:
-            assert len(pg.source) == 1 or len(pg.source) == ycols
-            for idx in range(ycols):
-                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
-                m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
-                m_pg.ylabel = ylabels[idx]
-                m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
-                self.plot_groups.append(m_pg)
+        for idx in range(ycols):
+            m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+            m_pg.ydata = pg.ydata if ycols == 1 else model.util.loc_col(pg.ydata, idx)
+            m_pg.ylabel = ylabels[idx]
+            m_pg.source = pg.source[idx // (ycols // len(pg.source)) ]
+            self.plot_groups.append(m_pg)
 
     def _parse_y(self, pg:PlottingPackage):
         
@@ -203,33 +199,26 @@ class PlotParser:
             
     def _add_plotgroup(self, pg:PlottingPackage):
 
-        if isinstance(pg.hint2, sheet_util.SheetFile):
-            pg.source = pg.hint2.filename.copy()
+        if isinstance(pg.xdata, model.SheetCollection):
+            pg.xdata = pg.xdata.flatten()
+        if isinstance(pg.ydata, model.SheetCollection):
+            pg.source = [d.source for d in pg.ydata.data]
+            pg.ydata = pg.ydata.flatten()
         else:
             pg.source = [pg.hint2 if pg.hint2 else pg.expr2]
-        
-        if isinstance(pg.xdata, sheet_util.SheetFile):
-            pg.xdata = pg.xdata.flatten()
-        if isinstance(pg.ydata, sheet_util.SheetFile):
-            pg.ydata = pg.ydata.flatten()
-        elif len(pg.ydata.shape) == 3:
-            if pg.ydata.shape[2] == 1:
-                pg.ydata = pg.ydata[:,:,0]
-            elif pg.ydata.shape[1] == 1:
-                pg.ydata = pg.ydata[:,0,:]
 
-        xcols = sheet_util.cols(pg.xdata)
-        ycols = sheet_util.cols(pg.ydata)
+        xcols = model.util.cols(pg.xdata)
+        ycols = model.util.cols(pg.ydata)
         expr1_str = pg.expr1 if pg.expr1 else '%d'
         expr2_str = pg.expr2 if pg.expr2 else '%d'
         if xcols == 1:
-            xlabels = sheet_util.columns(pg.xdata, expr1_str)
+            xlabels = model.util.columns(pg.xdata, expr1_str)
         else:
-            xlabels = sheet_util.columns(pg.xdata, expr1_str + '[%d]')
+            xlabels = model.util.columns(pg.xdata, expr1_str + '[%d]')
         if ycols == 1:
-            ylabels = sheet_util.columns(pg.ydata, expr2_str)
+            ylabels = model.util.columns(pg.ydata, expr2_str)
         else:
-            ylabels = sheet_util.columns(pg.ydata, expr2_str + '[%d]')
+            ylabels = model.util.columns(pg.ydata, expr2_str + '[%d]')
 
         for i in range(len(xlabels)):
             xlabels[i] = self._format_label(xlabels[i], expr1_str)
@@ -237,33 +226,18 @@ class PlotParser:
             ylabels[i] = self._format_label(ylabels[i], expr2_str)
 
         # split columns
-        if xcols == 1 and ycols == 1:
-            pg.source = pg.source[0]
-            pg.xlabel = xlabels[0]
-            pg.ylabel = ylabels[0]
-            self.plot_groups.append(pg)
-        elif xcols == 1 and ycols > 1:
-            assert len(pg.source) == 1 or len(pg.source) == ycols
+        if xcols == 1 or xcols == ycols:
             for idx in range(ycols):
                 m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
-                m_pg.xdata = pg.xdata
-                m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
-                m_pg.xlabel = xlabels[0]
+                m_pg.xdata = pg.xdata if xcols == 1 else model.util.loc_col(pg.xdata, idx)
+                m_pg.ydata = pg.ydata if ycols == 1 else model.util.loc_col(pg.ydata, idx)
+                m_pg.xlabel = xlabels[0] if xcols == 1 else xlabels[idx]
                 m_pg.ylabel = ylabels[idx]
-                m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
-                self.plot_groups.append(m_pg)
-        elif xcols == ycols:
-            assert len(pg.source) == 1 or len(pg.source) == ycols   # WARNING: assertion will fail when plotting all columns from wildcard
-            for idx in range(ycols):
-                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
-                m_pg.xdata = sheet_util.loc_col(pg.xdata, idx)
-                m_pg.ydata = sheet_util.loc_col(pg.ydata, idx)
-                m_pg.xlabel = xlabels[idx]
-                m_pg.ylabel = ylabels[idx]
-                m_pg.source = pg.source[idx] if len(pg.source) > 1 else pg.source[0]
+                m_pg.source = pg.source[idx // (ycols // len(pg.source))]  # the only situation with multiple idx > ycols is SheetCollection,
+                                                                            # so this should be fine. But careful when refactory.
                 self.plot_groups.append(m_pg)
         else:
-            raise errors.LineProcessError("Column number not match: x:%d, y:%d" % (sheet_util.cols(pg.xdata), sheet_util.cols(pg.ydata)))
+            raise errors.LineProcessError("Column number not match: x:%d, y:%d" % (model.util.cols(pg.xdata), model.util.cols(pg.ydata)))
 
     def shift_expr(self):
         if self._must_be_expr(self.next(), None):

@@ -49,11 +49,9 @@ def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%F:%T', auto_ran
 
 def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
 
-    from .. import sheet_util
-
-    m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', pg.source)
-    m_xdata = sheet_util.flatten(pg.xdata)
-    m_ydata = sheet_util.flatten(pg.ydata)
+    m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', str(pg.source))
+    m_xdata = np.array(pg.xdata).flatten()
+    m_ydata = np.array(pg.ydata).flatten()
 
     if chart_type == 'line':
         return subfigure.add_dataline(
