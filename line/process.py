@@ -74,7 +74,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             print(process_expr(m_state, ''.join(m_tokens)))
         else:
             varname = expr_proc.canonicalize(''.join(list(m_tokens)[:asnidx]))
-            m_state.variables[varname] = process_expr(m_state, ''.join(list(m_tokens)[asnidx+1:]))
+            for i in range(asnidx+1):
+                m_tokens.popleft()
+            m_state.variables[varname] = process_expr(m_state, ''.join(list(m_tokens)))
         return 0
 
     command = get_token(m_tokens)

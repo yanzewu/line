@@ -28,6 +28,7 @@ class GlobalState:
         self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x]}
 
         self.options = {}   # Additional program options
+        self._vmhost = None
 
     def cur_figure(self, create_if_empty=False):
         """ Get current figure state

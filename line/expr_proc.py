@@ -51,13 +51,17 @@ class ExprEvaler:
         logger.debug(self.expr)
 
     def load_singlevar(self, expr):
-        if expr.startswith('\'') or expr.endswith('"'):
-            self.expr = '__var' + expr[1:-1]
-        elif expr.startswith('$'):
-            self.expr = '__var' + expr[1:]
-        else:
-            self.expr = '__var' + expr
+        self.expr = ExprEvaler.convert_varname(expr)
         logger.debug(self.expr)
+    
+    @staticmethod
+    def convert_varname(expr):
+        if expr.startswith('\'') or expr.endswith('"'):
+            return '__var' + expr[1:-1]
+        elif expr.startswith('$'):
+            return '__var' + expr[1:]
+        else:
+            return '__var' + expr
 
     def evaluate(self):
         """ Evaluate expression; Return an array-like object.
@@ -67,7 +71,7 @@ class ExprEvaler:
                 try:
                     self.m_file_caches[v] = sheet_util.load_file(self.strip_var(v))
                 except IOError:
-                    raise LineProcessError('Undefined variable: "%s"' % v)
+                    raise LineProcessError('Undefined variable: "%s"' % self.strip_var(v))
         return self._eval()
 
     def evaluate_singlevar(self):
