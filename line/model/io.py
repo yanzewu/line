@@ -192,15 +192,18 @@ def sniff(f, default_delimiter=r'\s+', ignore_comment=True, sniff_num=5):
     return data_info
 
 
-def save_file(mat, path, delimiter='\t', format_='%18g'):
+def save_file(mat, path, columns=None, delimiter='\t', format_=None):
     """ Save the matrix into file.
     if mat is pandas.DataFrame or SourceableSheet, use pandas save function;
     Otherwise invokes use np.savetxt().
     """
     if isinstance(mat, pandas.DataFrame):
-        mat.to_csv(path, sep=delimiter, float_format=format_, index=False)
+        mat.to_csv(path, sep=delimiter, float_format=format_, index=False, header=columns if columns else True)
     elif isinstance(mat, sheet.SourceableSheet):
-        mat.data.to_csv(path, sep=delimiter, float_format=format_, index=False)
+        mat.data.to_csv(path, sep=delimiter, float_format=format_, index=False, header=columns if columns else True)
     else:
-        np.savetxt(path, mat, fmt=format_, delimiter=delimiter)
+        if format_ is None:
+            format_ = '%.18g'
+        header = delimiter.join((str(c) for c in columns)) if columns else ''
+        np.savetxt(path, mat, fmt=format_, delimiter=delimiter, header=header, comments='')
 

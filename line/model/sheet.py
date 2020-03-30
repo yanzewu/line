@@ -80,6 +80,11 @@ class SourceableSheet(np.lib.mixins.NDArrayOperatorsMixin):
     def column_iloc(self, idx):
         """ Get column by indices
         """
+        if self.BEGIN > 0 and idx < self.BEGIN:
+            if idx == self.BEGIN - 1:
+                return self.index()
+            else:
+                raise IndexError(idx)
         return SourceableSheet(self.data.iloc[:, idx - self.BEGIN], self.source)
 
     def slice_loc(self, slice_):
