@@ -7,6 +7,7 @@ import logging
 import pandas
 import numpy as np
 import warnings
+import glob
 
 from . import sheet
 
@@ -28,11 +29,7 @@ def load_file(*filenames, allow_wildcard=True, mode='auto', **kwargs):
     filenames_full = []
     for filename in filenames:
         if allow_wildcard and ('*' in filename or '?' in filename):
-            path, fn = os.path.split(filename)
-            if path == '':
-                path = '.'
-            flist = [os.path.join(path, f) for f in os.listdir(path)]
-            m_filenames = fnmatch.filter([f for f in flist if os.path.isfile(f)], os.path.join(path, fn))
+            m_filenames = glob.glob(filename, recursive=True)
             if not m_filenames:
                 warnings.warn('Wildcard "%s" does not match any file' % filename)
             filenames_full += m_filenames

@@ -16,7 +16,7 @@ class PlottingGroup:
         self.style = kwargs.get('style', {})
 
 
-def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%F:%T', auto_range=None, chart_type='line'):
+def do_plot(m_state, plot_groups, keep_existed=False, labelfmt=None, auto_range=None, chart_type='line'):
     """
     Do plotting on gca, create one if necessary.
 
@@ -32,13 +32,15 @@ def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%F:%T', auto_ran
     if not keep_existed:
         m_state.cur_subfigure().clear()
 
+    if labelfmt is None:
+        labelfmt = r'%F:%T' if len(set((pg.source for pg in plot_groups))) != 1 else r'%T'
+
     # add filename to data label?
-    has_multiple_files = len(set((pg.source for pg in plot_groups))) != 1
     r = []
     for pg in plot_groups:
         r.append(plot_single_group(m_state.cur_subfigure(), 
             pg, 
-            labelfmt=labelfmt if has_multiple_files else '%T',
+            labelfmt=labelfmt,
             chart_type=chart_type))
     
     if auto_range or (auto_range is None and m_state.options['auto-adjust-range']):
@@ -49,7 +51,7 @@ def do_plot(m_state, plot_groups, keep_existed=False, labelfmt='%F:%T', auto_ran
 
 def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
 
-    m_ylabel = labelfmt.replace('%T', pg.ylabel).replace('%F', str(pg.source))
+    m_ylabel = labelfmt.replace('%T', pg.ylabel).replace(r'%F', str(pg.source))
     m_xdata = np.array(pg.xdata).flatten()
     m_ydata = np.array(pg.ydata).flatten()
 

@@ -79,3 +79,16 @@ def get_index(mat):
         return mat.index()
     else:
         return np.arange(sheet.SourceableSheet.BEGIN, sheet.SourceableSheet.BEGIN + mat.shape[0])
+
+def stack(*mats):
+
+    c = []
+    for m in mats:
+        if isinstance(m, (pandas.DataFrame, pandas.Series)):
+            c.append(m)
+        elif isinstance(m, sheet.SourceableSheet):
+            c.append(m.data)
+        else:
+            c.append(pandas.DataFrame(m))
+
+    return sheet.SourceableSheet(pandas.concat(c, axis=1), source='<expr>')

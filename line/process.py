@@ -332,7 +332,8 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     parser = plot_proc.PlotParser()
     parser.parse(m_state, m_tokens)
     if parser.plot_groups:
-        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed)
+        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
+            labelfmt=r'%F:%T' if m_state.options['full-label'] else None)
     else:
         warn('No data to plot')
 
@@ -555,6 +556,8 @@ def process_display(m_state:state.GlobalState):
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state.variables, m_state.file_caches)
+    if expr.startswith('$('):
+        expr = expr[1:]
     evaler.load(expr, True)
     logger.debug(evaler.expr)
     return evaler.evaluate()
