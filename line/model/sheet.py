@@ -95,7 +95,7 @@ class SourceableSheet(np.lib.mixins.NDArrayOperatorsMixin):
         else:
             r = self.data.iloc[slice_]
         if isinstance(r, pd.Series):
-            return SourceableSheet(r, None)
+            return SourceableSheet(r, self.source)
         else:
             return r
 
@@ -164,3 +164,6 @@ class SheetCollection:
     def loc_loose(self, idx):
         return [d[idx] for d in self.data]
 
+    def __iter__(self):
+        for x in self.data:
+            yield x

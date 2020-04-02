@@ -3,6 +3,7 @@ import re
 import logging
 import numpy as np
 import pandas as pd
+import glob
 
 from . import stat_util
 from . import model
@@ -38,6 +39,8 @@ class ExprEvaler:
             'hist': stat_util.histogram,
             'load': model.load_file,
             'save': model.save_file,
+            'stack': model.util.stack,
+            'expand': lambda x: glob.glob(x, recursive=True),
             'col':None,
             'hint':None
         }
@@ -94,8 +97,12 @@ class ExprEvaler:
         """
         if hintvar is not None:
             evaler = ExprEvaler(self.m_globals, self.m_file_caches)
-            evaler.load_singlevar(hintvar)
-            self.hintvalue = evaler.evaluate_singlevar()
+            if hintvar.startswith("$("):    # TODO move this to front end?
+                evaler.load(hintvar[1:])
+                self.hintvalue = evaler.evaluate()
+            else:
+                evaler.load_singlevar(hintvar)
+                self.hintvalue = evaler.evaluate_singlevar()
         else:
             self.hintvalue = None
 
