@@ -7,7 +7,7 @@ from . import model
 from . import io_util
 from . import errors
 
-from .parse import *
+from .style_proc import *
 from . import expr_proc
 
 

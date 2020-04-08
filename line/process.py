@@ -17,7 +17,7 @@ from .positioning import split
 from .style import css
 from .style import palette
 
-from .parse import *
+from .style_proc import *
 from .errors import LineParseError, LineProcessError, warn
 
 expr_proc = None
@@ -430,8 +430,13 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             m_state.cur_subfigure().is_changed = True
     else:
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
-            m_tokens, css.NameSelector('gca')
+            m_tokens, css.NameSelector('gca'), recog_expression=True
         )
+        # handle expressions appeared in style values
+        for s in style_list:
+            if isinstance(style_list[s], str) and style_list[s].startswith('$'):
+                style_list[s] = process_expr(m_state, style_list[s])
+
         if m_state.apply_styles(
             css.StyleSheet(selection, style_list), add_class, remove_class):
             m_state.cur_figure().is_changed = True

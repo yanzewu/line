@@ -91,6 +91,9 @@ figure 4
 plot x
 set gca +a
 
+# expression
+set line1 lw=$(1+2) label=$(arg(0))
+
 # group and palette
 
 figure 3

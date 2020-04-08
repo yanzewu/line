@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from . import process
 from . import parse_util
-from . import parse
 from . import errors
 
 
@@ -65,7 +64,7 @@ class VMHost:
             block = CodeBlock()
             block.loop_var = parse_util.get_token(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), '=')
-            expr = parse.parse_column(tokens)
+            expr = parse_util.parse_column(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), 'do')
             ret = process.process_expr(state, expr)
             if isinstance(ret, str):
@@ -82,7 +81,7 @@ class VMHost:
                 self._push_record(fname, CodeBlock())
                 self.mode = 'record'
             else:
-                expr = parse.parse_column(tokens)
+                expr = parse_util.parse_column(tokens)
                 parse_util.assert_no_token(tokens)
                 ret = process.process_expr(state, expr)
                 self.set_variable(fname, ret)

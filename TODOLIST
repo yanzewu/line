@@ -7,10 +7,9 @@ Features
 ---
 [LOW] Smarter completion (need a library other than readline).
 [LOW] Auto determine tick format (for special cases).
-[LOW] Heatmap support.
+[LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
 [MID] Float position system.
-[LOW] Automatic style element lookup (not gca by default);
 [LOW] Viewmodel framework for style computation;
 [LOW] Figure title.
 [LOW] Embeded python code;

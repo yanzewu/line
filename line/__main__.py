@@ -46,7 +46,10 @@ Additional options can be shown by `line -e 'show option'`'''
 
     cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0) and
         defaults.default_options['delayed-init'])
-    cmd_handler.m_state._vmhost.push_args(args)
+    if len(args) == 0:
+        cmd_handler.m_state._vmhost.push_args(['[interactive]'])
+    else:
+        cmd_handler.m_state._vmhost.push_args(args)
 
     if len(args) == 0:
         cmd_handler.read_source()
