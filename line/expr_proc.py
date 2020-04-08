@@ -3,10 +3,10 @@ import re
 import logging
 import numpy as np
 import pandas as pd
-import glob
 
 from . import stat_util
 from . import model
+from . import io_util
 from .errors import LineParseError, LineProcessError, print_error
 
 _VAR_EXPR = re.compile(r'\$[_0-9a-zA-Z\*\?\.]+\b')
@@ -40,7 +40,7 @@ class ExprEvaler:
             'load': model.load_file,
             'save': model.save_file,
             'stack': model.util.stack,
-            'expand': lambda x: glob.glob(x, recursive=True),
+            'expand': io_util.expand,
             'col':None,
             'hint':None
         }

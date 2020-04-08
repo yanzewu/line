@@ -73,10 +73,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         except ValueError:
             print(process_expr(m_state, ''.join(m_tokens)))
         else:
-            varname = expr_proc.canonicalize(''.join(list(m_tokens)[:asnidx]))
+            varname = ''.join(list(m_tokens)[:asnidx])
             for i in range(asnidx+1):
                 m_tokens.popleft()
-            m_state.variables[varname] = process_expr(m_state, ''.join(list(m_tokens)))
+            m_state._vmhost.set_variable(varname, process_expr(m_state, ''.join(list(m_tokens))))
         return 0
 
     command = get_token(m_tokens)
@@ -555,7 +555,7 @@ def process_display(m_state:state.GlobalState):
         backend.show(m_state)
 
 def process_expr(m_state:state.GlobalState, expr):
-    evaler = expr_proc.ExprEvaler(m_state.variables, m_state.file_caches)
+    evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)
     if expr.startswith('$('):
         expr = expr[1:]
     evaler.load(expr, True)
@@ -580,9 +580,9 @@ def process_load(m_state:state.GlobalState, filename, args):
     if not full_filename:
         raise LineProcessError('Cannot open file "%s"' % filename)
 
-    m_state.arg_stack.append([filename] + args)
+    m_state._vmhost.push_args([filename] + args)
     handler.proc_file(full_filename)
-    m_state.arg_stack.pop()
+    m_state._vmhost.pop_args()
     os.chdir(cwd)
     m_state.is_interactive = is_interactive
     backend.initialize(m_state)

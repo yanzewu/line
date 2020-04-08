@@ -286,7 +286,7 @@ class PlotParser:
             ).replace('$', '')
 
     def evaluate(self, hintvar, expr):
-        evaler = expr_proc.ExprEvaler(self.m_state.variables, self.m_state.file_caches)
+        evaler = expr_proc.ExprEvaler(self.m_state._vmhost.variables, self.m_state.file_caches)
         if expr.isdigit():
             expr = '$' + expr
         if self._is_quoted(expr):

@@ -24,9 +24,7 @@ class GlobalState:
         self.is_interactive = None
 
         self.file_caches = {}
-        self.arg_stack = []
-        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x]}
-
+        
         self.options = {}   # Additional program options
         self._vmhost = None
 
