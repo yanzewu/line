@@ -53,9 +53,15 @@ class Axis(FigObject):
 
         if m_scale == 'linear':
             self.update_style({'tickpos': scale.get_ticks(minpos, maxpos, step)})
+            try:
+                if self.tick.get_style('format') == '%mp':
+                    self.tick.update_style({'format': r'%.4G'})
+            except KeyError:
+                pass
         elif m_scale == 'log':
             numticks = int(1.0/step) if step else None
             self.update_style({'tickpos': scale.get_ticks_log(minpos, maxpos, numticks)})
+            self.tick.update_style({'format':'%mp'})
 
 
 class Tick(FigObject):
@@ -65,8 +71,13 @@ class Tick(FigObject):
         })
 
     def _set_formatter(self, m_style, value):
-        
-        if 'm' in value:
+        m_style['format'] = value
+
+        if isinstance(value, style.css.SpecialStyleValue):
+            return
+        if r'%mp' in value:
+            m_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
+        elif 'm' in value:
             value1 = value.replace('m', 'g')
             m_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
         else:

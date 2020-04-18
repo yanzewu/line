@@ -434,7 +434,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         )
         # handle expressions appeared in style values
         for s in style_list:
-            if isinstance(style_list[s], str) and style_list[s].startswith('$'):
+            if isinstance(style_list[s], str) and style_list[s].startswith('$('):
                 style_list[s] = process_expr(m_state, style_list[s])
 
         if m_state.apply_styles(

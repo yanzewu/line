@@ -6,11 +6,12 @@ Fixes
 Features
 ---
 [LOW] Smarter completion (need a library other than readline).
-[LOW] Auto determine tick format (for special cases).
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
 [MID] Float position system.
 [LOW] Viewmodel framework for style computation;
+[LOW] Style hierachy;
 [LOW] Figure title.
 [LOW] Embeded python code;
 [MID] Subfigure title font set;
+[MID] Dpi-aware fontsize and point size;

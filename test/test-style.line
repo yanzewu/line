@@ -124,4 +124,5 @@ show .pairdash
 show line3
 show .originlab.line1 
 
+set legend="a b c d e f g"
 display

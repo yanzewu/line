@@ -26,6 +26,7 @@ class Subfigure(FigObject):
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
             'font': _set_font,
             'group': self._set_group,
+            'legend': self._set_legend,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -216,6 +217,12 @@ class Subfigure(FigObject):
     def _set_group(self, m_style, value):
         m_style['group'] = value
         self.update_colorid()
+
+    def _set_legend(self, m_style, value):
+        if isinstance(value, str):
+            value = value.split()
+        for d, v in zip(self.datalines + self.bars, value):
+            d.update_style({'label': str(v)})
 
     def _refresh_label(self):
         """ Set automatic x/y label for gca.

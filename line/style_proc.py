@@ -93,7 +93,7 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
         require_equal: If '=' must be present.
         recog_comma: Treat a,b,c as multivalued style parameter when possible.
         recog_colon: Treat a:b:c as multivalued style parameter when possible.
-        recog_expression: If the style value starts with '$', return the value without parsing.
+        recog_expression: If the style value starts with '$(', return the value without parsing.
         raise_error: Raise error if needed;
     Returns:
         m_styles: dict of stylename:stylevalue
@@ -174,7 +174,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         warn('Skip invalid style "%s"' % style_name)
         return None, None
 
-    if recog_expression and style_val.startswith('$'):
+    if recog_expression and style_val.startswith('$('):
         return style_name, style_val
 
     try:
