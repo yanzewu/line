@@ -49,6 +49,11 @@ class FigObject:
 
         return has_updated
 
+    def remove_style(self, name, priority=1):
+        """ Remove certain value in styles. Won't raise error if failed.
+        """
+        self.style[priority].pop(name, None)
+
     def clear_style(self, priority=1):
         """ Remove value in styles
         """

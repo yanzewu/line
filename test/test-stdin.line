@@ -1,0 +1,4 @@
+$f = load_stdin()
+plot f t:y1
+display
+$_ = save_stdout($f)

@@ -61,6 +61,9 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
         for subfig in m_fig.subfigures:
             subfig.backend = None
+
+        #m_fig.backend.set_dpi(dpi) # TODO incorrect behavior in Windows
+        m_fig.backend.set_size_inches(*size_inches)
     else:
         #m_fig.backend.set_dpi(dpi)
         m_fig.backend.set_size_inches(*size_inches)
@@ -385,7 +388,7 @@ def save_figure(m_state:state.GlobalState, filename):
     if not m_state.is_interactive:  # delayed evaluation
         update_figure(m_state)
     plt.savefig(
-        filename, dpi='figure'
+        filename, dpi=m_state.cur_figure().get_style('dpi')
     )
     if not m_state.is_interactive:
         m_state.cur_figure().clear_backend()

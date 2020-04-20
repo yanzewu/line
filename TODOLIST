@@ -1,7 +1,7 @@
 
 Fixes
 ---
-
+[LOW] Incorrect DPI when there is system-wide scaling on Windows
 
 Features
 ---
@@ -9,9 +9,8 @@ Features
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
 [MID] Float position system.
-[LOW] Viewmodel framework for style computation;
-[LOW] Style hierachy;
+[LOW] Style computation callback.
 [LOW] Figure title.
 [LOW] Embeded python code;
 [MID] Subfigure title font set;
-[MID] Dpi-aware fontsize and point size;
+

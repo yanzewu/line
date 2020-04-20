@@ -41,6 +41,8 @@ class ExprEvaler:
             'save': model.save_file,
             'stack': model.util.stack,
             'expand': io_util.expand,
+            'load_stdin': model.load_stdin,
+            'save_stdout': model.save_stdout,
             'col':None,
             'hint':None
         }

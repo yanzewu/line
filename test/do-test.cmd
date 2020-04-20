@@ -10,6 +10,8 @@ python -m line -d test/test-hist.line
 if %errorlevel% neq 0 exit /b %errorlevel%
 python -m line -d test/test-expr.line a
 if %errorlevel% neq 0 exit /b %errorlevel%
+cat example/test-data.txt | python -m line -d test/test-stdin.line 
+if %errorlevel% neq 0 exit /b %errorlevel%
 python -m line -d test/test-style.line
 if %errorlevel% neq 0 exit /b %errorlevel%
 python -m line -d test/test-element.line
