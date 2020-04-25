@@ -10,11 +10,12 @@ class FigObject:
     """ Style-modifiable object in the figure.
     """
 
-    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}):
+    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}, style_change_handler={}):
         """ typename -> object idenfier;
             name -> object name;
             custom_style_setter: lambda accepts style, value, priority;
             custom_style_getter: lambda accepts name;
+            style_change_handler: lambda accepts oldstyle, newstyle;
         """
 
         self.typename = typename
@@ -24,6 +25,7 @@ class FigObject:
         self.computed_style = None
         self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
         self.custom_style_getter = custom_style_getter
+        self.style_change_handler = style_change_handler
 
     def update_style(self, style_dict, priority=1):
         """ Update style from style_dict.
@@ -105,6 +107,13 @@ class FigObject:
         """ Lower level get style for backend.
         """
         return self.computed_style[name]
+
+    def on_style_updated(self, old_style, new_style):
+        for s, v in self.style_change_handler.items():
+            oldst = old_style.get(s, None)
+            newst = new_style[s]
+            if oldst != newst:
+                v(oldst, newst)
 
     def add_class(self, name):
         """ Add a name to class

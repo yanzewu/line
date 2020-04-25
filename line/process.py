@@ -381,6 +381,8 @@ def process_group(m_state:state.GlobalState, group_desc):
     else:
         m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_desc)})
         logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
+    m_state.refresh_style() # need to refresh twice -- for colorid and for actual color
+    m_state.cur_subfigure().is_changed = True
 
 
 def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):

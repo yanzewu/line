@@ -78,10 +78,12 @@ def add_fitline(subfigure, fittedfunc, range_=None, xlabel='', ylabel='', **kwar
     if range_ is None:
         xr = subfigure.get_style('xrange')
         step_ = xr[2] if xr[2] else (xr[1] - xr[0])/100
-        range_ = np.arange(xr[0], xr[1] + step_, step_)
+        range_ = (xr[0], xr[1], xr[2])
+
+    kwargs['range'] = range_
 
     return subfigure.add_smartdataline(
-        datapack.EvaluatableDataPack(fittedfunc, range_), ylabel, xlabel, kwargs
+        datapack.EvaluatableDataPack(fittedfunc), ylabel, xlabel, kwargs
     )
 
 
