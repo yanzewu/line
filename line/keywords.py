@@ -14,6 +14,7 @@ style_keywords = {
     'groupid',
     'hold',
     'label', 'xlabel', 'ylabel', 'rlabel', 'tlabel',
+    'legend',
     'length',
     'linewidth', 'linecolor', 'linetype',
     'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',

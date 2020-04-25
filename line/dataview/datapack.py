@@ -80,7 +80,7 @@ class DistributionDataPack(DataPack):
 
 class EvaluatableDataPack(DataPack):
 
-    def __init__(self, myfunc, x=[0]):
+    def __init__(self, myfunc, x=0):
         self.myfunc = myfunc
         self.data = x
         self._refresh()

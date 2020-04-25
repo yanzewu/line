@@ -1,6 +1,7 @@
-import csv
+
 import re
 import io
+import sys
 import os.path
 import fnmatch
 import logging
@@ -12,6 +13,31 @@ import glob
 from . import sheet
 
 logger = logging.getLogger('line')
+
+class SniffBuffer:
+
+    def __init__(self, fp):
+        self.fp = fp
+        self.buffer = ''
+
+    def readline(self):
+        if self.fp.seekable() and not self.fp is sys.stdin:
+            return self.fp.readline()
+        else:
+            r = self.fp.readline()
+            self.buffer += r
+            return r
+
+    def get_fp_begin(self):
+        if self.fp.seekable() and not self.fp is sys.stdin:
+            self.fp.seek(0)
+            return self.fp
+        else:
+            m_fp = io.StringIO(self.buffer + self.fp.read())
+            return m_fp
+
+    def close(self):
+        self.fp.close()
 
 
 def load_file(*filenames, allow_wildcard=True, mode='auto', **kwargs):
@@ -48,17 +74,21 @@ def load_file(*filenames, allow_wildcard=True, mode='auto', **kwargs):
         raise ValueError(mode)
 
 
-def load_single_file(filename, **kwargs):
+def load_single_file(filename, *args, **kwargs):
     """ Load file as `SourceableSheet` instance.
     """
-    return sheet.SourceableSheet(load_dataframe(filename, **kwargs), source=filename)
+    return sheet.SourceableSheet(load_dataframe(filename, *args, **kwargs), source=str(filename))
+
+def load_stdin(*args, **kwargs):
     
+    return sheet.SourceableSheet(load_dataframe(sys.stdin, *args, **kwargs), source='<stdin>')
 
 def load_dataframe(filename, data_title='auto', data_delimiter='auto', ignore_data_comment=True, na_filter=True, sniff_num=5):
     """ Load file as `pandas.DataFrame` instance.
     """
 
-    f = open(filename, 'r')
+    is_buffer = not isinstance(filename, str)
+    f = SniffBuffer(open(filename, 'r') if not is_buffer else filename)
     data_info = sniff(f, sniff_num=sniff_num)
     if data_title != 'auto':
         data_info['title'] = data_title
@@ -75,7 +105,8 @@ def load_dataframe(filename, data_title='auto', data_delimiter='auto', ignore_da
 
     if data_info['comment'] == 'smart':
         m_f = io.StringIO()
-        line = f.readline()
+        p_f = f.get_fp_begin()
+        line = p_f.readline()
         while line:
             q = line.find('#')
             if q != -1:
@@ -88,13 +119,13 @@ def load_dataframe(filename, data_title='auto', data_delimiter='auto', ignore_da
             else:
                 m_f.write(line)
                 m_f.write('\n')
-            line = f.readline()
+            line = p_f.readline()
         data_info['comment'] = None
     else:
-        m_f = f
+        m_f = f.get_fp_begin()
 
     logger.debug(data_info)
-    return pandas.read_csv(m_f,
+    r = pandas.read_csv(m_f,
         sep=data_info['delimiter'],
         header=0 if data_info['title'] else None,
         index_col=False,
@@ -103,6 +134,9 @@ def load_dataframe(filename, data_title='auto', data_delimiter='auto', ignore_da
         comment='#' if data_info['comment'] else None,
         na_filter=na_filter,
     )
+    if not is_buffer:
+        f.close()
+    return r
 
 
 def sniff(f, default_delimiter=r'\s+', ignore_comment=True, sniff_num=5):
@@ -185,7 +219,6 @@ def sniff(f, default_delimiter=r'\s+', ignore_comment=True, sniff_num=5):
     else:
         data_info['title'] = False
 
-    f.seek(0)
     return data_info
 
 
@@ -204,3 +237,6 @@ def save_file(mat, path, columns=None, delimiter='\t', format_=None):
         header = delimiter.join((str(c) for c in columns)) if columns else ''
         np.savetxt(path, mat, fmt=format_, delimiter=delimiter, header=header, comments='')
 
+
+def save_stdout(mat, *args, **kwargs):
+    save_file(mat, sys.stdout, *args, **kwargs)

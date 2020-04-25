@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from . import process
 from . import parse_util
-from . import parse
 from . import errors
 
 
@@ -23,6 +22,13 @@ class VMHost:
         self.debug = debug
         self.records = {}
         self.cur_record_name = None
+
+        self.arg_stack = []
+
+        import numpy as np
+        
+        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x]}
+        
 
     def process(self, state, tokens, line_debug_info):
         try:
@@ -58,7 +64,7 @@ class VMHost:
             block = CodeBlock()
             block.loop_var = parse_util.get_token(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), '=')
-            expr = parse.parse_column(tokens)
+            expr = parse_util.parse_column(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), 'do')
             ret = process.process_expr(state, expr)
             if isinstance(ret, str):
@@ -75,10 +81,10 @@ class VMHost:
                 self._push_record(fname, CodeBlock())
                 self.mode = 'record'
             else:
-                expr = parse.parse_column(tokens)
+                expr = parse_util.parse_column(tokens)
                 parse_util.assert_no_token(tokens)
                 ret = process.process_expr(state, expr)
-                state.variables[process.expr_proc.ExprEvaler.convert_varname(fname)] = ret
+                self.set_variable(fname, ret)
 
         elif parse_util.test_token_inc(tokens, 'call'):
             function = parse_util.get_token(tokens)
@@ -105,7 +111,7 @@ class VMHost:
     def exec_block(self, state, block):
         if block.loop_var:
             for x in block.loop_range:
-                state.variables[process.expr_proc.ExprEvaler.convert_varname(block.loop_var)] = x
+                self.set_variable(block.loop_var, x)
                 for stmt, info in block.stmts:
                     r = self.process(state, stmt.copy(), info)
                     if r != 0:
@@ -119,6 +125,18 @@ class VMHost:
 
     def record(self, tokens, line_debug_info):
         self._cur_record().stmts.append((tokens.copy(), line_debug_info))
+
+    def get_variable(self, name):
+        return self.variables[process.expr_proc.ExprEvaler.convert_varname(name)]
+
+    def set_variable(self, name, value):
+        self.variables[process.expr_proc.ExprEvaler.convert_varname(name)] = value
+
+    def push_args(self, args):
+        self.arg_stack.append(args)
+
+    def pop_args(self):
+        self.arg_stack.pop()
 
     def _cur_record(self):
         return self.records.get(self.cur_record_name, None)

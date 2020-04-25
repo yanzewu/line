@@ -91,6 +91,9 @@ figure 4
 plot x
 set gca +a
 
+# expression
+set line1 lw=$(1+2) label=$(arg(0))
+
 # group and palette
 
 figure 3
@@ -121,4 +124,5 @@ show .pairdash
 show line3
 show .originlab.line1 
 
+set legend="a b c d e f g"
 display

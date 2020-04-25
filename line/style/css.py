@@ -36,6 +36,41 @@ class ResetStyle:
     pass
 
 
+class Stylable:
+    """ Not actually used. Describe the interfaces of element used by CSS.
+    """
+    def __init__(self):
+        self.typename = ""              # str
+        self.classnames = []            # list of str
+        self.computed_style = None      # dict
+
+    def has_name(self, name:str)->bool:
+        """ Whether having the `name`
+        """
+        return False            # return bool
+
+    def get_children(self)->list:
+        """ Return all children elements
+        """
+        return []               # return list of Stylable
+
+    def get_style(self, key:str, raise_error:bool):
+        """ Return corresponding style value. 
+        If `raise_error` is set, raises `KeyError` if key not found.
+        """
+        return None
+
+    def export_style(self)->dict:
+        """ Return the style calculated.
+        """
+        return {}
+
+    def on_style_updated(self, old_style:dict, new_style:dict):
+        """ Called after style is calculated.
+        """
+        pass
+
+
 class Selector:
     """ Base class of selector
     """ 
@@ -271,7 +306,7 @@ class StyleSheet:
         for selector, style in self.data.items():
             if isinstance(selector, TypeSelector):
                 for element, priority in selector.select(stylable):
-                    if element.computed_style is None:
+                    if not element.computed_style:
                         element.computed_style = style.copy()
                     else:
                         element.computed_style = dict(((d, v) for d, v in element.computed_style.items() if not is_copyable_style(d)))
@@ -302,10 +337,22 @@ class StyleSheet:
                 else:
                     self.data[selector].update(style)
 
+    def find(self, key):
+        return self.data[key]
 
-def compute_inheritance(stylable, parent_style={}):
+
+def compute_inheritance(stylable, parent_style, default_stylesheet):
     """ Compute inheritance and write into computed_style
     """
+
+    default_style = default_stylesheet.find(TypeSelector(stylable.typename))
+    old_computed_style = {} if not stylable.computed_style else stylable.computed_style.copy()
+
+    if not stylable.computed_style:
+        stylable.computed_style = default_style.copy()
+    else:
+        stylable.computed_style = dict(((d, v) for d, v in stylable.computed_style.items() if not is_copyable_style(d)))
+        stylable.computed_style.update(default_style)
 
     for d, v in stylable.export_style().items():
         if v is SpecialStyleValue.INHERIT:
@@ -322,16 +369,18 @@ def compute_inheritance(stylable, parent_style={}):
         else:
             stylable.computed_style[d] = v
 
+    stylable.on_style_updated(old_computed_style, stylable.computed_style)
+
     for c in stylable.get_children():
-        compute_inheritance(c, stylable.computed_style)
+        compute_inheritance(c, stylable.computed_style, default_stylesheet)
         
 
 def compute_style(stylable, default_stylesheet):
     """ Compute default and inherit for computed_style for stylable.
     """
 
-    default_stylesheet.set_as_default(stylable)
-    compute_inheritance(stylable)
+    #default_stylesheet.set_as_default(stylable)
+    compute_inheritance(stylable, {}, default_stylesheet)
 
     
 def parse_selector(selector):

@@ -45,6 +45,7 @@ class CMDHandler:
         self.token_begin_pos = []
         self.completion_buffer = []
         self._filename = None
+        self._unpaired_quote = None
 
         if preload_input:
             th = threading.Thread(target=self.get_input_cache)
@@ -214,6 +215,16 @@ class CMDHandler:
         """ Preprocessing and execute
         """
         logger.debug('Handle input line: %s' % line)
+        if self._unpaired_quote is not None:
+            j = line.find(self._unpaired_quote)
+            if j != -1:
+                self.token_buffer[-1] += line[:j+1] # TODO check if '\n' is necessary
+                line = line[j+1:]
+                self._unpaired_quote = None
+            else:
+                self.token_buffer[-1] += line.strip('\n')
+                return self.RET_CONTINUE
+
         token_iter = self.TOKEN_MATCHER.finditer(line)
         
         while True:
@@ -223,10 +234,12 @@ class CMDHandler:
 
             if cur_token.group('a'):    # string
                 string = cur_token.group('a')
-                if string[-1] != string[0]:
-                    raise LineParseError("Quote not match")
                 token_buffer.append(string)
                 token_begin_pos.append(cur_token.start())
+                if string[-1] != string[0]:
+                    self._unpaired_quote = string[0]
+                    # raise LineParseError("Quote not match")
+                    return self.RET_CONTINUE
 
             elif cur_token.group('b'):  # variable or others
                 token_buffer.append(cur_token.group('b'))
@@ -240,11 +253,7 @@ class CMDHandler:
                 elif char == '#':
                     break
                 elif char == '\\':
-                    cur_token = next(token_iter, None)
-                    if cur_token is None or cur_token.group('c') == '#':
-                        return self.RET_CONTINUE # ask for next line
-                    else:
-                        raise LineParseError('Character after "\\"')
+                    return self.RET_CONTINUE
                 elif char == ';':
                     if execute:
                         ret = self.m_state._vmhost.process(self.m_state, self.token_buffer, 

@@ -5,7 +5,7 @@ import numpy as np
 from . import plot
 from . import fill
 from . import fit as fit_
-from ..parse import parse_style_descriptor, build_line_style
+from ..style_proc import parse_style_descriptor, build_line_style
 
 
 def plot_line(m_state, *args, **kwargs):

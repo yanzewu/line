@@ -13,42 +13,7 @@ from .parse_util import *
 logger = logging.getLogger('line')
 
 
-def parse_column(m_tokens):
-    """ Return a string containing column descriptor
-    """
-    if '(' in m_tokens[0]:
-        column_expr = ''
-        m_bracket = 0
-        while True:
-            new_token = get_token_raw(m_tokens)
-            for i in range(len(new_token)):
-                if new_token[i] == '(':
-                    m_bracket += 1
-                elif new_token[i] == ')':
-                    m_bracket -= 1
-                    if m_bracket == 0:
-                        column_expr += new_token[:i+1]
-                        if i != len(new_token)-1:
-                            m_tokens.appendleft(new_token[i+1:])
-                        break
-            if m_bracket == 0:
-                break
-            else:
-                column_expr += new_token
-            
-    elif m_tokens[0][0] == '$':
-        column_expr = get_token_raw(m_tokens)
-        while lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**'):
-            column_expr += get_token_raw(m_tokens) + get_token_raw(m_tokens)
-
-    else:
-        column_expr = get_token_raw(m_tokens)
-
-    logger.debug('Column string parsed: %s' % column_expr)
-    return column_expr
-
-
-def parse_selection_and_style_with_default(m_tokens, default_selection):
+def parse_selection_and_style_with_default(m_tokens, default_selection, **kwargs):
     
     if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and \
         lookup(m_tokens, 1) != ',' and (
@@ -68,7 +33,7 @@ def parse_selection_and_style_with_default(m_tokens, default_selection):
         add_class = []
         remove_class = []
     else:
-        style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True)
+        style_list, add_class, remove_class = parse_style(m_tokens, recog_class=True, **kwargs)
 
     return selection, style_list, add_class, remove_class
     
@@ -121,10 +86,15 @@ def parse_single_style_selector(t):
             return css.NameSelector(t)
         
 
-def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True, recog_class=False, raise_error=False):
+def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, recog_colon=True, recog_class=False, recog_expression=False, raise_error=False):
     """ Parse style tokens.
     Args:
         termflag: Terminate parsing by flag.
+        require_equal: If '=' must be present.
+        recog_comma: Treat a,b,c as multivalued style parameter when possible.
+        recog_colon: Treat a:b:c as multivalued style parameter when possible.
+        recog_expression: If the style value starts with '$(', return the value without parsing.
+        raise_error: Raise error if needed;
     Returns:
         m_styles: dict of stylename:stylevalue
         class_add: classname to be added;
@@ -158,7 +128,7 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
             else:
                 m_styles.update(build_line_style(lc, lt, pt))
         else:
-            style_name, style_val_real = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon, raise_error)
+            style_name, style_val_real = parse_single_style(m_tokens, require_equal, recog_comma, recog_colon, recog_expression, raise_error)
             if style_name:
                 m_styles[style_name] = style_val_real
 
@@ -170,12 +140,8 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
         return m_styles
 
 
-def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_colon=True, raise_error=False):
+def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_colon=True, recog_expression=False, raise_error=False):
     """ Parse consecutive style descriptor 'style=val'
-    Args:
-        require_equal: If '=' must be present.
-        recog_comma: Treat a,b,c as multivalued style parameter when possible.
-        recog_colon: Treat a:b:c as multivalued style parameter when possible.
     """
 
     style_name = get_token(m_tokens)
@@ -207,6 +173,9 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
     if is_invalid:
         warn('Skip invalid style "%s"' % style_name)
         return None, None
+
+    if recog_expression and style_val.startswith('$('):
+        return style_name, style_val
 
     try:
         style_val_real = translate_style_val(style_name, style_val)

@@ -25,8 +25,8 @@ class Subfigure(FigObject):
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
             'font': _set_font,
-            'group': self._set_group,
             'title': lambda s,v: self.title.update_style({'text': v}),
+            'legend': self._set_legend,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -37,6 +37,8 @@ class Subfigure(FigObject):
             'rrange': lambda x:self.axes[2].get_style('range'),
             'trange': lambda x:self.axes[3].get_style('range'),
             'font': lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
+        }, {
+            'group': lambda oldst, newst: self.update_colorid() if newst else None,
         })
 
         self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]
@@ -173,7 +175,7 @@ class Subfigure(FigObject):
     def update_colorid(self):
         """ refresh colorid and groupid for each line.
         """
-        colorids, groupids = self.get_style('group').generate_ids(len(self.datalines))
+        colorids, groupids = self.attr('group').generate_ids(len(self.datalines))
 
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
@@ -201,23 +203,30 @@ class Subfigure(FigObject):
         self.axes[0]._set_datarange(min_x, max_x)
         self.axes[1]._set_datarange(min_y, max_y)
 
+    def _style_priority(self, m_style):
+        return 0 if m_style is self.style[0] else 1
+
     def _set_xrange(self, m_style, value):
+        p = self._style_priority(m_style)
         if value == 'auto':
             self.update_range_param()
-            self.axes[0].update_style({'range':(None,None,None)})
+            self.axes[0].update_style({'range':(None,None,None)}, priority=p)
         else:
-            self.axes[0].update_style({'range':value})
+            self.axes[0].update_style({'range':value}, priority=p)
     
     def _set_yrange(self, m_style, value):
+        p = self._style_priority(m_style)
         if value == 'auto':
             self.update_range_param()
-            self.axes[1].update_style({'range':(None,None,None)})
+            self.axes[1].update_style({'range':(None,None,None)}, priority=p)
         else:
-            self.axes[1].update_style({'range':value})
+            self.axes[1].update_style({'range':value}, priority=p)
 
-    def _set_group(self, m_style, value):
-        m_style['group'] = value
-        self.update_colorid()
+    def _set_legend(self, m_style, value):
+        if isinstance(value, str):
+            value = value.split()
+        for d, v in zip(self.datalines + self.bars, value):
+            d.update_style({'label': str(v)}, priority=self._style_priority(m_style))
 
     def _refresh_label(self):
         """ Set automatic x/y label for gca.

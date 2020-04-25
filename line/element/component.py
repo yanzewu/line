@@ -53,24 +53,31 @@ class Axis(FigObject):
 
         if m_scale == 'linear':
             self.update_style({'tickpos': scale.get_ticks(minpos, maxpos, step)})
+            try:
+                if self.tick.get_style('format') == '%mp':
+                    self.tick.update_style({'format': r'%.4G'})
+            except KeyError:
+                pass
         elif m_scale == 'log':
             numticks = int(1.0/step) if step else None
             self.update_style({'tickpos': scale.get_ticks_log(minpos, maxpos, numticks)})
+            self.tick.update_style({'format':'%mp'})
 
 
 class Tick(FigObject):
     def __init__(self, name):
-        super().__init__('tick', name, {
-            'format': self._set_formatter
-        })
+        super().__init__('tick', name, {}, {}, {
+            'format': self._update_formatter})
 
-    def _set_formatter(self, m_style, value):
-        
-        if 'm' in value:
+    def _update_formatter(self, oldval, value):
+
+        if r'%mp' in value:
+            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
+        elif 'm' in value:
             value1 = value.replace('m', 'g')
-            m_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
+            self.computed_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
         else:
-            m_style['formatter'] = lambda x, pos:value % x
+            self.computed_style['formatter'] = lambda x, pos:value % x
 
 
 class Grid(FigObject):
@@ -115,13 +122,18 @@ class SmartDataLine(FigObject):
 
         super().__init__('line', name, {
             'color':_set_color,
-            'range':self._set_range,
+            'range': self._set_range,
+        }, {}, {
+            'range': self._update_range,
         })
         self.update_style({
             'label':label, 'xlabel':xlabel
         })
 
     def _set_range(self, m_style, value):
+        m_style['range'] = value
+
+    def _update_range(self, oldval, value):
         step_ = value[2] if value[2] else (value[1] - value[0])/100
         self.data.update(np.arange(value[0], value[1] + step_, step_))
 

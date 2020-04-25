@@ -1,6 +1,9 @@
 """ Util functions for parsing.
 """
 
+import logging
+logger = logging.getLogger('line')
+
 from .errors import LineParseError
 
 STOB = {'true':True, 'false':False, 'none':None}
@@ -110,3 +113,36 @@ def parse_token_with_comma(m_tokens):
     return tokenlist
 
 
+def parse_column(m_tokens):
+    """ Return a string containing column descriptor
+    """
+    if '(' in m_tokens[0]:
+        column_expr = ''
+        m_bracket = 0
+        while True:
+            new_token = get_token_raw(m_tokens)
+            for i in range(len(new_token)):
+                if new_token[i] == '(':
+                    m_bracket += 1
+                elif new_token[i] == ')':
+                    m_bracket -= 1
+                    if m_bracket == 0:
+                        column_expr += new_token[:i+1]
+                        if i != len(new_token)-1:
+                            m_tokens.appendleft(new_token[i+1:])
+                        break
+            if m_bracket == 0:
+                break
+            else:
+                column_expr += new_token
+            
+    elif m_tokens[0][0] == '$':
+        column_expr = get_token_raw(m_tokens)
+        if lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**'):
+            column_expr += get_token_raw(m_tokens) + parse_column(m_tokens)
+
+    else:
+        column_expr = get_token_raw(m_tokens)
+
+    logger.debug('Column string parsed: %s' % column_expr)
+    return column_expr
