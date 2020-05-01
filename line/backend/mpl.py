@@ -108,7 +108,7 @@ def update_subfigure(m_state:state.GlobalState):
     """
 
     # figure is closed -> redraw the figure.
-    if not plt.fignum_exists(m_state.cur_figure().backend.number):
+    if m_state.cur_figure().backend is None or not plt.fignum_exists(m_state.cur_figure().backend.number):
         update_figure(m_state)
         return
     
@@ -305,7 +305,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
         x, y = _translate_loc_normal(*text.attr('pos'))
 
-        ax.text(
+        t = ax.text(
             x,
             y,
             text.attr('text'),
@@ -316,6 +316,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             visible=m_style['visible'],
             zorder=m_style['zindex']
         )
+        text.computed_style['frame'] = style.Rect(*t.get_window_extent(renderer).bounds)
+        t.set_position(_get_text_loc(m_subfig, text, text.attr('pos')))
 
     x_begin, x_end, x_interval = m_subfig.axes[0].attr('range')
     x_ticks = m_subfig.axes[0].attr('tickpos')
@@ -457,8 +459,55 @@ def _translate_loc(x, y):
     
 def _translate_loc_normal(x, y):
     return (
-        {style.FloatingPos.LEFT:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.RIGHT:1}.get(x, x),
-        {style.FloatingPos.BOTTOM:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.TOP:1}.get(y, y))
+        {style.FloatingPos.OUTLEFT:0, style.FloatingPos.LEFT:0, style.FloatingPos.CENTER:0.5, 
+            style.FloatingPos.RIGHT:1, style.FloatingPos.OUTRIGHT:1}.get(x, x),
+        {style.FloatingPos.OUTBOTTOM:0, style.FloatingPos.BOTTOM:0, style.FloatingPos.CENTER:0.5, 
+            style.FloatingPos.TOP:1, style.FloatingPos.OUTTOP:1}.get(y, y))
+
+def _get_text_loc(subfigure, text, pos):
+
+    if pos == style.FloatingPos.AUTO:
+        raise ValueError("Text position cannot be auto")
+    
+    try:
+        sf = subfigure.attr('frame')
+        tf = text.attr('frame')
+    except KeyError:
+        return _translate_loc_normal(*pos)
+    
+    w = tf.width / sf.width
+    h = tf.height / sf.height
+    margin = text.attr('margin') 
+
+    if pos[0] == style.FloatingPos.LEFT:
+        x = margin[0]
+    elif pos[0] == style.FloatingPos.CENTER:
+        x = 0.5 - w/2
+    elif pos[0] == style.FloatingPos.RIGHT:
+        x = 1.0 - margin[2] - w
+    elif pos[0] == style.FloatingPos.OUTLEFT:
+        x = -margin[2] - w
+    elif pos[0] == style.FloatingPos.OUTRIGHT:
+        x = 1.0 + margin[0]
+    else:
+        x = pos[0]
+
+    if pos[1] == style.FloatingPos.TOP:
+        y = 1.0 - margin[3] - h
+    elif pos[1] == style.FloatingPos.CENTER:
+        y = 0.5 + h/2
+    elif pos[1] == style.FloatingPos.BOTTOM:
+        y = margin[1]
+    elif pos[1] == style.FloatingPos.OUTTOP:
+        y = 1.0 + margin[1] + h
+    elif pos[1] == style.FloatingPos.OUTBOTTOM:
+        y = -margin[3]
+    else:
+        y = pos[1]
+
+    return x, y
+
+
 
 _mpl_loc_code = {
     (style.FloatingPos.LEFT, style.FloatingPos.BOTTOM): (3, None),

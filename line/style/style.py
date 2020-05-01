@@ -207,6 +207,9 @@ class Padding:
     def __setitem__(self, idx, val):
         self.data[idx] = val
 
+    def __str__(self):
+        return '(%g,%g,%g,%g)' % tuple(self.data)
+
     def width(self):
         return 1 - self.data[0] - self.data[2]
 

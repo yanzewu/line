@@ -84,6 +84,9 @@ def _get_legend_offset(subfigure, legend):
         return 0,0,0,0
 
     sf = subfigure.attr('frame')
-    lf = legend.attr('frame')
+    try:
+        lf = legend.attr('frame')
+    except KeyError:
+        return 0,0,0,0
 
     return max(0, sf.left() - lf.left()), max(0, sf.bottom() - lf.bottom()), max(0, lf.right() - sf.right()), max(0, lf.top() - sf.top())

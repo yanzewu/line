@@ -53,6 +53,7 @@ class Subfigure(FigObject):
 
         self.is_changed = True
         self.backend = None
+        self.on_size_changed = None
 
     def _set_padding(self, m_style, idx, val):
         
@@ -65,6 +66,16 @@ class Subfigure(FigObject):
 
     def get_children(self):
         return self.axes + [self.legend] + [self.title] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
+
+    def update_render_callback(self):
+
+        for a in self.axes:
+            a.render_callback = self.render_callback
+            a.tick.render_callback = self.render_callback
+            a.label.render_callback = self.render_callback
+
+        self.title.render_callback = self.render_callback
+        self.legend.render_callback = self.render_callback
 
     def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
         

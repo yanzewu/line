@@ -11,6 +11,7 @@ class Figure(FigObject):
         self.subfigures = [Subfigure('subfigure0')]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
+        self.needs_rerender = 0     # 0 -- nothing; 1 -- compact only; 2 -- compact + render
         self.set_dynamical = True
         self.backend = None         # object for plotting
 
@@ -25,7 +26,12 @@ class Figure(FigObject):
         }, {
             'hspacing': lambda x: x['spacing'][0],
             'vspacing': lambda x: x['spacing'][1]
+        }, {
+            'size': lambda a, b: self.render_callback() if self.render_callback else None,
+            'margin': lambda a, b: self.render_callback() if self.render_callback else None,
         })
+
+        self.update_render_callback()
 
     def _set_dpi(self, m_style, value):
         if value == 'high': # 4k resolution
@@ -61,3 +67,16 @@ class Figure(FigObject):
         self.backend = None
         for m_subfig in self.subfigures:
             m_subfig.backend = None
+
+    def update_render_callback(self):
+        self.render_callback = self._render_callback
+        for s in self.subfigures:
+            s.render_callback = self.render_callback
+            s.update_render_callback()
+
+    def _render_callback(self, render_required=False):
+        self.is_changed = True
+        if render_required or not self.backend:
+            self.needs_rerender = 2
+        else:
+            self.needs_rerender = 1

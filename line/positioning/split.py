@@ -31,6 +31,7 @@ def split_figure(figure, hsplitnum:int, vsplitnum:int, resize_figure=True):
     
     figure.subfigures = list(itertools.chain.from_iterable(subfig_state_2d))
     figure.is_changed = True
+    figure.update_render_callback()
     
     if resize_figure:
         split_old = figure.get_style('split')

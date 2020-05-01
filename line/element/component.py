@@ -67,7 +67,10 @@ class Axis(FigObject):
 class Tick(FigObject):
     def __init__(self, name):
         super().__init__('tick', name, {}, {}, {
-            'format': self._update_formatter})
+            'format': self._update_formatter,
+            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
+            })
 
     def _update_formatter(self, oldval, value):
 
@@ -79,6 +82,8 @@ class Tick(FigObject):
         else:
             self.computed_style['formatter'] = lambda x, pos:value % x
 
+        if self.render_callback:
+            self.render_callback(True)
 
 class Grid(FigObject):
     def __init__(self, name):
@@ -86,7 +91,19 @@ class Grid(FigObject):
 
 class Legend(FigObject):
     def __init__(self, name):
-        super().__init__('legend', name)
+        super().__init__('legend', name, style_change_handler={
+            'fontsize': lambda a, b: self._check_render(True),
+            'fontfamily': lambda a, b: self._check_render(True),
+            'visible': lambda a, b: self._check_render(),
+            'pos': lambda a, b: self._check_render(),
+        })
+
+    def _check_render(self, render=False):
+        if isinstance(self.attr('pos'), style.FloatingPos):
+            return
+        if self.render_callback:
+            self.render_callback(render)
+            
 
 class DataLine(FigObject):
 
@@ -224,6 +241,11 @@ class Text(FigObject):
             'font':_set_font
         }, {
             'font':lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
+        }, {
+            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
+            'text': lambda a, b: self.render_callback(True) if self.render_callback else None,
         })
         self.update_style({'text':text, 'pos':pos})
 
@@ -239,6 +261,10 @@ class Label(FigObject):
             'font':_set_font
         }, {
             'font':lambda x: '%s,%d' % (x['fontfamily'], x['fontsize'])
+        }, {
+            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
         })
 
     def _set_font(self, m_style, value):
