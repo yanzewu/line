@@ -273,8 +273,9 @@ class StyleSheet:
         else:
             self.data = {selectors:style}
 
-    def apply_to(self, stylable, *args):
+    def apply_to(self, stylable, *args, **kwargs):
         """ Calculate used value of stylable (and its children)
+        Additional args and kwargs are passed to stylable.update_style().
         """
         apply_queue = {}
         has_updated = False
@@ -290,9 +291,9 @@ class StyleSheet:
             for priority, style in data:
                 if isinstance(style, ResetStyle):
                     has_updated = True
-                    element.clear_style(*args)
+                    element.clear_style(*args, **kwargs)
                 else:
-                    has_updated = element.update_style(style, *args) or has_updated
+                    has_updated = element.update_style(style, *args, **kwargs) or has_updated
 
         return has_updated
 

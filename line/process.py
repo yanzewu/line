@@ -68,6 +68,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     m_state.file_caches.clear()
     if m_tokens[0].startswith('$'):
+        if m_tokens[0].startswith('$('):
+            process_expr(m_state, ''.join(list(m_tokens)))
+            return 0
+            
         try:
             asnidx = m_tokens.index('=')
         except ValueError:

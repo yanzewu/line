@@ -91,8 +91,11 @@ class VMHost:
             block = self.records.get(function, None)
             if not block:
                 raise errors.LineProcessError("Undefined function: %s" % function)
-            return self.exec_block(state, block)
-
+            self.arg_stack.append([function] + [process.process_expr(state, t) for t in tokens])
+            r = self.exec_block(state, block)
+            self.arg_stack.pop()
+            if r != 0:
+                return r
         else:
             return process.parse_and_process_command(tokens, state)
 

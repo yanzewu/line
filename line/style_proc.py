@@ -15,10 +15,14 @@ logger = logging.getLogger('line')
 
 def parse_selection_and_style_with_default(m_tokens, default_selection, **kwargs):
     
-    if keywords.is_style_keyword(lookup(m_tokens)) and lookup(m_tokens, 1) != 'clear' and \
-        lookup(m_tokens, 1) != ',' and (
-        not keywords.is_style_keyword(lookup(m_tokens, 1)) or 
-        (lookup(m_tokens, 1) not in ('on', 'off') and len(m_tokens) <= 2)):
+    if keywords.is_style_keyword(lookup_raw(m_tokens)) and \
+        lookup_raw(m_tokens, 1) not in ('clear', ',') and \
+        not keywords.is_style_keyword(lookup_raw(m_tokens, 1)) and \
+        not (
+            lookup_raw(m_tokens) in keywords.element_keywords and
+            lookup_raw(m_tokens, 1) in ('on', 'off') and 
+            len(m_tokens) <= 2
+        ):
         # the nasty cases... either not a style keyword or not enough style parameters
         # that treated as value
 

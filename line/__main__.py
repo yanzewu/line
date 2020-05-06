@@ -60,7 +60,8 @@ Additional options can be shown by `line -e 'show option'`'''
         cmd_handler.proc_file(args[0])
     elif mode == 'eval':
         cmd_handler.read_source()
-        cmd_handler.proc_lines(args)
+        cmd_handler._filename = '<command>'
+        cmd_handler.proc_lines([' '.join(args)])
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
         cmd_handler.read_source()

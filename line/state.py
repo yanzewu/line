@@ -93,9 +93,9 @@ class GlobalState:
 
             # clear sys-set styles first, then apply
             ss = css.StyleSheet(css.AllSelector(), css.ResetStyle())
-            ss.apply_to(self.cur_figure(), 0)
-            self.custom_stylesheet.apply_to(self.cur_figure(), 0)
-            self.class_stylesheet.apply_to(self.cur_figure(), 0)
+            ss.apply_to(self.cur_figure(), priority=0)
+            self.custom_stylesheet.apply_to(self.cur_figure(), priority=0)
+            self.class_stylesheet.apply_to(self.cur_figure(), priority=0)
             css.compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True
 

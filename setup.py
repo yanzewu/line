@@ -6,7 +6,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='line',
-    version='1.0.1',
+    version='dev',
     description='Creating nice line plot with least typing',
     author='Yanze Wu',
     packages=find_packages(),

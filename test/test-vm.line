@@ -37,8 +37,19 @@ let fun = do
     print $j
     plot "test/dataload/batch1.txt" 1:2
 done
-
-display
-
 call fun
 display
+
+# Function with args
+
+let fun3 = do
+    print "fun3:" $(arg(1))
+done
+let fun2 = do
+    print "fun2:" $(arg(1))
+    call fun3 $(arg(2))
+done
+$u = 4
+print $u
+call fun2 5 $u
+
