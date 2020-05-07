@@ -310,20 +310,26 @@ def render_cur_figure(m_state:state.GlobalState):
 
     m_state.refresh_style(True)
     if m_state.cur_figure().is_changed:
-        backend.update_figure(m_state, True)
-        m_state.cur_figure().is_changed = False
-        for m_subfig in m_state.cur_figure().subfigures:
-            m_subfig.is_changed = False
-
-        if m_state.options['auto-compact'] and m_state.cur_figure().needs_rerender:
+        rerender_times = m_state.cur_figure().needs_rerender
+        if m_state.options['auto-compact'] and rerender_times > 0:            
+            if rerender_times >= 1:
+                backend.update_figure(m_state, True)
             for sf in m_state.cur_figure().subfigures:
                 sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
             if len(m_state.cur_figure().subfigures) > 1:
                 m_state.refresh_style(True)
                 split.align_subfigures(m_state.cur_figure(), 'axis')
-            m_state.refresh_style(True)
+
+            # Rendering > 2 only works in multiple subfigures.
+            m_state.cur_figure().needs_rerender = rerender_times - 1 \
+                if rerender_times > 2 and len(m_state.cur_figure().subfigures) > 1 \
+                else 0
+            render_cur_figure(m_state)
+        else:
             backend.update_figure(m_state, True)
-            m_state.cur_figure().needs_rerender = 0
+            m_state.cur_figure().is_changed = False
+            for m_subfig in m_state.cur_figure().subfigures:
+                m_subfig.is_changed = False
 
     elif m_state.cur_subfigure().is_changed:
         backend.update_subfigure(m_state)

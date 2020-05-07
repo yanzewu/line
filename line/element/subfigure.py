@@ -76,6 +76,7 @@ class Subfigure(FigObject):
 
         self.title.render_callback = self.render_callback
         self.legend.render_callback = self.render_callback
+        # NOTE: adjusting subfigure itself (size/pos) won't trigger render. I'll see if it is necessary in the future.
 
     def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
         

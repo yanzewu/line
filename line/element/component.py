@@ -68,7 +68,7 @@ class Tick(FigObject):
     def __init__(self, name):
         super().__init__('tick', name, {}, {}, {
             'format': self._update_formatter,
-            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
             })
 
@@ -83,7 +83,7 @@ class Tick(FigObject):
             self.computed_style['formatter'] = lambda x, pos:value % x
 
         if self.render_callback:
-            self.render_callback(True)
+            self.render_callback(1)
 
 class Grid(FigObject):
     def __init__(self, name):
@@ -92,17 +92,24 @@ class Grid(FigObject):
 class Legend(FigObject):
     def __init__(self, name):
         super().__init__('legend', name, style_change_handler={
-            'fontsize': lambda a, b: self._check_render(True),
-            'fontfamily': lambda a, b: self._check_render(True),
+            'fontsize': lambda a, b: self._check_render(),
+            'fontfamily': lambda a, b: self._check_render(),
             'visible': lambda a, b: self._check_render(),
             'pos': lambda a, b: self._check_render(),
+            'column': lambda a, b: self._check_render(),
         })
-
-    def _check_render(self, render=False):
-        if isinstance(self.attr('pos'), style.FloatingPos):
+        # TODO it is known that add dataline will change legend without auto positioning
+    def _check_render(self):
+        pos = self.attr('pos')
+        if isinstance(pos, style.FloatingPos):
             return
-        if self.render_callback:
-            self.render_callback(render)
+        for p in pos:
+            if p in (style.FloatingPos.OUTBOTTOM, style.FloatingPos.OUTLEFT, style.FloatingPos.OUTRIGHT, style.FloatingPos.OUTTOP) or \
+                (isinstance(p, (int, float)) and (p > 1 or p < 0)):
+                # NOTE of course there are some weird cases that require render without being outside. I'll see if it's necessary to add them.
+                if self.render_callback:
+                    self.render_callback(2)
+                break
             
 
 class DataLine(FigObject):
@@ -242,10 +249,10 @@ class Text(FigObject):
         }, {
             'font':lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
         }, {
-            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
-            'fontfamily': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
-            'text': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
         })
         self.update_style({'text':text, 'pos':pos})
 
@@ -262,9 +269,10 @@ class Label(FigObject):
         }, {
             'font':lambda x: '%s,%d' % (x['fontfamily'], x['fontsize'])
         }, {
-            'fontsize': lambda a, b: self.render_callback(True) if self.render_callback else None,
-            'fontfamily': lambda a, b: self.render_callback(True) if self.render_callback else None,
+            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
+            'pos': lambda a, b: self.render_callback() if self.render_callback else None, 
         })
 
     def _set_font(self, m_style, value):

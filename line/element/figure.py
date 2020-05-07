@@ -8,7 +8,7 @@ class Figure(FigObject):
 
     def __init__(self, figure_name):
         
-        self.subfigures = [Subfigure('subfigure0')]        # list of subfigures
+        self.subfigures = [Subfigure('subfigure1')]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
         self.needs_rerender = 0     # 0 -- nothing; 1 -- compact only; 2 -- compact + render
@@ -74,9 +74,12 @@ class Figure(FigObject):
             s.render_callback = self.render_callback
             s.update_render_callback()
 
-    def _render_callback(self, render_required=False):
+    def _render_callback(self, ex_render_times=0):
+        """ Send an extra render request. All requests are combined in one rendering session.
+        ex_render_times:
+            0 -> take the previous render data (not implemented, treated as 1);
+            1 -> the element needs to be rerendered once;
+            2 -> the element needs to be rerendered twice (only for multiple subfigures);
+        """
         self.is_changed = True
-        if render_required or not self.backend:
-            self.needs_rerender = 2
-        else:
-            self.needs_rerender = 1
+        self.needs_rerender = max(self.needs_rerender, max(ex_render_times + 1, 1 if self.backend else 2))

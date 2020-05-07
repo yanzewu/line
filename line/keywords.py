@@ -5,6 +5,7 @@ style_keywords = {
     'bin',
     'color',
     'colorid',
+    'column',
     'coord',
     'dpi',
     'edgecolor', 'edgewidth',
@@ -100,6 +101,7 @@ command_alias = {
     's': 'set',
     'add':'append',
     'subplot': 'subfigure',
+    'sp': 'subfigure',
     'fig': 'figure',
 }
 

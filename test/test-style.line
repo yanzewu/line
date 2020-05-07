@@ -124,6 +124,7 @@ display
 
 # show
 
+set figure size=1200,1000
 set gca +originlab
 
 show xaxis

@@ -371,6 +371,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             fontsize=m_style['fontsize'],
             loc=p,
             bbox_to_anchor=b,
+            ncol=m_style['column'],
             frameon=True,
             framealpha=m_style['alpha']
         )

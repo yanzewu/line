@@ -22,7 +22,7 @@ def split_figure(figure, hsplitnum:int, vsplitnum:int, resize_figure=True):
     for i in range(vsplitnum):
         subfig_state_2d.append([])
         for j in range(hsplitnum):
-            subfig_name = 'subfigure%d' % (i*hsplitnum + j)
+            subfig_name = 'subfigure%d' % (i*hsplitnum + j + 1)
             if i < vsplit and j < hsplit:
                 subfig_state_2d[i].append(figure.subfigures[i*hsplit + j])
                 subfig_state_2d[i][-1].name = subfig_name

@@ -5,8 +5,8 @@
 figure {
     size: 1440, 960;
     dpi: 200;
-    margin: 0.05,0.05,0.02,0.02;
-    spacing: 0.02,0.02;
+    margin: 0.03,0.03,0.03,0.03;
+    spacing: 0.01,0.01;
     split: 1,1;
 }
 
@@ -142,6 +142,7 @@ text {
 
 legend {
     alpha: 0;
+    column: 1;
     linewidth: 0.5;
     linecolor: black;
     linetype: 'solid';
