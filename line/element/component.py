@@ -19,6 +19,7 @@ class Axis(FigObject):
 
         self.vmin = 0.0
         self.vmax = 1.0
+        self.backend = None
 
         super().__init__('axis', axis_name, {
             'range':self._set_range,

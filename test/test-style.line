@@ -39,8 +39,8 @@ yscale linear
 xscale log
 xscale linear
 
-set xtick orient=out color=black font="Times" format="%.4f"
-set ytick linewidth=2 length=3
+set xtick orient=out color=black font="Times" format="%.4f" minor=3
+set ytick linewidth=2 length=3 minor=2 linewidth-minor=2 orient-minor=out
 set ytick format '%.2m'
 
 set legend pos left,bottom
@@ -51,6 +51,22 @@ set label fontsize=12
 set label,tick fontsize=12
 set label,tick,legend fontsize=12
 
+legend off
+legend on
+xlabel off
+xlabel on
+
+# opposite axis
+set raxis,taxis visible=true
+set rtick,rlabel,ttick,tlabel visible=true 
+set y2label="rlabel"
+set x2label="tlabel"
+set y2range=1:2:10
+set y2scale=log
+set x2scale=linear
+set ttick format="%.2f" color=black minor=3
+
+grid off
 grid on
 grid lt=- lc=black zindex=-1
 

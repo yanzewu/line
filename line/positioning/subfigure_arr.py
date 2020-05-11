@@ -16,16 +16,21 @@ def get_compact_subfigure_padding(subfigure):
     offset_left, offset_right = _get_outmost_ticklabel_offset(subfigure, 'x') if has_tick_x else (0, 0)
     offset_bottom, offset_top = _get_outmost_ticklabel_offset(subfigure, 'y') if has_tick_y else (0, 0)
     
+    axis_left_d = subfigure.axes[1].attr('frame').width if subfigure.axes[1].attr('visible') else 0
+    axis_bottom_d = subfigure.axes[0].attr('frame').height if subfigure.axes[0].attr('visible') else 0
+    axis_right_d = subfigure.axes[2].attr('frame').width if subfigure.axes[2].attr('visible') else 0
+    axis_top_d = subfigure.axes[3].attr('frame').height if subfigure.axes[3].attr('visible') else 0
+
     fig_size_h = subfig_size.width / (rsize[0] - padding[0] - padding[2])
     fig_size_v = subfig_size.height / (rsize[1] - padding[1] - padding[3])
 
     title_h = subfigure.title.attr('frame').height if subfigure.title.attr('visible') and subfigure.title.attr('text') else 0
     legend_offset = _get_legend_offset(subfigure, subfigure.legend)
 
-    padding_left = 10 + max(offset_left, subfigure.axes[1].attr('frame').width, legend_offset[0])
-    padding_bottom = 10 + max(offset_bottom, subfigure.axes[0].attr('frame').height, legend_offset[1])
-    padding_right = 10 + max(offset_right, legend_offset[2])
-    padding_top = 10 + max(offset_top, title_h, legend_offset[3])
+    padding_left = 10 + max(offset_left, axis_left_d, legend_offset[0])
+    padding_bottom = 10 + max(offset_bottom, axis_bottom_d, legend_offset[1])
+    padding_right = 10 + max(offset_right, axis_right_d, legend_offset[2])
+    padding_top = 10 + max(offset_top, title_h + axis_top_d, legend_offset[3])
 
     return [padding_left / fig_size_h, padding_bottom / fig_size_v, 
         padding_right / fig_size_h, padding_top / fig_size_v]

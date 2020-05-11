@@ -24,6 +24,8 @@ class Subfigure(FigObject):
             'trange': lambda s,v:self.axes[3].update_style({'range': v}),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}),
+            'rscale': lambda s,v:self.axes[2].update_style({'scale': v}),
+            'tscale': lambda s,v:self.axes[3].update_style({'scale': v}),
             'font': _set_font,
             'title': lambda s,v: self.title.update_style({'text': v}),
             'legend': self._set_legend,

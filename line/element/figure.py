@@ -17,6 +17,8 @@ class Figure(FigObject):
 
         super().__init__('figure', figure_name, {
             'dpi':self._set_dpi,
+            'width': lambda s, v: self._set_spacing_and_margin(s, 'size', 0, v),
+            'height': lambda s, v: self._set_spacing_and_margin(s, 'size', 1, v),
             'hspacing':lambda s, v: self._set_spacing_and_margin(s, 'spacing', 0, v),
             'vspacing': lambda s, v: self._set_spacing_and_margin(s, 'spacing', 1, v),
             'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
@@ -47,10 +49,10 @@ class Figure(FigObject):
             defaults.default_figure_size_inches[0]*m_style['dpi'],
             defaults.default_figure_size_inches[1]*m_style['dpi']]
 
-    def _set_spacing_and_margin(self, m_style, key, idx, val):
+    def _set_spacing_and_margin(self, m_style, key, idx, val, class_=list):
 
-        if key not in m_style:
-            m_style[key] = list(self.get_style(key))
+        if key not in m_style or not isinstance(m_style[key], class_):
+            m_style[key] = class_(self.get_style(key))
 
         m_style[key][idx] = val
 
