@@ -26,6 +26,7 @@ class FigObject:
         self.custom_style_setter = custom_style_setter   # dict of lambda exprs.
         self.custom_style_getter = custom_style_getter
         self.style_change_handler = style_change_handler
+        self.render_callback = None
 
     def update_style(self, style_dict, priority=1):
         """ Update style from style_dict.

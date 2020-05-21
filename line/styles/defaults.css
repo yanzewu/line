@@ -5,8 +5,8 @@
 figure {
     size: 1440, 960;
     dpi: 200;
-    margin: 0.02,0.02,0.02,0.02;
-    spacing: 0.02,0.02;
+    margin: 0.03,0.03,0.03,0.03;
+    spacing: 0.01,0.01;
     split: 1,1;
 }
 
@@ -14,7 +14,6 @@ subfigure {
     padding: 0.125,0.1,0.05,0.05;
     palette: 'default';
     group: none;
-    title: '';
     visible: true;
     fontfamily: 'Times New Roman';
     fontsize: 16;
@@ -53,9 +52,13 @@ tick {
     format: '%.4G';
     color: black;
     orient: 'in';
+    orient-minor: 'in';
     linewidth: 0.5;
+    linewidth-minor: 0.5;
     length: 3;
+    length-minor: 2;
     visible: true;
+    minor: 1;
 }
 
 grid {
@@ -67,7 +70,7 @@ grid {
 }
 
 line {
-    linewidth: 2;
+    linewidth: 1.5;
     linetype: 'solid';
     linecolor: black;
     pointsize: 6;
@@ -138,10 +141,12 @@ text {
     zindex: 0;
     text: 'Text';
     pos: top,left;
+    margin: 0.02,0.02,0.02,0.02;
 }
 
 legend {
     alpha: 0;
+    column: 1;
     linewidth: 0.5;
     linecolor: black;
     linetype: 'solid';

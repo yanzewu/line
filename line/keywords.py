@@ -5,6 +5,7 @@ style_keywords = {
     'bin',
     'color',
     'colorid',
+    'column',
     'coord',
     'dpi',
     'edgecolor', 'edgewidth',
@@ -12,20 +13,22 @@ style_keywords = {
     'font', 'fontfamily', 'fontsize',
     'format',
     'groupid',
+    'height',
     'hold',
-    'label', 'xlabel', 'ylabel', 'rlabel', 'tlabel',
+    'label', 'xlabel', 'ylabel', 'rlabel', 'tlabel', 'x2label', 'y2label',
     'legend',
-    'length',
-    'linewidth', 'linecolor', 'linetype',
+    'length', 'length-minor',
+    'linewidth', 'linecolor', 'linetype', 'linewidth-minor',
     'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
+    'minor',
     'norm',
-    'orient',
+    'orient', 'orient-minor',
     'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
     'palette',
     'pointsize', 'pointcolor', 'pointtype',
     'pos', 'rpos',
-    'range', 'xrange', 'yrange',
-    'scale', 'xscale', 'yscale',
+    'range', 'xrange', 'yrange', 'rrange', 'trange', 'x2range', 'y2range',
+    'scale', 'xscale', 'yscale', 'rscale', 'tscale',
     'size', 'rsize',
     'skippoint',
     'hspacing', 'vspacing', 'spacing',
@@ -57,12 +60,18 @@ style_alias = {
     'ytics':'ytick',
     'xlim': 'xrange',
     'ylim': 'yrange',
-    'fontname': 'fontfamily'
+    'fontname': 'fontfamily',
+    'y2label': 'rlabel',
+    'y2range': 'rrange',
+    'y2scale': 'rscale',
+    'x2label': 'tlabel',
+    'x2range': 'trange',
+    'x2scale': 'tscale',
 }
 
 element_keywords = {
     'figure', 'subfigure', 'axis', 'label', 'tick', 'legend',
-    'grid', 'title', 'line', 'drawline', 'polygon', 'text'
+    'grid', 'line', 'drawline', 'polygon', 'text'
 }
 
 command_keywords = {
@@ -100,6 +109,7 @@ command_alias = {
     's': 'set',
     'add':'append',
     'subplot': 'subfigure',
+    'sp': 'subfigure',
     'fig': 'figure',
 }
 

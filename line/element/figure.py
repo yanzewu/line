@@ -8,14 +8,17 @@ class Figure(FigObject):
 
     def __init__(self, figure_name):
         
-        self.subfigures = [Subfigure('subfigure0')]        # list of subfigures
+        self.subfigures = [Subfigure('subfigure1')]        # list of subfigures
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
+        self.needs_rerender = 0     # 0 -- nothing; 1 -- compact only; 2 -- compact + render
         self.set_dynamical = True
         self.backend = None         # object for plotting
 
         super().__init__('figure', figure_name, {
             'dpi':self._set_dpi,
+            'width': lambda s, v: self._set_spacing_and_margin(s, 'size', 0, v),
+            'height': lambda s, v: self._set_spacing_and_margin(s, 'size', 1, v),
             'hspacing':lambda s, v: self._set_spacing_and_margin(s, 'spacing', 0, v),
             'vspacing': lambda s, v: self._set_spacing_and_margin(s, 'spacing', 1, v),
             'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
@@ -25,7 +28,12 @@ class Figure(FigObject):
         }, {
             'hspacing': lambda x: x['spacing'][0],
             'vspacing': lambda x: x['spacing'][1]
+        }, {
+            'size': lambda a, b: self.render_callback() if self.render_callback else None,
+            'margin': lambda a, b: self.render_callback() if self.render_callback else None,
         })
+
+        self.update_render_callback()
 
     def _set_dpi(self, m_style, value):
         if value == 'high': # 4k resolution
@@ -41,10 +49,10 @@ class Figure(FigObject):
             defaults.default_figure_size_inches[0]*m_style['dpi'],
             defaults.default_figure_size_inches[1]*m_style['dpi']]
 
-    def _set_spacing_and_margin(self, m_style, key, idx, val):
+    def _set_spacing_and_margin(self, m_style, key, idx, val, class_=list):
 
-        if key not in m_style:
-            m_style[key] = list(self.get_style(key))
+        if key not in m_style or not isinstance(m_style[key], class_):
+            m_style[key] = class_(self.get_style(key))
 
         m_style[key][idx] = val
 
@@ -61,3 +69,19 @@ class Figure(FigObject):
         self.backend = None
         for m_subfig in self.subfigures:
             m_subfig.backend = None
+
+    def update_render_callback(self):
+        self.render_callback = self._render_callback
+        for s in self.subfigures:
+            s.render_callback = self.render_callback
+            s.update_render_callback()
+
+    def _render_callback(self, ex_render_times=0):
+        """ Send an extra render request. All requests are combined in one rendering session.
+        ex_render_times:
+            0 -> take the previous render data (not implemented, treated as 1);
+            1 -> the element needs to be rerendered once;
+            2 -> the element needs to be rerendered twice (only for multiple subfigures);
+        """
+        self.is_changed = True
+        self.needs_rerender = max(self.needs_rerender, max(ex_render_times + 1, 1 if self.backend else 2))

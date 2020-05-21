@@ -207,9 +207,44 @@ class Padding:
     def __setitem__(self, idx, val):
         self.data[idx] = val
 
+    def __str__(self):
+        return '(%g,%g,%g,%g)' % tuple(self.data)
+
     def width(self):
         return 1 - self.data[0] - self.data[2]
 
     def height(self):
         return 1 - self.data[1] - self.data[3]
 
+class Rect:
+    
+    def __init__(self, *args):
+        if len(args) == 1:
+            self.x, self.y, self.width, self.height = args[0]
+        elif len(args) == 2:
+            self.x = 0
+            self.y = 0
+            self.width, self.height = args
+        else:
+            self.x, self.y, self.width, self.height = args
+
+    def __getitem__(self, idx):
+        return (self.x, self.y, self.width, self.height)[idx]
+
+    def update(self, value):
+        self.x, self.y, self.width, self.height = value
+
+    def left(self):
+        return self.x
+
+    def right(self):
+        return self.x + self.width
+
+    def top(self):
+        return self.y + self.height
+
+    def bottom(self):
+        return self.y
+
+    def __repr__(self):
+        return '(x=%s, y=%s, w=%s, h=%s)' % (self.x, self.y, self.width, self.height)

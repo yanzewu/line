@@ -8,9 +8,6 @@ Features
 [LOW] Smarter completion (need a library other than readline).
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
-[MID] Float position system.
-[LOW] Style computation callback.
 [LOW] Figure title.
 [LOW] Embeded python code;
-[MID] Subfigure title font set;
-
+[LOW] Optional legend candidate;

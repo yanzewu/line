@@ -24,7 +24,10 @@ class Subfigure(FigObject):
             'trange': lambda s,v:self.axes[3].update_style({'range': v}, priority=self._style_priority(s)),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}, priority=self._style_priority(s)),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}, priority=self._style_priority(s)),
+            'rscale': lambda s,v:self.axes[2].update_style({'scale': v}, priority=self._style_priority(s)),
+            'tscale': lambda s,v:self.axes[3].update_style({'scale': v}, priority=self._style_priority(s)),
             'font': _set_font,
+            'title': lambda s,v: self.title.update_style({'text': v}),
             'legend': self._set_legend,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
@@ -42,6 +45,7 @@ class Subfigure(FigObject):
 
         self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]
         self.legend = Legend('legend')
+        self.title = Text('', (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP), 'title')
 
         self.datalines = [] # datalines
         self.bars = []
@@ -51,6 +55,7 @@ class Subfigure(FigObject):
 
         self.is_changed = True
         self.backend = None
+        self.on_size_changed = None
 
     def _set_padding(self, m_style, idx, val):
         
@@ -62,7 +67,18 @@ class Subfigure(FigObject):
         return name == 'gca' or self.name == name
 
     def get_children(self):
-        return self.axes + [self.legend] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
+        return self.axes + [self.legend] + [self.title] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
+
+    def update_render_callback(self):
+
+        for a in self.axes:
+            a.render_callback = self.render_callback
+            a.tick.render_callback = self.render_callback
+            a.label.render_callback = self.render_callback
+
+        self.title.render_callback = self.render_callback
+        self.legend.render_callback = self.render_callback
+        # NOTE: adjusting subfigure itself (size/pos) won't trigger render. I'll see if it is necessary in the future.
 
     def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
         

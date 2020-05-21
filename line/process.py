@@ -13,6 +13,7 @@ from . import backend
 from . import cmd_handle
 from . import group_proc
 
+from .positioning import subfigure_arr
 from .positioning import split
 from .style import css
 from .style import palette
@@ -192,7 +193,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if m_state.cur_figurename is None:
             m_state.create_figure()
             if m_state.is_interactive:
-                redraw_cur_figure(m_state)
+                render_cur_figure(m_state)
 
         m_fig = m_state.cur_figure()
 
@@ -229,6 +230,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'replot':
         if lookup(m_tokens, 0) == 'all':
             m_state.cur_figure().is_changed = True
+            if m_state.options['auto-compact']:
+                m_state.cur_figure().needs_rerender = 2
         else:
             m_state.cur_subfigure().is_changed = True
 
@@ -269,7 +272,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         for fig in m_state.figures:
             m_state.cur_figurename = fig
             m_state.cur_figure().is_changed = True
-            redraw_cur_figure(m_state)
+            render_cur_figure(m_state)
         m_state.cur_figurename = _cur_figurename
 
     elif command == 'display':
@@ -300,21 +303,37 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # update figure
     if m_state.cur_figure().is_changed or m_state.cur_subfigure().is_changed:
-        redraw_cur_figure(m_state)
+        render_cur_figure(m_state)
 
     if do_focus_up:
         backend.update_focus_figure(m_state)
 
     return 0
 
-def redraw_cur_figure(m_state:state.GlobalState):
+def render_cur_figure(m_state:state.GlobalState):
 
     m_state.refresh_style(True)
     if m_state.cur_figure().is_changed:
-        backend.update_figure(m_state, True)
-        m_state.cur_figure().is_changed = False
-        for m_subfig in m_state.cur_figure().subfigures:
-            m_subfig.is_changed = False
+        rerender_times = m_state.cur_figure().needs_rerender
+        if m_state.options['auto-compact'] and rerender_times > 0:            
+            if rerender_times >= 1:
+                backend.update_figure(m_state, True)
+            for sf in m_state.cur_figure().subfigures:
+                sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
+            if len(m_state.cur_figure().subfigures) > 1:
+                m_state.refresh_style(True)
+                split.align_subfigures(m_state.cur_figure(), 'axis')
+
+            # Rendering > 2 only works in multiple subfigures.
+            m_state.cur_figure().needs_rerender = rerender_times - 1 \
+                if rerender_times > 2 and len(m_state.cur_figure().subfigures) > 1 \
+                else 0
+            render_cur_figure(m_state)
+        else:
+            backend.update_figure(m_state, True)
+            m_state.cur_figure().is_changed = False
+            for m_subfig in m_state.cur_figure().subfigures:
+                m_subfig.is_changed = False
 
     elif m_state.cur_subfigure().is_changed:
         backend.update_subfigure(m_state)
@@ -418,6 +437,11 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             m_tokens, css.NameSelector('gca')
         )
         m_state.update_local_stylesheet(css.StyleSheet(selection, style_list))
+
+    elif test_token_inc(m_tokens, 'compact'):
+        render_cur_figure(m_state)
+        for sf in m_state.cur_figure().subfigures:
+            sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
@@ -558,12 +582,19 @@ def process_save(m_state:state.GlobalState, filename:str):
             warn('Canceled')
             return
 
+    render_cur_figure(m_state)
     backend.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
 
 def process_display(m_state:state.GlobalState):
     if not m_state.is_interactive:
-        backend.show(m_state)
+        if m_state.cur_figurename:
+            cf = m_state.cur_figurename
+            for f in m_state.figures:
+                m_state.cur_figurename = f
+                render_cur_figure(m_state)
+            m_state.cur_figurename = cf
+            backend.show(m_state)
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)

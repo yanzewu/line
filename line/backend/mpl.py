@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as lines
 import matplotlib.ticker as ticker
 import matplotlib.font_manager as font_manager
+import matplotlib.tight_layout as tight_layout
 
 from . import state
 from . import style
@@ -84,7 +85,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
         ax = subfig.backend
         frame = scale((pos[0]+padding[0], pos[1]+padding[1], 
-                rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
+            rsize[0]-padding[0]-padding[2], rsize[1]-padding[1]-padding[3]))
         if ax is None:
             ax = plt.Axes(m_plt_fig, frame)
             subfig.backend = ax
@@ -96,7 +97,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
     if redraw_subfigures:
         for subfig in m_fig.subfigures:
-            _update_subfigure(subfig)
+            _update_subfigure(subfig, tight_layout.get_renderer(m_fig.backend))
             logger.debug('Updated subfigure %s' % subfig.name)
 
     #plt.show(block=False)
@@ -107,28 +108,31 @@ def update_subfigure(m_state:state.GlobalState):
     """
 
     # figure is closed -> redraw the figure.
-    if not plt.fignum_exists(m_state.cur_figure().backend.number):
+    if m_state.cur_figure().backend is None or not plt.fignum_exists(m_state.cur_figure().backend.number):
         update_figure(m_state)
         return
     
     logger.debug('Updating figure %s, subfigure %d' % (m_state.cur_figurename, m_state.cur_figure().cur_subfigure))
-    plt.figure(m_state.cur_figurename)
-    _update_subfigure(m_state.cur_subfigure())
+    fig = plt.figure(m_state.cur_figurename)
+    _update_subfigure(m_state.cur_subfigure(), tight_layout.get_renderer(fig))
 
-def _update_subfigure(m_subfig:state.Subfigure):
+def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
     ax = m_subfig.backend
     ax.cla()
     ax.set_visible(m_subfig.attr('visible'))
     ax.set_frame_on(True)
 
-    ax.set_title(m_subfig.computed_style['title'],
-        fontsize=m_subfig.computed_style['fontsize'],
-        fontfamily=m_subfig.computed_style['fontfamily']
-    )
+    if m_subfig.title.attr('text') and m_subfig.title.attr('visible'):
+        ax.set_title(m_subfig.title.attr('text'),
+            fontsize=m_subfig.title.attr('fontsize'),
+            fontfamily=m_subfig.title.attr('fontfamily')
+        )
+
+    spine_names = ('bottom', 'left', 'right', 'top')
 
     # axis
-    for i, d in enumerate(('bottom', 'left', 'right', 'top')):
+    for i, d in enumerate(spine_names):
         ax.spines[d].set_visible(m_subfig.axes[i].attr('visible'))
         ax.spines[d].set_linewidth(m_subfig.axes[i].attr('linewidth'))
         ax.spines[d].set_linestyle(m_subfig.axes[i].attr('linetype').to_str())
@@ -143,67 +147,78 @@ def _update_subfigure(m_subfig:state.Subfigure):
         tick_styles.append(m_subfig.axes[i].tick.computed_style)
         grid_styles.append(m_subfig.axes[i].grid.computed_style)
 
-    # labels
-    ax.set_xlabel(
-        m_subfig.axes[0].label.attr('text'),
-        color=label_styles[0]['color'],
-        fontfamily=label_styles[0]['fontfamily'],
-        fontsize=label_styles[0]['fontsize'],
-        visible=label_styles[0]['visible'],
-        x=label_styles[0]['pos'][0],
-    )
-    ax.set_ylabel(
-        m_subfig.axes[1].label.attr('text'),
-        color=label_styles[1]['color'],
-        fontfamily=label_styles[1]['fontfamily'],
-        fontsize=label_styles[1]['fontsize'],
-        visible=label_styles[1]['visible'],
-        y=label_styles[1]['pos'][0],
-    )
-    # the right label requires drawing a new axis
-    ax.set_xscale(m_subfig.axes[0].attr('scale'))
-    ax.set_yscale(m_subfig.axes[1].attr('scale'))
+    # creating additional axes for right/top
+    for j in (2, 3):
+        if m_subfig.axes[j].attr('visible') and (m_subfig.axes[j].label.attr('visible') or 
+            m_subfig.axes[j].tick.attr('visible')):
+            if m_subfig.axes[j].backend:
+                try:
+                    m_subfig.axes[j].backend.remove()
+                except KeyError:
+                    pass
+            m_subfig.axes[j].backend = ax.twinx() if j == 2 else ax.twiny()
+            for d in spine_names:
+                m_subfig.axes[j].backend.spines[d].set_visible(False)
+        else:
+            m_subfig.axes[j].backend = None
+
+    backends = (ax, ax, m_subfig.axes[2].backend, m_subfig.axes[3].backend)
+    is_xside = (True, False, False, True)
+
+    for i, b in enumerate(backends):
+        if b is None:
+            continue
+
+        # labels
+        set_labelfunc = b.set_xlabel if is_xside[i] else b.set_ylabel
+        posname = 'x' if is_xside[i] else 'y'
+        set_labelfunc(
+            m_subfig.axes[i].label.attr('text'),
+            color=label_styles[i]['color'],
+            fontfamily=label_styles[i]['fontfamily'],
+            fontsize=label_styles[i]['fontsize'],
+            visible=label_styles[i]['visible'],
+            **{posname: label_styles[i]['pos'][0]},
+        )
+
+        # scales
+        set_scalefunc = b.set_xscale if is_xside[i] else b.set_yscale
+        set_scalefunc(m_subfig.axes[i].attr('scale'))
 
     #ax.set_autoscale_on(False)
 
-    # tick
-    for i, a in enumerate('xy'):
-        ax.tick_params(
-            a,
+        # ticks
+        tick_name = 'x' if is_xside[i] else 'y'
+        b.tick_params(
+            tick_name,
+            which='major',
             direction=tick_styles[i]['orient'],
             labelcolor=tick_styles[i]['color'],
             width=tick_styles[i]['linewidth'],
             length=tick_styles[i]['length']
         )
+        b.tick_params(
+            tick_name,
+            which='minor',
+            direction=tick_styles[i]['orient-minor'],
+            labelcolor=tick_styles[i]['color'],
+            width=tick_styles[i]['linewidth-minor'],
+            length=tick_styles[i]['length-minor'],
+        )
     
-    # tick label style
-    for xticklabel in ax.get_xmajorticklabels():
-        xticklabel.set_fontfamily(tick_styles[0]['fontfamily'])
-        xticklabel.set_fontsize(tick_styles[0]['fontsize'])
-        xticklabel.set_visible(tick_styles[0]['visible'])
+        # tick labels
+        major_tick_labels = b.get_xmajorticklabels() if is_xside[i] else b.get_ymajorticklabels()
+        for mtl in major_tick_labels:
+            mtl.set_fontfamily(tick_styles[i]['fontfamily'])
+            mtl.set_fontsize(tick_styles[i]['fontsize'])
+            mtl.set_visible(tick_styles[i]['visible'])
 
-    for yticklabel in ax.get_ymajorticklabels():
-        yticklabel.set_fontfamily(tick_styles[1]['fontfamily'])
-        yticklabel.set_fontsize(tick_styles[1]['fontsize'])
-        yticklabel.set_visible(tick_styles[1]['visible'])
-
-    # tick format
-    if 'formatter' in m_subfig.axes[0].tick.computed_style:
-        ax.xaxis.set_major_formatter(ticker.FuncFormatter(
-            m_subfig.axes[0].tick.attr('formatter')
-        ))
-    else:
-        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter(
-            m_subfig.axes[0].tick.attr('format')
-        ))
-    if 'formatter' in m_subfig.axes[1].tick.computed_style:
-        ax.yaxis.set_major_formatter(ticker.FuncFormatter(
-            m_subfig.axes[1].tick.attr('formatter')
-        ))
-    else:
-        ax.yaxis.set_major_formatter(ticker.FormatStrFormatter(
-            m_subfig.axes[1].tick.attr('format')
-        ))
+        # tick format
+        target_axis = b.xaxis if is_xside[i] else b.yaxis
+        if 'formatter' in tick_styles[i]:
+            target_axis.set_major_formatter(ticker.FuncFormatter(tick_styles[i]['formatter']))
+        else:
+            target_axis.set_major_formatter(ticker.FormatStrFormatter(tick_styles[i]['format']))
     
     logger.debug('Total %d datalines, %d drawlines, %d texts' % (
         len(m_subfig.datalines), len(m_subfig.drawlines), len(m_subfig.texts)))
@@ -303,7 +318,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         x, y = _translate_loc_normal(*text.attr('pos'))
 
-        ax.text(
+        t = ax.text(
             x,
             y,
             text.attr('text'),
@@ -314,32 +329,35 @@ def _update_subfigure(m_subfig:state.Subfigure):
             visible=m_style['visible'],
             zorder=m_style['zindex']
         )
+        text.computed_style['frame'] = style.Rect(*t.get_window_extent(renderer).bounds)
+        t.set_position(_get_text_loc(m_subfig, text, text.attr('pos')))
 
-    x_begin, x_end, x_interval = m_subfig.axes[0].attr('range')
-    x_ticks = m_subfig.axes[0].attr('tickpos')
-    ax.set_xticks(x_ticks)
-    ax.set_xbound(x_begin, x_end)
+    for i, b in enumerate(backends):
+        if b is None:
+            continue
 
-    y_begin, y_end, y_interval = m_subfig.axes[1].attr('range')
-    y_ticks = m_subfig.axes[1].attr('tickpos')
-    ax.set_yticks(y_ticks)
-    ax.set_ybound(y_begin, y_end)
+        a_begin, a_end, a_interval = m_subfig.axes[i].attr('range')
+        a_ticks = m_subfig.axes[i].attr('tickpos')
+        set_boundfunc = b.set_xbound if is_xside[i] else b.set_ybound
+        set_boundfunc(a_begin, a_end)
 
-    # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
-    if m_subfig.axes[0].attr('scale') == 'linear' and m_subfig.axes[0].attr('range')[2] is None:
-        ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=len(x_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
-    elif m_subfig.axes[0].attr('scale') == 'log':
-        x_subs = [1.0] + np.arange(int(x_interval*10), 10, int(x_interval*10), dtype=int).tolist() if x_interval else (1.0,)
-        ax.xaxis.set_major_locator(ticker.LogLocator(subs=x_subs))
-        ax.xaxis.set_minor_locator(ticker.LogLocator(subs=(1,5,)))
-    if m_subfig.axes[1].attr('scale') == 'linear' and m_subfig.axes[1].attr('range')[2] is None:
-        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=len(y_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
-    elif m_subfig.axes[1].attr('scale') == 'log':
-        y_subs = [1.0] + np.arange(int(y_interval*10), 10, int(y_interval*10), dtype=int).tolist() if y_interval else (1.0,)
-        ax.yaxis.set_major_locator(ticker.LogLocator(subs=y_subs))
-        ax.yaxis.set_minor_locator(ticker.LogLocator(subs=(1,5,)))
+        set_tickfunc = b.set_xticks if is_xside[i] else b.set_yticks
+        set_tickfunc(a_ticks)
 
-    # grid
+        # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
+        target_axis = b.xaxis if is_xside[i] else b.yaxis
+        if m_subfig.axes[i].attr('scale') == 'linear':
+            if m_subfig.axes[i].attr('range')[2] is None:
+                target_axis.set_major_locator(ticker.MaxNLocator(nbins=len(a_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
+            target_axis.set_minor_locator(ticker.AutoMinorLocator(tick_styles[i]['minor'] + 1))
+        elif m_subfig.axes[i].attr('scale') == 'log':
+            a_subs = [1.0] + np.arange(int(a_interval*10), 10, int(a_interval*10), dtype=int).tolist() if a_interval else (1.0,)
+            target_axis.set_major_locator(ticker.LogLocator(subs=a_subs))
+            n = tick_styles[i]['minor'] + 1
+            if n > 1:
+                target_axis.set_minor_locator(ticker.LogLocator(subs=[10/n*j for j in range(1, n)]))
+
+    # grid (only x, y)
     for i, n in enumerate('xy'):
         ax.grid(grid_styles[i]['visible'], which='major', axis=n, 
             linewidth=grid_styles[i]['linewidth'],
@@ -367,6 +385,7 @@ def _update_subfigure(m_subfig:state.Subfigure):
             fontsize=m_style['fontsize'],
             loc=p,
             bbox_to_anchor=b,
+            ncol=m_style['column'],
             frameon=True,
             framealpha=m_style['alpha']
         )
@@ -379,6 +398,24 @@ def _update_subfigure(m_subfig:state.Subfigure):
 
         for t in legend.get_texts():
             t.set_fontfamily(m_style['fontfamily'])
+
+        m_subfig.legend.computed_style['frame'] = style.Rect(*legend.get_window_extent(renderer).bounds)
+    
+    for i, b in enumerate(backends):
+        if b is None:
+            m_subfig.axes[i].computed_style['frame'] = style.Rect(0,0,0,0)
+            m_subfig.axes[i].tick.computed_style['frame'] = style.Rect(0,0,0,0)
+            m_subfig.axes[i].label.computed_style['frame'] = style.Rect(0,0,0,0)
+        else:
+            target_axis = b.get_xaxis() if is_xside[i] else b.get_yaxis()
+            tick_labels = b.get_xticklabels() if is_xside[i] else b.get_yticklabels()
+            tb_ax = target_axis.get_tightbbox(renderer)
+            m_subfig.axes[i].computed_style['frame'] = style.Rect(tb_ax.bounds if tb_ax else (0,0,0,0))
+            m_subfig.axes[i].tick.computed_style['frame'] = [style.Rect(l.get_window_extent(renderer).bounds) for l in tick_labels]
+            m_subfig.axes[i].label.computed_style['frame'] = style.Rect(target_axis.get_label().get_window_extent(renderer).bounds)
+
+    m_subfig.computed_style['frame'] = style.Rect(*ax.get_window_extent(renderer).bounds)
+    m_subfig.title.computed_style['frame'] = style.Rect(ax.title.get_window_extent(renderer).bounds)
 
 
 def save_figure(m_state:state.GlobalState, filename):
@@ -440,8 +477,55 @@ def _translate_loc(x, y):
     
 def _translate_loc_normal(x, y):
     return (
-        {style.FloatingPos.LEFT:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.RIGHT:1}.get(x, x),
-        {style.FloatingPos.BOTTOM:0, style.FloatingPos.CENTER:0.5, style.FloatingPos.TOP:1}.get(y, y))
+        {style.FloatingPos.OUTLEFT:0, style.FloatingPos.LEFT:0, style.FloatingPos.CENTER:0.5, 
+            style.FloatingPos.RIGHT:1, style.FloatingPos.OUTRIGHT:1}.get(x, x),
+        {style.FloatingPos.OUTBOTTOM:0, style.FloatingPos.BOTTOM:0, style.FloatingPos.CENTER:0.5, 
+            style.FloatingPos.TOP:1, style.FloatingPos.OUTTOP:1}.get(y, y))
+
+def _get_text_loc(subfigure, text, pos):
+
+    if pos == style.FloatingPos.AUTO:
+        raise ValueError("Text position cannot be auto")
+    
+    try:
+        sf = subfigure.attr('frame')
+        tf = text.attr('frame')
+    except KeyError:
+        return _translate_loc_normal(*pos)
+    
+    w = tf.width / sf.width
+    h = tf.height / sf.height
+    margin = text.attr('margin') 
+
+    if pos[0] == style.FloatingPos.LEFT:
+        x = margin[0]
+    elif pos[0] == style.FloatingPos.CENTER:
+        x = 0.5 - w/2
+    elif pos[0] == style.FloatingPos.RIGHT:
+        x = 1.0 - margin[2] - w
+    elif pos[0] == style.FloatingPos.OUTLEFT:
+        x = -margin[2] - w
+    elif pos[0] == style.FloatingPos.OUTRIGHT:
+        x = 1.0 + margin[0]
+    else:
+        x = pos[0]
+
+    if pos[1] == style.FloatingPos.TOP:
+        y = 1.0 - margin[3] - h
+    elif pos[1] == style.FloatingPos.CENTER:
+        y = 0.5 + h/2
+    elif pos[1] == style.FloatingPos.BOTTOM:
+        y = margin[1]
+    elif pos[1] == style.FloatingPos.OUTTOP:
+        y = 1.0 + margin[1] + h
+    elif pos[1] == style.FloatingPos.OUTBOTTOM:
+        y = -margin[3]
+    else:
+        y = pos[1]
+
+    return x, y
+
+
 
 _mpl_loc_code = {
     (style.FloatingPos.LEFT, style.FloatingPos.BOTTOM): (3, None),
