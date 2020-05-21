@@ -7,13 +7,14 @@ import pandas as pd
 from . import stat_util
 from . import model
 from . import io_util
-from .errors import LineParseError, LineProcessError, print_error
+from .errors import LineParseError, LineProcessError, print_error, warn
 
 _VAR_EXPR = re.compile(r'\$[_0-9a-zA-Z\*\?\.]+\b')
 _TOKEN_EXPR = re.compile(r'\b[_a-zA-Z]([0-9a-zA-Z][_0-9a-zA-Z\.]*)?(?!\()\b')
 _INNSTR_EXPR = re.compile(r'\b__str\d+\b')
 _INNVAR_EXPR = re.compile(r'\b__var[_0-9a-zA-Z]+\b')
-
+_SPECIAL_BRACKET = re.compile(r'\$\!?\(')
+_SPECIAL_BRACKET_MAPPER = {'$(': '(', '$!(': 'python('}
 
 logger = logging.getLogger('line')
 
@@ -44,16 +45,17 @@ class ExprEvaler:
             'load_stdin': model.load_stdin,
             'save_stdout': model.save_stdout,
             'col':None,
-            'hint':None
+            'hint':None,
         }
 
     def __init__(self, m_globals:dict, m_file_caches:dict):
         self.m_globals = m_globals          # predefined variables
         self.m_file_caches = m_file_caches  # file cache, transparent for outside
         self.m_locals = {}                  # runtime evaluated variables
+        self.m_globals['python'] = self.evaluate_system # the single special command requires call to self
 
-    def load(self, expr, omit_dollar=False):
-        self.expr = canonicalize(expr, omit_dollar)
+    def load(self, expr, omit_dollar=False, variable_prefix='__var'):
+        self.expr = canonicalize(expr, omit_dollar, variable_prefix=variable_prefix)
         logger.debug(self.expr)
 
     def load_singlevar(self, expr):
@@ -68,6 +70,22 @@ class ExprEvaler:
             return '__var' + expr[1:]
         else:
             return '__var' + expr
+
+    def evaluate_system(self, expr):
+        if not isinstance(expr, str):
+            raise LineProcessError('string required')
+        
+        safety = self.m_globals['state']().options['safety']
+        if safety == 0:
+            pass
+        elif safety == 1:
+            warn('Executing external code which may not be safe.')
+        else:
+            if not io_util.query_cond('Execute python code?', True, default=False):
+                raise LineProcessError('Cannot execute python code because user cancelled')
+        evaler = ExprEvaler(self.m_globals, self.m_file_caches)
+        evaler.load(expr, omit_dollar=True, variable_prefix='')
+        return evaler._eval(False)
 
     def evaluate(self):
         """ Evaluate expression; Return an array-like object.
@@ -97,16 +115,7 @@ class ExprEvaler:
         """ Evaluate expression, try interpret undefined variable as column
         label of hintvar.
         """
-        if hintvar is not None:
-            evaler = ExprEvaler(self.m_globals, self.m_file_caches)
-            if hintvar.startswith("$("):    # TODO move this to front end?
-                evaler.load(hintvar[1:])
-                self.hintvalue = evaler.evaluate()
-            else:
-                evaler.load_singlevar(hintvar)
-                self.hintvalue = evaler.evaluate_singlevar()
-        else:
-            self.hintvalue = None
+        self.hintvalue = hintvar
 
         self.m_locals['col'] = lambda x: model.util.loc_col_str(self.hintvalue, str(x))
         self.m_locals['hint'] = lambda: self.hintvalue
@@ -125,18 +134,19 @@ class ExprEvaler:
                             raise LineProcessError('Undefined variable: "%s"' % self.strip_var(v))
         return self._eval()
 
-    def _eval(self):
+    def _eval(self, supress_builtins=True):
         _m_globals = self.FUNCTIONS.copy()
         _m_globals.update(self.m_file_caches)
         _m_globals.update(self.m_globals)
-        _m_globals.update({'__builtins__': None})
+        if supress_builtins:
+            _m_globals.update({'__builtins__': None})
         return eval(self.expr, _m_globals, self.m_locals)
 
     def strip_var(self, varname):
         return varname[5:]
         
         
-def canonicalize(expr:str, omit_dollar=False):
+def canonicalize(expr:str, omit_dollar=False, variable_prefix='__var'):
     """ Check expression quote, bracket and doing the following variable replacement:
     $foo => __varfoo
     if `omit_dollar' is set, also try to replace foo => __varfoo
@@ -166,10 +176,11 @@ def canonicalize(expr:str, omit_dollar=False):
                 m_quote = None
 
         elif m_quote is None:
-            if expr[i] in '([':
+            if expr[i] in '([{':
                 m_bracket.append(expr[i])
-            elif expr[i] in ')]':
-                if len(m_bracket) > 0 and ((expr[i] == ')' and m_bracket[-1] == '(') or expr[i] == ']' and m_bracket[-1] == '['):
+            elif expr[i] in ')]}':
+                if len(m_bracket) > 0 and ((
+                    expr[i] == ')' and m_bracket[-1] == '(') or expr[i] == ']' and m_bracket[-1] == '[' or expr[i] == '}' and m_bracket[-1] == '{'):
                     m_bracket.pop()
                 else:
                     raise LineParseError('Bracket not match near "%s"' % expr[i-3:i+3])
@@ -180,10 +191,11 @@ def canonicalize(expr:str, omit_dollar=False):
     elif m_quote is not None:
         raise LineParseError('Quote not match')
 
-    expr = _VAR_EXPR.sub(lambda x:'__var' + x.group()[1:], expr)
+    expr = _VAR_EXPR.sub(lambda x: variable_prefix + x.group()[1:], expr)
+    expr = _SPECIAL_BRACKET.sub(lambda x: _SPECIAL_BRACKET_MAPPER[x.group()], expr)
 
     if omit_dollar:
-        expr = _TOKEN_EXPR.sub(lambda x: '__var' + x.group(), expr)
+        expr = _TOKEN_EXPR.sub(lambda x: variable_prefix + x.group(), expr)
 
     else:
         varwithoutdollar = _TOKEN_EXPR.search(expr)

@@ -47,6 +47,7 @@ class VMHost:
     def process_unsafe(self, state, tokens, line_debug_info):
         
         if self.mode == 'exec':
+            self.variables['state'] = lambda: state
             return self.exec_special(state, tokens, line_debug_info)
             
         elif self.mode == 'record' or self.mode == 'recorddo':
@@ -64,7 +65,7 @@ class VMHost:
             block = CodeBlock()
             block.loop_var = parse_util.get_token(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), '=')
-            expr = parse_util.parse_column(tokens)
+            expr = parse_util.parse_expr(tokens)
             parse_util.assert_token(parse_util.get_token(tokens), 'do')
             ret = process.process_expr(state, expr)
             if isinstance(ret, str):
@@ -81,7 +82,7 @@ class VMHost:
                 self._push_record(fname, CodeBlock())
                 self.mode = 'record'
             else:
-                expr = parse_util.parse_column(tokens)
+                expr = parse_util.parse_expr(tokens)
                 parse_util.assert_no_token(tokens)
                 ret = process.process_expr(state, expr)
                 self.set_variable(fname, ret)

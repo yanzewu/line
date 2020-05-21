@@ -9,5 +9,4 @@ Features
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
 [LOW] Figure title.
-[LOW] Embeded python code;
 [LOW] Optional legend candidate;

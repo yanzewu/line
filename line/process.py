@@ -2,6 +2,7 @@
 import logging
 from collections import deque
 import os
+import re
 
 import numpy as np
 
@@ -68,20 +69,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     m_tokens = tokens
 
     m_state.file_caches.clear()
-    if m_tokens[0].startswith('$'):
-        if m_tokens[0].startswith('$('):
-            process_expr(m_state, ''.join(list(m_tokens)))
-            return 0
-            
-        try:
-            asnidx = m_tokens.index('=')
-        except ValueError:
-            print(process_expr(m_state, ''.join(m_tokens)))
-        else:
-            varname = ''.join(list(m_tokens)[:asnidx])
-            for i in range(asnidx+1):
-                m_tokens.popleft()
+    if lookup_raw(m_tokens, ret_string=True).startswith('$'):
+        if re.match(r'\$[_0-9a-zA-Z\*\?\.]+', lookup_raw(m_tokens, ret_string=True)) and lookup_raw(m_tokens, 1) == '=':
+            varname = get_token(m_tokens)
+            get_token(m_tokens)
             m_state._vmhost.set_variable(varname, process_expr(m_state, ''.join(list(m_tokens))))
+        else:
+            print(process_expr(m_state, ''.join(m_tokens)))
         return 0
 
     command = get_token(m_tokens)
@@ -239,7 +233,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         outstr = ''
         while len(m_tokens) > 0:
             if m_tokens[0].startswith('$'):
-                outstr += str(process_expr(m_state, parse_column(m_tokens)))
+                outstr += str(process_expr(m_state, parse_expr(m_tokens)))
             else:
                 outstr += m_tokens[0]
                 m_tokens.popleft()
@@ -598,8 +592,6 @@ def process_display(m_state:state.GlobalState):
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)
-    if expr.startswith('$('):
-        expr = expr[1:]
     evaler.load(expr, True)
     logger.debug(evaler.expr)
     return evaler.evaluate()

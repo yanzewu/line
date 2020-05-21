@@ -88,7 +88,7 @@ class PlotParser:
             self._parse_y(pg)
         elif self.next() not in ' ,;=' and (self._must_be_expr(self.next(), self.next(1)) or self.next(1) == ':'):  # hint expr ?
             pg.hint1 = self.token_stack.pop()
-            pg.expr1 = parse_column(self.m_tokens)    
+            pg.expr1 = parse_expr(self.m_tokens)    
 
             if self.next() == ':':  # hint expr :
                 get_token(self.m_tokens)
@@ -172,7 +172,7 @@ class PlotParser:
             pg.style = {}
         elif self.next() not in ' ,;=' and self._must_be_expr(self.next(), self.next(1)):
             pg.hint2 = self.token_stack.pop()
-            pg.expr2 = parse_column(self.m_tokens)
+            pg.expr2 = parse_expr(self.m_tokens)
             pg.style = self._parse_style()
         elif self.next(1) == '=':    # expr style
             pg.hint2 = pg.hint1
@@ -188,7 +188,7 @@ class PlotParser:
         except LineParseError as e:
             if e.message.startswith('Invalid style') or e.message.startswith('Incomplete command'):
                 pg.hint2 = self.token_stack.pop()
-                pg.expr2 = parse_column(self.m_tokens)
+                pg.expr2 = parse_expr(self.m_tokens)
                 pg.style = self._parse_style()
             else:
                 pg.style = self._parse_style()
@@ -241,7 +241,7 @@ class PlotParser:
 
     def shift_expr(self):
         if self._must_be_expr(self.next(), None):
-            self.token_stack.append(parse_column(self.m_tokens))
+            self.token_stack.append(parse_expr(self.m_tokens))
         else:
             return self.token_stack.append(get_token_raw(self.m_tokens))
 
@@ -295,5 +295,15 @@ class PlotParser:
             else:
                 expr = 'col(%s)' % expr
         evaler.load(expr, omit_dollar=True)
-        return evaler.evaluate_with_hintvar(hintvar)
+        if hintvar:
+            evaler2 = expr_proc.ExprEvaler(self.m_state._vmhost.variables, self.m_state.file_caches)
+            if hintvar.startswith('$('):
+                evaler2.load(hintvar)
+                hintvalue = evaler2.evaluate()
+            else:
+                evaler2.load_singlevar(hintvar)
+                hintvalue = evaler2.evaluate_singlevar()
+        else:
+            hintvalue = None
+        return evaler.evaluate_with_hintvar(hintvalue)
         

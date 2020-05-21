@@ -113,8 +113,8 @@ def parse_token_with_comma(m_tokens):
     return tokenlist
 
 
-def parse_column(m_tokens):
-    """ Return a string containing column descriptor
+def parse_expr(m_tokens):
+    """ Return a continuous expression string.
     """
     if '(' in m_tokens[0]:
         column_expr = ''
@@ -138,8 +138,8 @@ def parse_column(m_tokens):
             
     elif m_tokens[0][0] == '$':
         column_expr = get_token_raw(m_tokens)
-        if lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**'):
-            column_expr += get_token_raw(m_tokens) + parse_column(m_tokens)
+        if lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**') or column_expr == '$':
+            column_expr += get_token_raw(m_tokens) + parse_expr(m_tokens)
 
     else:
         column_expr = get_token_raw(m_tokens)

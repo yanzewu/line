@@ -25,7 +25,8 @@ def parse_default_options(option_list, option_range=None, raise_error=False):
         default_handler=option_util.to_bool, 
         custom_handler_dict={
             'data-delimiter': lambda x: x,
-            'data-title': lambda x: x if x == 'auto' else option_util.to_bool(x)
+            'data-title': lambda x: x if x == 'auto' else option_util.to_bool(x),
+            'safety': lambda x: int(x),
         })
 
 
