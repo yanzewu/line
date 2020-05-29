@@ -51,5 +51,5 @@ let fun2 = do
 done
 $u = 4
 print $u
-call fun2 5 $u
+call fun2 5.0 $u
 

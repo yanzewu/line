@@ -42,6 +42,7 @@ plot load('test/dataload/batch1.txt', 'test/dataload/batch2.txt')
 $d = load('test/dataload/batch1.txt', 'test/dataload/batch2.txt')
 plot d t:y1
 plot d t:($y1+$y2), 1:($2+$3), ($2+$3), (sin($2)+2), (sin($y2)+2)
+plot example/test-data.txt t:cols('y*'), t:cols('y?'), t:cols('y[1-2]'), t:cols('2-3')
 
 plot test/dataload/titles.txt t:'y(a)', t:'(b)', t:"'c'"
 

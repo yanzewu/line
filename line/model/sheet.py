@@ -55,7 +55,7 @@ class SourceableSheet(np.lib.mixins.NDArrayOperatorsMixin):
 
     def __getitem__(self, idx):
 
-        if isinstance(idx, int):
+        if isinstance(idx, (int, np.ndarray, list, pd.DataFrame, pd.Series)):
             return self.column_iloc(idx)
         elif isinstance(idx, str):
             return self.column_sloc(idx)
@@ -80,7 +80,7 @@ class SourceableSheet(np.lib.mixins.NDArrayOperatorsMixin):
     def column_iloc(self, idx):
         """ Get column by indices
         """
-        if self.BEGIN > 0 and idx < self.BEGIN:
+        if self.BEGIN > 0 and isinstance(idx, int) and idx < self.BEGIN:
             if idx == self.BEGIN - 1:
                 return self.index()
             else:

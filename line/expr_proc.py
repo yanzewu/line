@@ -45,6 +45,7 @@ class ExprEvaler:
             'load_stdin': model.load_stdin,
             'save_stdout': model.save_stdout,
             'col':None,
+            'cols': None,
             'hint':None,
         }
 
@@ -118,6 +119,7 @@ class ExprEvaler:
         self.hintvalue = hintvar
 
         self.m_locals['col'] = lambda x: model.util.loc_col_str(self.hintvalue, str(x))
+        self.m_locals['cols'] = lambda x: model.util.loc_col_wildcard(self.hintvalue, str(x))
         self.m_locals['hint'] = lambda: self.hintvalue
       
         for v in _INNVAR_EXPR.findall(self.expr):

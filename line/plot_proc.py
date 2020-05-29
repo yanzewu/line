@@ -291,7 +291,7 @@ class PlotParser:
             expr = '$' + expr
         if self._is_quoted(expr):
             if hintvar is None or io_util.file_or_wildcard_exist(strip_quote(expr)):
-                expr = 'load(%s)' % expr
+                expr = 'load(%s)' % expr if not ('*' in expr or '?' in expr) else 'load(*expand(%s))' % expr
             else:
                 expr = 'col(%s)' % expr
         evaler.load(expr, omit_dollar=True)
@@ -301,8 +301,12 @@ class PlotParser:
                 evaler2.load(hintvar)
                 hintvalue = evaler2.evaluate()
             else:
-                evaler2.load_singlevar(hintvar)
-                hintvalue = evaler2.evaluate_singlevar()
+                if '*' in hintvar or '?' in hintvar:
+                    evaler2.load('load(*expand("%s"))' % hintvar)
+                    hintvalue = evaler2.evaluate()
+                else:
+                    evaler2.load_singlevar(hintvar)
+                    hintvalue = evaler2.evaluate_singlevar()
         else:
             hintvalue = None
         return evaler.evaluate_with_hintvar(hintvalue)

@@ -27,7 +27,7 @@ class VMHost:
 
         import numpy as np
         
-        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x]}
+        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x], 'set':self.set_variable}
         
 
     def process(self, state, tokens, line_debug_info):
@@ -92,7 +92,10 @@ class VMHost:
             block = self.records.get(function, None)
             if not block:
                 raise errors.LineProcessError("Undefined function: %s" % function)
-            self.arg_stack.append([function] + [process.process_expr(state, t) for t in tokens])
+            new_args = [function]
+            while len(tokens) > 0:
+                new_args.append(process.process_expr(state, parse_util.parse_expr(tokens)))
+            self.arg_stack.append(new_args)
             r = self.exec_block(state, block)
             self.arg_stack.pop()
             if r != 0:

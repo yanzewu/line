@@ -36,6 +36,44 @@ def loc_col_str(mat, colname:str):
             return mat[:, colname]
 
 
+def loc_col_wildcard(mat, colname:str, expand_range=True):
+    """ Locate all columns matched by wildcard.
+    If `expand_range` is set and colname is "a-b"/"a:b"/"a:b:c" where both a,b,c are numbers,
+    match indices instead of column names.
+
+    raises `KeyError` if nothing is matched.
+    """
+
+    import re
+    import fnmatch
+
+    if isinstance(mat, sheet.SheetCollection):
+        return sheet.SheetCollection([
+            sheet.SourceableSheet(loc_col_wildcard(x, colname, expand_range=expand_range)) for x in mat.data],
+            mat.name_convention)
+
+    if expand_range and re.match(r'\d+\-\d+$', colname):
+        a, b = colname.split('-')
+        indices = np.arange(int(a)-sheet.SourceableSheet.BEGIN, int(b)+1-sheet.SourceableSheet.BEGIN)
+    elif expand_range and re.match(r'\d+\:\d+$', colname):
+        a, b = colname.split(':')
+        indices = slice(int(a)-sheet.SourceableSheet.BEGIN, int(b)-sheet.SourceableSheet.BEGIN)
+    elif expand_range and re.match(r'\d+\:\d+\:\d+$', colname):
+        a, b, c = colname.split(':')
+        indices = slice(int(a)-sheet.SourceableSheet.BEGIN, int(c)-sheet.SourceableSheet.BEGIN, int(b))
+    else:
+        c = columns(mat)
+        indices = np.array([i for i in range(len(c)) if fnmatch.fnmatch(c[i], colname)])
+
+    if isinstance(indices, np.ndarray) and len(indices) == 0:
+        raise KeyError("Nothing is matched")
+
+    if isinstance(mat, pandas.DataFrame):
+        return mat.iloc[:, indices]
+    else:
+        return mat[:, indices]
+
+
 def columns(mat, title_sub='%d'):
     """ Get column titles.
     Return title_sub % (integer) sequences (start from 1) for arrays.

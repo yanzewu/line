@@ -155,3 +155,15 @@ class GlobalState:
                 fig.set_dynamical = True
 
         return has_updated
+
+
+    def get_element_by_name(self, name, multiple=False):
+        """ Get element(s) by name. If `multiple` is set, then return a list.
+        """
+        if not self.cur_figurename:
+            return None if not multiple else []
+        elements = css.StyleSheet(css.NameSelector(name)).select(self.cur_figure())
+        return elements if multiple else (elements.pop() if len(elements) > 0 else None)
+
+    getelem = get_element_by_name
+    get_elements_by_name = lambda x: get_element_by_name(True)
