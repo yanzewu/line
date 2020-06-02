@@ -23,7 +23,7 @@ hold off
 
 set xaxis linewidth=2 linetype=-- font=Arial color=default range=0:12
 set yaxis linewidth=2 linetype=-- font=Arial color=inherit range=0:12
-set raxis,taxis visible=false
+set x2axis,y2axis visible=false
 
 xlabel "This is xlabel"
 ylabel "This is ylabel" 
@@ -57,14 +57,14 @@ xlabel off
 xlabel on
 
 # opposite axis
-set raxis,taxis visible=true
-set rtick,rlabel,ttick,tlabel visible=true 
-set y2label="rlabel"
-set x2label="tlabel"
+set x2axis,y2axis visible=true
+set x2tick,x2label,y2tick,y2label visible=true 
+set y2label="y2label"
+set x2label="x2label"
 set y2range=1:2:10
 set y2scale=log
 set x2scale=linear
-set ttick format="%.2f" color=black minor=3
+set x2tick format="%.2f" color=black minor=3
 
 grid off
 grid on

@@ -16,34 +16,34 @@ class Subfigure(FigObject):
             'padding-top': lambda s,v:  self._set_padding(s, 3, v),
             'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}, priority=self._style_priority(s)),
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}, priority=self._style_priority(s)),
-            'rlabel': lambda s,v:self.axes[2].label.update_style({'text': v}, priority=self._style_priority(s)),
-            'tlabel': lambda s,v:self.axes[3].label.update_style({'text': v}, priority=self._style_priority(s)),
+            'y2label': lambda s,v:self.axes[2].label.update_style({'text': v}, priority=self._style_priority(s)),
+            'x2label': lambda s,v:self.axes[3].label.update_style({'text': v}, priority=self._style_priority(s)),
             'xrange': self._set_xrange,
             'yrange': self._set_yrange,
-            'rrange': lambda s,v:self.axes[2].update_style({'range': v}, priority=self._style_priority(s)),
-            'trange': lambda s,v:self.axes[3].update_style({'range': v}, priority=self._style_priority(s)),
+            'y2range': lambda s,v:self.axes[2].update_style({'range': v}, priority=self._style_priority(s)),
+            'x2range': lambda s,v:self.axes[3].update_style({'range': v}, priority=self._style_priority(s)),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}, priority=self._style_priority(s)),
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}, priority=self._style_priority(s)),
-            'rscale': lambda s,v:self.axes[2].update_style({'scale': v}, priority=self._style_priority(s)),
-            'tscale': lambda s,v:self.axes[3].update_style({'scale': v}, priority=self._style_priority(s)),
+            'y2scale': lambda s,v:self.axes[2].update_style({'scale': v}, priority=self._style_priority(s)),
+            'x2scale': lambda s,v:self.axes[3].update_style({'scale': v}, priority=self._style_priority(s)),
             'font': _set_font,
             'title': lambda s,v: self.title.update_style({'text': v}),
             'legend': self._set_legend,
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
-            'rlabel': lambda x:self.axes[2].get_style('text'),
-            'tlabel': lambda x:self.axes[3].get_style('text'),
+            'y2label': lambda x:self.axes[2].get_style('text'),
+            'x2label': lambda x:self.axes[3].get_style('text'),
             'xrange': lambda x:self.axes[0].get_style('range'),
             'yrange': lambda x:self.axes[1].get_style('range'),
-            'rrange': lambda x:self.axes[2].get_style('range'),
-            'trange': lambda x:self.axes[3].get_style('range'),
+            'y2range': lambda x:self.axes[2].get_style('range'),
+            'x2range': lambda x:self.axes[3].get_style('range'),
             'font': lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
         }, {
             'group': lambda oldst, newst: self.update_colorid() if newst else None,
         })
 
-        self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('raxis'), Axis('taxis')]
+        self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('y2axis'), Axis('x2axis')]
         self.legend = Legend('legend')
         self.title = Text('', (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP), 'title')
 
@@ -248,20 +248,31 @@ class Subfigure(FigObject):
         if not self.datalines and not self.bars:
             return
 
-        xlabels = set((d.get_style('xlabel') for d in self.datalines + self.bars))
+        xlabels = [d.get_style('xlabel') for d in self.datalines + self.bars]
+        if all((':' in x for x in xlabels)):    # Special Handler for File:column (usually in SheetCollection)
+            suffix = xlabels[0][xlabels[0].index(':')+1:]
+            if all((x[x.index(':')+1:] == suffix for x in xlabels)):
+                self.axes[0].label.update_style({'text': suffix})
+        else:
+            if len(set(xlabels)) == 1:
+                self.axes[0].label.update_style({'text': xlabels.pop()})
+
         histogram_counts = len([b for b in self.bars if b.dynamic_bin])
 
-        if len(xlabels) == 1:
-            self.axes[0].label.update_style({'text': xlabels.pop()})
         # TODO: clear label if necessary
 
         if histogram_counts == 0:
-            ylabels = set((d.get_style('label') for d in self.datalines))
+            ylabels = [d.get_style('label') for d in self.datalines]
+            if all((':' in y for y in ylabels)):
+                suffix = ylabels[0][ylabels[0].index(':')+1:]
+                if all((x[x.index(':')+1:] == suffix for x in ylabels)):
+                    self.axes[1].label.update_style({'text': suffix})
+            else:
+                if len(set(ylabels)) == 1:
+                    self.axes[1].label.update_style({'text': ylabels.pop()})
+
         elif histogram_counts == len(self.bars) and not self.datalines:
-            ylabels = {'Distribution'}  # The label "Distribution" is set only when all plots are histogram
+            self.axes[1].label.update_style({'text': 'Distribution'})
         else:
             return
-
-        if len(ylabels) == 1:
-            self.axes[1].label.update_style({'text': ylabels.pop()})
         

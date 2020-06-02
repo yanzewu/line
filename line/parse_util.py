@@ -22,6 +22,9 @@ def get_token_raw(m_tokens):
     except IndexError:
         raise LineParseError("Incomplete command")
 
+def is_quoted(token):
+    return len(token) > 0 and token[0] in '\'\"'
+
 def strip_quote(token):
     return token[1:-1] if token[0] in '\'\"' else token
 
@@ -116,11 +119,17 @@ def parse_token_with_comma(m_tokens):
 def parse_expr(m_tokens):
     """ Return a continuous expression string.
     """
-    if '(' in m_tokens[0]:
+    if is_quoted(m_tokens[0]):
+        return get_token_raw(m_tokens)
+    elif '(' in m_tokens[0]:
         column_expr = ''
         m_bracket = 0
         while True:
             new_token = get_token_raw(m_tokens)
+            if is_quoted(new_token):
+                column_expr += new_token
+                continue
+            
             for i in range(len(new_token)):
                 if new_token[i] == '(':
                     m_bracket += 1
@@ -136,7 +145,7 @@ def parse_expr(m_tokens):
             else:
                 column_expr += new_token
             
-    elif m_tokens[0][0] == '$':
+    elif m_tokens[0].startswith('$'):
         column_expr = get_token_raw(m_tokens)
         if lookup(m_tokens) in ('+', '-', '*', '/', '^', '==', '!=', '&', '|', '**') or column_expr == '$':
             column_expr += get_token_raw(m_tokens) + parse_expr(m_tokens)

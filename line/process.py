@@ -75,7 +75,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             get_token(m_tokens)
             m_state._vmhost.set_variable(varname, process_expr(m_state, ''.join(list(m_tokens))))
         else:
-            print(process_expr(m_state, ''.join(m_tokens)))
+            ret = process_expr(m_state, ''.join(m_tokens))
+            if not (ret is None and not m_state.is_interactive):
+                print(ret)
         return 0
 
     command = get_token(m_tokens)

@@ -2,6 +2,8 @@
 
 # Line Documentation
 
+Version: v0.2
+
 Structure of this documentation:
 
 - [Command Line Options](#command-line-options)
@@ -23,58 +25,82 @@ Run commands in line (in non-interactive mode):
 
     line -e 'command1;command2;...'
 
-Plotting file directly:
+Plotting file directly (the grammar is same as the [plot](#plot) command):
 
-    line -p [filename1] (col_selection) (styles) ...
-
-The file plotting mode has same grammar as `plot` command.
+    line -p [filename] (col_selection) (styles), ...
 
 ### Global Switches
 
-Controls the program behavior. Can be also adjusted by `set option`.
+By passing optional arguments to line, you can control the program behavior. The usage is
 
-- --auto-adjust-range
-- --autoload-file-as-variable
-- --data-title
-- --data-delimiter
-- --display-when-quit
-- --ignore-data-comment
-- --prompt-always
-- --prompt-multi-removal
-- --prompt-overwrite
-- --prompt-save-when-quit
-- --rescale-when-split
+    line --name=value
+
+This works in all three modes. The options can also be changed via `set option name=value` in the commands or (globally) by modifying [options.ini](../line/styles/options.ini).
+
+Available options are:
+
+name | avaiable values | Default | function
+--- | --- | --- | ---
+auto-adjust-range | true/false | true | Adjust the range of axis automatically when plotting new data;
+auto-compact | true/false | true | Always make the figure compact;
+autoload-file-as-variable | true/false | true | Load files through filenames automatically (if disabled, you have to use `load()` function to load them);
+data-title | true/false/auto | auto | Treat the first row of data as title. (Default: auto).
+data-delimiter | any char/'white'/'auto' | auto | Delimiter of data
+delayed-init | true/false | true | Delayed loading modules in interactive mode
+display-when-quit | true/false | false | Always try to display the figure when quitting
+full-label | true/false | false| Always use "filename:column" format for labels
+ignore-data-comment | true/false | true | Ignore lines begin with '#'
+prompt-always | true/false | false | Prompt in file mode
+prompt-multi-removal | true/false | true | Prompt when removing more than one element
+prompt-overwrite | true/false | true | Prompt when saving to an existing file
+prompt-save-when-quit | true/false | false | Prompt "save current figure" when quitting
+rescale-when-split | true/false | true | Change figure's size when splitting
+safety | 0/1/2 | 1 | When executing python code, 0=>continues; 1=>displays a warning; 2=>prompts for allowance
 
 ## Command Reference
 
 Contents:
 
-- [append](#append)
+- [append,add](#append)
 - [cd](#cd)
-- [clear](#clear)
+- [call](#call)
+- [clear,cla](#clear)
 - [display](#display)
-- [figure,subfigure](#figure%44-subfigure)
+- [figure,fig,subfigure,subplot,sp](#figure%44-subfigure)
 - [fill](#fill)
+- [fit](#fit)
+- [for](#for)
 - [group](#group)
+- [grid](#special-set-commands)
 - [hist](#hist)
+- [hold](#special-set-commands)
 - [input](#input)
+- [legend](#special-set-commands)
+- [let](#let)
 - [load](#load)
 - [line,hline,vline](#line%44-hline%44-vline)
-- [plot](#plot)
+- [palette](#special-set-commands)
+- [plot,p](#plot)
 - [print](#print)
-- [quit](#quit)
+- [quit,exit,q](#quit)
 - [remove](#remove)
 - [replot](#replot)
 - [save](#save)
-- [set](#set)
+- [set,s](#set)
 - [split,hsplit,vsplit](#split%44-hsplit%44-vsplit)
+- [style](#set)
 - [show](#show)
+- [title](#special-set-commands)
 - [text](#text)
+- [xlabel,ylabel](#special-set-commands)
+- [xrange,yrange](#special-set-commands)
+- [xscale,yscale](#special-set-commands)
 
 ### plot
 ---
 
-Plotting data from file to current subfigure.
+Alias: p
+Plotting data from file to current subfigure. Any exisiting lines will be removed.
 
 Usage:
 
@@ -87,11 +113,14 @@ Example:
 
 Args:
 
-- source: A single variable name (if exists in global variable table) or filename. If source is not given, the previous source in current command is used.
-- xexpr, yexpr: Column expression. See [Expressions](#expressions) for details.
-    - If the expr only contains digits, it is treated as a column index.
-    - If a column selection is not present, by default all columns in the file are added into current figure. If there are multiple columns and the source is a file, the first column is treated as x column.
-- style, val: See [Style name and value](#list-of-valid-style-and-names).
+- source: Variable name, filename or [expression](#expressions). If source is not given, the previous source in current command is used.
+    - If no xexpr, yexpr are given, filename with "/" must be quoted (otherwise it will be treated as expression);
+    - Expression must be quoted by `$()`;
+- xexpr, yexpr: Column index, column title, or [expression](#expressions).
+    - If the expr is a single token, it will be automatically mapped to column title or index. See [Automatic Variable Mapping](#automatic-variable-mapping).
+    - If xexpr is omitted, the xaxis will be the data indices.
+    - If xexpr and yexpr are both omitted, all columns in the file are added into current figure. If there are multiple columns and the source is a file, the first column is treated as x column.
+- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
 - linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.
 
 Related options:
@@ -119,9 +148,25 @@ The bin number of histogram can be set as `bin=[value]`.
 ### append
 ---
 
-Append data to current subfigure.
+Alias: add
+Append data to current subfigure without removing existing plots. See [plot](#plot) for details.
 
-Equivalent to `hold on; plot`. See [plot](#plot) for details.
+## fit
+---
+
+Fit line(s).
+
+Usage:
+
+    fit line1,line2,... (rule) (style=val) ...
+
+Args:
+
+- line1,line2: Identifier of line (usually just "line" + digit), see [Element Selector](#element-selector) for details.
+- rule: One of "linear","quad","exp","prop" (proportional). If omitted, using linear fit.
+- (style=val): Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
+    - when setting "label='\$\%E\$'", displays the latex expression as line label. This cannot be set via `set` command.
+
 
 ### remove
 ---
@@ -130,12 +175,11 @@ Remove objects in current subfigure. Can only remove datas, lines and texts.
 
 Usage:
 
-    remove selection1, selection2 ... style=val ...
+    remove selection1, selection2 ...
 
 Args:
 
-- element: Selections of elements, see [Element Selector](#element-selector) for details.
-- style, val: Remove all lines with certain style.
+- selection1,selection2: Selections of elements, must be line, bar, drawline, polygon or text. See [Element Selector](#element-selector) for details.
 
 Line indices will change if there are lines removed. Use `show line label` to see the indices.
 
@@ -158,25 +202,33 @@ Usage:
 
 `colorid` is bind to each character according to its first occurence. For example, "AABBC" will set colorid 1,1,2,2,3. "AACCB" will set the same sequence.
 `groupid` is set according to the repeated times of a character. For example, "AABBC" will set `groupid` to 1,2,1,2,1. groupid can be useful to change style pairwisely, like `set line +pairdash`.
+However, Identifier "0" always has colorid 0 and groupid 0. It is usually a black solid line.
 
-The "..." will be expanded by the last repeating unit before it.
+The "..." will be expanded by the last repeating unit before it. There are two ways to expand the repeating unit. One is direct repeating:
 
     ABCABC... -> ABCABCABC
     ABCCC... -> ABCCCCC
     ABCC...D -> ABCCCCCCD
 
-Identifier "0" represent the reference style, which has colorid 0 and groupid 0. It is usually a black solid line.
+The other is incremental repeating:
+
+    AABBCCDD... -> AABBCCDDEE
+    AAABBBCCC... -> AAABBBCCCDDD
+
+`group` will automatically determine the way of expansion.
 
 
 ### set
 ---
 
+Alias: s
+Alias for `set future`: style
 Set style parameters.
 
 Usage:
 
-    set (default) (selection1,selection2,...) style1=val1 style2=val2 +class1 -class2 ...
-    set (default) (selection1,selection2,...) clear
+    set (future/default) (selection1,selection2,...) style1=val1 style2=val2 +class1 -class2 ...
+    set (future/default) (selection1,selection2,...) clear
     set option opt=arg
     set palette (type) palettename
 
@@ -187,22 +239,32 @@ Example:
     set line +paircross
     set gca hold on
 
-See [Element Selector](#element-selector) for more details about selections. If no element is set, the style is applied to current subfigure.
+Args:
+- selection1,selection2: [Element Selector](#element-selector). If not given, the style is applied to current subfigure. Note in `set default` and `set future`, the selection cannot be omitted and has certain constraint.
+- `set default` modifies default value of styles, same as updating `default.css` (but not permanently). Only element type selector can be used in `set default`.
+- `set future` modifies the global stylesheet, same as updating `default.d.css` (but not permanently). The selectors for `set future` should only be classes.
+- `set palette (type)` changes palette for line (default), bar, polygon or drawline. The avaiable palette names can be viewed via `show palette` command. Custom palette can be created in [palettes.json](../line/styles/palettes.json).
+- `set option` changes default options, e.g. `set option ignore-data-comment=true`. See [Global Switches](#global-switches) for all avaiable options.
 
-Additional options for set:
-- `set default` modifies default value of styles, same as updating `default.css`.
-- `set future` (experimental) modifies the global stylesheet, same as updating `default.d.css`.
-- `set palette (type)` changes palette for certain figure elements (one of line (default),bar,polygon,drawline).
-- `set option` changes default options, e.g. `set option ignore-data-comment=true`.
+#### Special Set Commands
 
-#### Abbrevation
+If the first parameter of set is in the following list, then the "set" word can be omitted. 
 
-If the first parameter of set is one of "grid,hold,legend,palette,x/ylabel,x/yrange,x/yscale,title", then the "set" word can be omitted. Examples:
+- grid
+- hold
+- legend
+- palette
+- title
+- xlabel, ylabel, x2label, y2label
+- xrange, yrange, x2range, y2range
+- xscale, yscale, x2scale, y2scale
 
-    hold on # == set gca hold on
-    grid on # == set gca grid visible=true
-    xlabel "t" # == set gca xlabel "t"
-    xrange 0:10 # == set gca xrange 0:10
+Examples:
+
+    hold on # ==> set gca hold on
+    grid on # ==> set gca grid visible=true
+    xlabel "t" # ==> set gca xlabel "t"
+    xrange 0:10 # ==> set gca xrange 0:10
 
 
 ### show
@@ -212,14 +274,13 @@ Display element style, options and miscellaneous info.
 
 Usage:
 
-    show default [element] (stylename)
     show selection1,selection2, ... (stylename)
     show currentfile
     show pwd
     show option [optionname]
 
 Args:
-- selection: Selections of elements, see [Element Selector](#element-selector) for details.
+- selection1,selection2: Selections of elements, see [Element Selector](#element-selector) for details.
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
 - `show currentfile` shows current save filename;
 - `show pwd` shows current directory;
@@ -234,10 +295,13 @@ Fill under current line or between lines.
 
 Usage:
 
-    fill line1 line2    # fill the area under line1 and line2, using sequential colors
-    fill line1-line2 # fill the area between line1 and line2
+    fill line1 line2 (style=val ...)   # fill the area under line1 and line2, using sequential colors
+    fill line1-line2 (style=val ...)   # fill the area between line1 and line2
 
-Fill will generate polygon objects, available for style customizing.
+`fill` will generate polygon objects, available for style customizing.
+
+- line1,line2: Identifier of line (usually just "line" + digit), see [Element Selector](#element-selector) for details.
+- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
 
 ### line, hline, vline
 ---
@@ -250,8 +314,8 @@ Usage:
     hline y1 (style=val ...)
     vline x1 (style=val ...)
 
-- x1,x2,y1,y2: Start and end position. By default it's data coordinate. Specify `coord=data/axis` to change it.
-- style, val: Line styles.
+- x1,x2,y1,y2: Start and end position. By default it's data coordinate. You can change it by specifying `coord=data/axis`.
+- style, val: Styles of the plotted drawline. See [Style name and value](#list-of-valid-style-and-names).
 
 
 ### text
@@ -266,7 +330,7 @@ Usage:
 Args:
 
 - pos: Positions 'x,y'. By default it's axis coordinate. Specify `coord=data/axis` to change it.
-- style,val: Style parameters.
+- style, val: Styles of the text. See [Style name and value](#list-of-valid-style-and-names).
 
 
 ### split, hsplit, vsplit
@@ -291,6 +355,8 @@ Related options:
 ### figure, subfigure
 ---
 
+Alias of figure: fig
+Alias of subfigure: subplot, sp
 Select figure or subfigure.
 
 Usage:
@@ -299,7 +365,7 @@ Usage:
     subfigure index
     subfigure vnum,hnum,index
 
-The behavior of `figure` is similar with matlab's figure. It creates new figure and bring it to the front.
+The behavior of `figure` is similar with matlab's `figure()`. It creates new figure and bring it to the front. Title is not necessary.
 
 The index of subfigure is an integer, starting from left to right and then top to bottom. If `vnum` and `hnum` are given, figure will be split first.
 
@@ -323,6 +389,7 @@ Related options:
 ### clear
 ---
 
+Alias: cla
 Clear current subfigure but keeps style.
 
 Usage:
@@ -334,7 +401,7 @@ Use `set gca visible=false` to completely hide current subfigure.
 ### replot
 ---
 
-Refresh the current subfigure or figure (if "all" is present).
+Refresh the current subfigure or figure (if "all" is present). This is sometimes useful when setting the figure to be compact.
 
 Usage:
 
@@ -345,12 +412,12 @@ Usage:
 ### print
 ---
 
-Print a string.
+Print a string. Will try executing expression (starting with `$`) before print.
 
 Usage:
 
     print 'Hello world'
-
+    print $(1+2)
 
 ### input
 ---
@@ -380,6 +447,8 @@ Usage:
 
     load filename [args...]
 
+The arguments will be available via `arg()` function.
+
 ### cd
 ---
 Change directory.
@@ -391,6 +460,7 @@ Usage:
 ### quit
 ---
 
+Alias: exit, q
 Quit the program.
 
 Usage:
@@ -413,18 +483,18 @@ Usage:
     done
 
 Args:
-    - variable: string, with or without the dollar mark;
-    - expression: An [expression](#expressions) string.
-    - command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
 
-The expression must yield an iterable object (such as list or array) or string. In the latter case, the loop
-variables are the split results of the string.
+- variable: string, with or without the dollar mark;
+- expression: An [expression](#expressions) string.
+- command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+
+The expression must yield an iterable object (such as list or array) or string. In the latter case, the loop variables are the split results of the string.
 
 
 ### let
 ---
 
-Define a variable or function.
+Define a variable or function. The function can be called via [call](#call) command.
 
 Usage:
 
@@ -434,9 +504,9 @@ Usage:
     done
 
 Args:
-    - variable/function: string, with or without the dollar mark;
-    - expression: An [expression](#expressions) string.
-    - command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+- variable/function: string, with or without the dollar mark;
+- expression: An [expression](#expressions) string.
+- command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
 
 The function defined by `do` is similar to a function in shell, which is merely a set of code snippet.
 
@@ -444,69 +514,93 @@ The function defined by `do` is similar to a function in shell, which is merely 
 ### call
 ---
 
-Call a function.
+Call a user-defined function.
 
 Usage:
 
-    call [function]
+    call [function] (args...)
 
-The function must be defined by `let` command.
+The function must be defined by `let ... do` command. The arguments will be available via `arg()` function in the function body.
 
 
 ## Expressions
 
-Line handles simple arithmetic expression, including indexing `[]` and functions `func()`. The grammar is similar to Python or other programming language:
+Line handles simple arithmetic expressions. The grammar is similar to Python or other programming language:
 
 - Arithmetic operators: `+ - * / ** ^ |`. All the operations are column-wise;
 - Indexing a column: Using column title `['column_title']` or column index (starting from 1) `[1] [2]`;
-- Variable: Start with dollar sign `$`. Line also tries to parse variable without dollar sign, but will not guarantee parsed;
-- Function: Can have multiple arguments. List of available functions is given below;
+- Variable: Start with dollar sign `$`. Line also tries to parse variables without dollar sign, but they are not guaranteed to be parsed (usually do);
+- Internal function: See the list below. Note this is different from the user-defined functions (the latter is evaluated by `call` command);
 - String: With either single quotation or double quotation;
 
-It's suggested to quote expression by bracket `()` to avoid ambiguity with the other part of the command.
+It's suggested to quote expression by bracket `()` to avoid ambiguity with the other part of the command. Alternatively, the dollar sign `$` can be put in front of left bracket, which can be used as an identifier of expressions in commands like `set` or `print`.
 
 Examples:
 
-    sin($x) # calculate sin() for each element in $x
-    $a+$b   # calculate element-wise sum of $a and $b
+    sin($x)     # calculate sin() for each element in $x
+    $a+$b       # calculate element-wise sum of $a and $b
     $file[2]    # get second column of $file
+    $($x + $y)  # same as ($x+$y), but gets recognized in some commands
 
 Function list:
 
- Name | Usage
+(1) Mathematical functions:
+
+ Name | Returns
  --- | ---
-sin | sin(x)
-cos | cos(x)
-tan | tan(x)
-cumsum | cumsum(x)
-exp | exp(x)
-log | log(x)
-sinh | sinh(x)
-cosh | cosh(x)
-tanh | tanh(x)
-sqrt | sqrt(x)
-abs | abs(x)
-tp | tp(x)
-min | min(x, y) (minimum element between two lists)
-max | max(x, y) (maximum element between two lists)
-hist | hist(x) (requires a column, returns a Nx2 matrix)
-load | load('filename')
-save | save('filename')
-col | col('column_name') (only available in plotting)
-arg | arg(index) (get args passed in shell or by 'load' command. Start from 0)
+sin(x) | 
+cos(x) | 
+tan(x) | 
+cumsum(x) | 
+exp(x) | 
+log(x) | 
+sinh(x) | 
+cosh(x) | 
+tanh(x) | 
+sqrt(x) | 
+abs(x) | 
+tp(x) | The transpose of x
+min(x, y) | The minimum element between two arrays x, y
+max(x, y) | The maximum element between two arrays x, y
+range(start, stop, [step]) | A uniformly distributed array with step = `step`
+linspace(start, stop, [num]) | A uniformly distributed array with total `num` elements
+hist(x, [bins], [norm]) | An Nx2 matrix, the first column is value, the second column is distribution
 
-### Assigning
+(2) Other functions
 
-Assigning starts with a dollar sign:
+ Name | Return or Function
+ --- | ---
+load('filename'), load('file1','file2',...) | Datasheet or Collection of datasheets (if the input is multiple files or multiple files are matched)
+save(mat, 'filename') | Save a datasheet (collection cannot be saved)
+load_stdin() | Load datasheet from  (not working in interactive mode)
+save_stdout(mat) | Save a datasheet to stdout
+stack(mat1, mat2, ...) | Stack datasheets horizontally
+col('column_id') | Locate a column by title or index (only available in [plot](#plot), [add](#add) or [hist](#hist))
+cols('column_id') | Locate columns by wildcard or index like '1-5' (only available in [plot](#plot), [add](#add) or [hist](#hist))
+expand('wildcard') | Expand the wildcard into list of files
+arg(index) | Get args passed in shell, by [load](#load) command or by [call](#call) command
+set('name', value) | Set the value of a variable
+python('expr'), $!('expr') | Evaluating the expression by Python `eval()`
+
+
+### Evaluating Expressions
+
+In either interactive mode or file mode, when any line begins with `$`, Line tries to evaluate it as an expression. If the expression starts with `$variable=`..., then it is treated as an asssignment. Otherwise it is treated as an evaluation and the result will be  (except the result is `None` in file mode. This is same as Python).
+
+Example of expressions
 
     line> $a = 2
+    line> $a
+    2
     line> $b = load('filename.txt')
 
-The variable must be a single token, and will be overrided if the name exists.
+Variable will be overrided by reassignment.
+
+Variable `x` is already defined to be a array from -5 to 5.
 
 ### Files and Autoloaded Variables
 
-When `autoload-file-as-variable` is set, Line will try parsing a varaible that has not been defined as matrix file(s). The format of matrix file is same as spreadsheet, except that title and index can be omitted.
+When `autoload-file-as-variable` is set, Line will try parsing a variable that has not been defined as datasheet or datasheet collection.
 
 Example:
 
@@ -518,7 +612,7 @@ Currently line does not support special charaters in file (such as `. + - * /`).
 
 ### Automatic Column Mapping
 
-In plotting commands, columns are automatically mapped to variables, if the variable name does not exist in global space.
+In [plot](#plot), [add](#add) or [hist](#hist), if a variable name has not been defined, Line will try match it as a columns title or index.
 
 Examples:
 
@@ -586,9 +680,9 @@ The hierachy of elements:
 
 - figure
     - subfigure
-        - xaxis, yaxis, raxis, taxis
-            - xlabel, ylabel, rlabel, tlabel
-            - xtick, ytick, rtick, ttick
+        - xaxis, yaxis, x2axis, y2axis
+            - xlabel, ylabel, x2label, y2label
+            - xtick, ytick, x2tick, y2tick
             - xgrid, ygrid
         - datalines
         - drawlines
@@ -610,18 +704,18 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
 
  Element Type | Style 
  --- | ---
- figure | size, margin, (h/v)spacing, dpi
+ figure | size, width, height, margin, (h/v)spacing, dpi
  subfigure | rsize, rpos, padding, title, font, fontfamily, fontsize, color, linecolor, xlabel, ylabel, xrange, yrange, xtick, ytick
  axis | linewidth, linetype, font, fontfamily, fontsize, color, range, scale, visible, zindex
  label | font, fontfamily, fontsize, text, visible
- tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, visible
+ tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, minor, length-minor, linewidth-minor, visible
  grid | linewidth, linetype, linecolor, visible, zindex
  line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
  bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, coord, visible, zindex
  polygon | linetype, linecolor, fillcolor, color, alpha, colorid, visible, zindex
  text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
- legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, visible, zindex
+ legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, column, visible, zindex
 
 ### List of Valid Style Values
 
@@ -631,6 +725,7 @@ alpha | float
 bin | int
 color or c|  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
 colorid | int
+column | int
 coord | 'data'/'axis'/'figure'
 dpi | int / 'high'/'mid'/'low'
 edgewidth | int
@@ -640,16 +735,21 @@ fontfamily | string (font name)
 fontsize | float
 format | string (indicator like '%f')
 groupid | int
+height | int
 hold | 'on'/'off'/'true'/'false'
 hspacing | float
 label or t | string. (Experimental) '!\[regex]>\[repl]' if starts with '!'
 length | float
+length-minor | float
 linetype or lt| '-'/'--'/'-.'/':'/'solid'/'dash'/'dot'/'dashdot'
 linewidth or lw| float
-margin | float,float,float,float (bottom,left,right,top)
+linewidth-minor | float
+margin | float,float,float,float (left,bottom,right,top)
+margin-top,margin-bottom,margin-left,margin-right | float
 norm | 'pdf'/'density'/'distribution'/'probability'/'count'
 orient | 'in/out'
-padding | float,float,float,float (bottom,left,right,top)
+padding | float,float,float,float (left,bottom,right,top)
+padding-top,padding-bottom,padding-left,padding-right | float
 pointsize or ps| float
 pointtype or pt | '.'/'x'/'+'/'*'/'o'/'d'/'s'/'^'/'v'/'<'/'>'/'p'/'h'
 pos | float,float (x,y) or (subfigure elements only) floating positions

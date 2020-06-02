@@ -96,7 +96,7 @@ class PlotParser:
             else:   # hint expr
                 pg.hint2 = pg.hint1
                 pg.expr2 = pg.expr1
-                if self._is_quoted(pg.expr1) or pg.hint1 != self.cur_hint:
+                if is_quoted(pg.expr1) or pg.hint1 != self.cur_hint:
                     self.cur_xexpr = None # if it's a file or hint changes, reset x index
                 pg.expr1 = self.cur_xexpr
                 pg.style = self._parse_style()
@@ -122,7 +122,7 @@ class PlotParser:
         # missing x index
         if pg.expr1 is None:
             # file: take first column as index, unless not possible
-            if self._is_quoted(pg.expr2):
+            if is_quoted(pg.expr2):
                 if model.util.cols(pg.ydata) == 1:
                     pg.xdata = model.util.get_index(pg.ydata)
                 else:
@@ -255,7 +255,7 @@ class PlotParser:
             return parse_style(self.m_tokens, ',', recog_comma=False, recog_class=False)
 
     def _must_be_expr(self, token, token2):
-        return not self._is_quoted(token) and \
+        return not is_quoted(token) and \
             (token.startswith('(') or \
             (
                 '(' in token and 
@@ -289,7 +289,7 @@ class PlotParser:
         evaler = expr_proc.ExprEvaler(self.m_state._vmhost.variables, self.m_state.file_caches)
         if expr.isdigit():
             expr = '$' + expr
-        if self._is_quoted(expr):
+        if is_quoted(expr):
             if hintvar is None or io_util.file_or_wildcard_exist(strip_quote(expr)):
                 expr = 'load(%s)' % expr if not ('*' in expr or '?' in expr) else 'load(*expand(%s))' % expr
             else:
@@ -302,7 +302,7 @@ class PlotParser:
                 hintvalue = evaler2.evaluate()
             else:
                 if '*' in hintvar or '?' in hintvar:
-                    evaler2.load('load(*expand("%s"))' % hintvar)
+                    evaler2.load('load(*expand("%s"))' % strip_quote(hintvar))
                     hintvalue = evaler2.evaluate()
                 else:
                     evaler2.load_singlevar(hintvar)

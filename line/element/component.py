@@ -13,9 +13,9 @@ class Axis(FigObject):
 
     def __init__(self, axis_name):
 
-        self.label = Label(axis_name[0] + 'label')
-        self.tick = Tick(axis_name[0] + 'tick')
-        self.grid = Grid(axis_name[0] + 'grid')
+        self.label = Label(axis_name[:-4] + 'label')
+        self.tick = Tick(axis_name[:-4] + 'tick')
+        self.grid = Grid(axis_name[:-4] + 'grid')
 
         self.vmin = 0.0
         self.vmax = 1.0

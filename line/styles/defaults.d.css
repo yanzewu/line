@@ -55,19 +55,19 @@ legend {
 
 /* Minor axis */
 
-#rlabel {
+#y2label {
     visible: false;
 }
 
-#rtick {
+#y2tick {
     visible: false;
 }
 
-#tlabel {
+#x2label {
     visible: false;
 }
 
-#ttick {
+#x2tick {
     visible: false;
 }
 
