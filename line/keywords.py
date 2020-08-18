@@ -3,6 +3,7 @@ style_keywords = {
     'alpha',
     'bgcolor',
     'bin',
+    'clip',
     'color',
     'colorid',
     'column',

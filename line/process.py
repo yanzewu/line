@@ -264,6 +264,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'input':
         m_state.is_interactive = True
+        if lookup(m_tokens) == 'norender':    # no render exisiting fiture
+            return 0
+
         _cur_figurename = m_state.cur_figurename
         for fig in m_state.figures:
             m_state.cur_figurename = fig
@@ -308,6 +311,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
 def render_cur_figure(m_state:state.GlobalState):
 
+    logger.debug('Rendering...')
     m_state.refresh_style(True)
     if m_state.cur_figure().is_changed:
         rerender_times = m_state.cur_figure().needs_rerender
@@ -584,6 +588,8 @@ def process_save(m_state:state.GlobalState, filename:str):
 
 def process_display(m_state:state.GlobalState):
     if not m_state.is_interactive:
+        backend.finalize(m_state)
+        backend.initialize(m_state, silent=False)
         if m_state.cur_figurename:
             cf = m_state.cur_figurename
             for f in m_state.figures:

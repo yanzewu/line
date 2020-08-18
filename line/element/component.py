@@ -76,7 +76,10 @@ class Tick(FigObject):
 
     def _update_formatter(self, oldval, value):
 
+        # special formatter for log
         if r'%mp' in value:
+            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if (x > 0 and x < 0.01 or x > 100) else '%.4G' % x)
+        elif r'%mP' in value:
             self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
         elif 'm' in value:
             value1 = value.replace('m', 'g')

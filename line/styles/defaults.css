@@ -84,6 +84,7 @@ line {
     label: '';
     xlabel: '';
     skippoint: 1;
+    clip: true;
     colorid: 0;
     groupid: 0;
 }

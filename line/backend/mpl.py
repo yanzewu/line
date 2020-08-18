@@ -24,11 +24,37 @@ logger = logging.getLogger('line')
 matplotlib.rcParams['mathtext.fontset'] = defaults.default_math_font
 matplotlib.rcParams['font.family'] = defaults.default_fonts
 
-def initialize(m_state:state.GlobalState, plt_backend='Qt5Agg'):
+if isinstance(defaults.default_options['mpl-backend'], str):
+    defaults.default_options['mpl-backend'] = [defaults.default_options['mpl-backend']]
+primary_backend = defaults.default_options['mpl-backend'][0]
+alternative_backends = defaults.default_options['mpl-backend'][1:]
+silent_backend = defaults.default_options['mpl-silent-backend']
+
+def initialize(m_state:state.GlobalState, silent=None):
+    """ silent: If `True`, use silent_backend instead of primary_backend;
+                If `None`, detect `m_state.is_interactive`.
+    """
+    if silent is None:
+        silent = not m_state.is_interactive
+
     try:
-        plt.switch_backend(plt_backend)
+        if not silent:
+            plt.switch_backend(primary_backend)
+        else:
+            plt.switch_backend(silent_backend)
     except ImportError:
-        logger.info('Fallback to TK backend')
+        switch_success = False
+        for ab in alternative_backends:
+            try:
+                plt.switch_backend(ab)
+            except ImportError:
+                continue
+            else:
+                switch_success = True
+                logger.info('Fallback to backend %s' % ab)
+                break
+        if not switch_success:
+            logger.info('Cannot switch to any alternative backend. Use default instead')
         
     if m_state.is_interactive:
         plt.ion()
@@ -230,6 +256,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         ax.plot( 
             dataline.data.get_x(),
             dataline.data.get_y(),
+            clip_on=m_style['clip'],
             color=m_style['linecolor'],
             label=m_style['label'],
             linestyle=m_style['linetype'].to_str(),

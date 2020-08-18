@@ -429,7 +429,7 @@ Usage:
 ### input
 ---
 
-Switch to interactive mode. This is useful in line input and script input.
+Switch to interactive mode. This is useful in line input and script input. All exisiting figures will be displayed.
 
 Usage:
 
@@ -718,7 +718,7 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
  label | font, fontfamily, fontsize, text, visible
  tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, minor, length-minor, linewidth-minor, visible
  grid | linewidth, linetype, linecolor, visible, zindex
- line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, skippoint, label, xlabel, colorid, groupid, visible, zindex
+ line | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, skippoint, clip, label, xlabel, colorid, groupid, visible, zindex
  bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, coord, visible, zindex
  polygon | linetype, linecolor, fillcolor, color, alpha, colorid, visible, zindex
@@ -731,6 +731,7 @@ Style Name | Value Description
 --- | ---
 alpha | float
 bin | int
+clip | true/false
 color or c|  'r'/'g'/'red'/'darkred' ... (CSS4 Colors) or 70707F...
 colorid | int
 column | int
