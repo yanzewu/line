@@ -10,3 +10,4 @@ Features
 [LOW] Errorbar support.
 [LOW] Figure title.
 [LOW] Optional legend candidate;
+[MID] Treat warning as error for file input.

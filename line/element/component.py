@@ -36,6 +36,7 @@ class Axis(FigObject):
         m_style['range'] = (minpos, maxpos, value[2])
         if m_style == self.style[1]:
             self._refresh_ticks(m_style['range'], self.get_style('scale'))
+        # TODO minpos, maxpos are not always vmin, vmax; they will have some padding around data.
 
     def _set_scale(self, m_style, value):
         m_style['scale'] = value
@@ -270,6 +271,7 @@ class Label(FigObject):
         }, {
             'font':lambda x: '%s,%d' % (x['fontfamily'], x['fontsize'])
         }, {
+            'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,

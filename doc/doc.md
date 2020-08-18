@@ -100,6 +100,7 @@ Contents:
 ---
 
 Alias: p
+
 Plotting data from file to current subfigure. Any exisiting lines will be removed.
 
 Usage:
@@ -120,7 +121,7 @@ Args:
     - If the expr is a single token, it will be automatically mapped to column title or index. See [Automatic Variable Mapping](#automatic-variable-mapping).
     - If xexpr is omitted, the xaxis will be the data indices.
     - If xexpr and yexpr are both omitted, all columns in the file are added into current figure. If there are multiple columns and the source is a file, the first column is treated as x column.
-- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
+- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-values).
 - linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.
 
 Related options:
@@ -149,6 +150,7 @@ The bin number of histogram can be set as `bin=[value]`.
 ---
 
 Alias: add
+
 Append data to current subfigure without removing existing plots. See [plot](#plot) for details.
 
 ## fit
@@ -164,7 +166,7 @@ Args:
 
 - line1,line2: Identifier of line (usually just "line" + digit), see [Element Selector](#element-selector) for details.
 - rule: One of "linear","quad","exp","prop" (proportional). If omitted, using linear fit.
-- (style=val): Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
+- (style=val): Styles of the plotted line. See [Style name and value](#list-of-valid-style-values).
     - when setting "label='\$\%E\$'", displays the latex expression as line label. This cannot be set via `set` command.
 
 
@@ -222,7 +224,9 @@ The other is incremental repeating:
 ---
 
 Alias: s
+
 Alias for `set future`: style
+
 Set style parameters.
 
 Usage:
@@ -301,7 +305,7 @@ Usage:
 `fill` will generate polygon objects, available for style customizing.
 
 - line1,line2: Identifier of line (usually just "line" + digit), see [Element Selector](#element-selector) for details.
-- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-and-names).
+- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-values).
 
 ### line, hline, vline
 ---
@@ -315,7 +319,7 @@ Usage:
     vline x1 (style=val ...)
 
 - x1,x2,y1,y2: Start and end position. By default it's data coordinate. You can change it by specifying `coord=data/axis`.
-- style, val: Styles of the plotted drawline. See [Style name and value](#list-of-valid-style-and-names).
+- style, val: Styles of the plotted drawline. See [Style name and value](#list-of-valid-style-values).
 
 
 ### text
@@ -330,7 +334,7 @@ Usage:
 Args:
 
 - pos: Positions 'x,y'. By default it's axis coordinate. Specify `coord=data/axis` to change it.
-- style, val: Styles of the text. See [Style name and value](#list-of-valid-style-and-names).
+- style, val: Styles of the text. See [Style name and value](#list-of-valid-style-values).
 
 
 ### split, hsplit, vsplit
@@ -356,7 +360,9 @@ Related options:
 ---
 
 Alias of figure: fig
+
 Alias of subfigure: subplot, sp
+
 Select figure or subfigure.
 
 Usage:
@@ -390,6 +396,7 @@ Related options:
 ---
 
 Alias: cla
+
 Clear current subfigure but keeps style.
 
 Usage:
@@ -461,6 +468,7 @@ Usage:
 ---
 
 Alias: exit, q
+
 Quit the program.
 
 Usage:
