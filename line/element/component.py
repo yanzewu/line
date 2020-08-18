@@ -80,7 +80,7 @@ class Tick(FigObject):
         if r'%mp' in value:
             self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if (x > 0 and x < 0.01 or x > 100) else '%.4G' % x)
         elif r'%mP' in value:
-            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
+            self.computed_style['formatter'] = lambda x, pos: value.replace('%mP', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
         elif 'm' in value:
             value1 = value.replace('m', 'g')
             self.computed_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))

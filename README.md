@@ -15,7 +15,6 @@ Prerequesties:
 - Matplotlib >= 3.0 (Necessary)
 - Numpy >= 1.13 (Necessary)
 - Pandas >= 0.22 (Necessary)
-- PyQt5 (Optional, for Qt backend)
 
 The package is written in pure python and is directly executable. To install it into python library:
 
