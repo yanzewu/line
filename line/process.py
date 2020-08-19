@@ -378,21 +378,47 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     """
     m_subfig = m_state.cur_subfigure()
 
-    selection = parse_style_selector(m_tokens)
+    # special with figure
+    figures_to_remove = []
+    selection = []
+    for s in parse_style_selector(m_tokens):
+        if isinstance(s, css.NameSelector):
+            if s.name == 'gcf':
+                figures_to_remove.append('figure:' + m_state.cur_figurename)
+                continue
+            elif s.name.startswith('figure'):
+                figures_to_remove.append('figure:' + [f for f in m_state.figures if f == s.name[6:]][0])
+                continue
+        selection.append(s)
+
     ss = css.StyleSheet(selection)
     elements = ss.select(m_state.cur_subfigure())
 
-    if not elements:
+    if not elements and not figures_to_remove:
         warn('No element is selected')
         return
 
-    if len(elements) > 1:
-        if io_util.query_cond('Remove elements %s?' % (' '.join(e.name for e in elements)), 
+    if len(elements) + len(figures_to_remove) > 1:
+        if io_util.query_cond('Remove elements %s %s? ' % (
+            ' '.join(e.name for e in elements), ' '.join(f for f in figures_to_remove)), 
             m_state.options['prompt-multi-removal'] and (m_state.options['prompt-always'] or 
             m_state.is_interactive), True):
             pass
         else:
             return
+
+    cur_figurename = m_state.cur_figurename
+    for f in figures_to_remove:
+        m_state.cur_figurename = f[7:]
+        backend.close_figure(m_state)
+        m_state.remove_figure(m_state.cur_figurename)
+
+    if 'figure:' + cur_figurename in figures_to_remove:
+        if not m_state.figures:
+            m_state.cur_figurename = None
+        return
+    else:
+        m_state.cur_figurename = cur_figurename
 
     for e in elements:
         m_state.cur_subfigure().remove_element(e)

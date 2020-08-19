@@ -247,4 +247,4 @@ class Rect:
         return self.y
 
     def __repr__(self):
-        return '(x=%s, y=%s, w=%s, h=%s)' % (self.x, self.y, self.width, self.height)
+        return '(x=%.2f, y=%.2f, w=%.2f, h=%.2f)' % (self.x, self.y, self.width, self.height)

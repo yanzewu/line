@@ -69,6 +69,16 @@ class GlobalState:
         self.custom_stylesheet.apply_to(subfig, 0)
         return subfig
 
+    def remove_figure(self, name):
+        """ Remove a figure with certain name.
+        """
+        self.figures.pop(str(name))
+        if name == self.cur_figurename:
+            if len(self.figures) == 0:
+                self.cur_figurename = None
+            else:
+                self.cur_figurename = list(self.figures.keys())[0]
+
     def update_default_stylesheet(self, ss:css.StyleSheet):
         for s in ss.data.keys():
             if not isinstance(s, css.TypeSelector):

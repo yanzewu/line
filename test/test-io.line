@@ -16,6 +16,7 @@ cd ..
 # save
 
 set option prompt-always=true
+set yrange auto
 plot sin(x)
 save
 figure 2

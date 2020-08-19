@@ -32,7 +32,6 @@ line {
 bar {
     alpha: 0.9;
     visible: inherit;
-    width: 1.0;
 }
 
 drawline {
