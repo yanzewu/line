@@ -9,6 +9,7 @@ style_keywords = {
     'column',
     'coord',
     'dpi',
+    'enabled',
     'edgecolor', 'edgewidth',
     'fillcolor', 'fillstyle',
     'font', 'fontfamily', 'fontsize',
@@ -84,6 +85,7 @@ command_keywords = {
     'load',
     'line', 'hline', 'vline',
     'plot',
+    'plotr',
     'print',
     'quit',
     'remove',
@@ -107,6 +109,7 @@ command_alias = {
     'subplot': 'subfigure',
     'sp': 'subfigure',
     'fig': 'figure',
+    'plotyy': 'plotr',
 }
 
 extended_set_keywords = {

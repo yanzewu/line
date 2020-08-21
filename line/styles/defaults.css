@@ -30,9 +30,9 @@ axis {
     fontfamily: 'Times New Roman';
     fontsize: 16;
     color: black;
-    tickpos: 0,0.5,1;
     range: '0:1';
     scale: linear;
+    enabled: false;
     visible: true;
     zindex: -1;
 }
@@ -71,7 +71,7 @@ grid {
 
 line {
     linewidth: 1.5;
-    linetype: 'solid';
+    linetype: solid;
     linecolor: black;
     pointsize: 6;
     pointtype: none;
@@ -85,6 +85,7 @@ line {
     xlabel: '';
     skippoint: 1;
     clip: true;
+    side: left,bottom;
     colorid: 0;
     groupid: 0;
 }
@@ -97,11 +98,11 @@ bar {
     linecolor: black;
     fillcolor: white;
     width: 0.8;
-    barwidth: 1.0;
     visible: true;
     zindex: 0;
     label: '';
     xlabel: '';
+    side: left,bottom;
     colorid: 0;
 }
 

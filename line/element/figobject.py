@@ -66,7 +66,7 @@ class FigObject:
         else:
             self.style[priority].clear()
 
-    def get_style(self, name, raise_error=True):
+    def get_style(self, name, raise_error=True, default=None):
         """ Get value of style.
         The query is processed by priority - if highest priority style
         has entry, return the value; otherwise look for lower priority.
@@ -84,12 +84,16 @@ class FigObject:
         if self.computed_style is None:
             if raise_error:
                 raise KeyError(name)
+            else:
+                return default
         else:
             try:
                 return self.computed_style[name]
             except KeyError:
                 if raise_error:
                     raise
+                else:
+                    return default
 
     def attr(self, name):
         """ Alias for get_computed_style

@@ -95,6 +95,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     if command == 'plot':
         parse_and_process_plot(m_state, m_tokens, keep_existed=None)
 
+    elif command == 'plotr':
+        parse_and_process_plot(m_state, m_tokens, keep_existed=None, side=style.FloatingPos.RIGHT)
+
     elif command == 'append':
         parse_and_process_plot(m_state, m_tokens, keep_existed=True)
 
@@ -340,7 +343,7 @@ def render_cur_figure(m_state:state.GlobalState):
         m_state.cur_subfigure().is_changed = False 
 
 
-def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed):
+def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed, side=style.FloatingPos.LEFT):
     """ Parsing and processing `plot` and `append` commands.
 
     Args:
@@ -355,8 +358,13 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     parser = plot_proc.PlotParser()
     parser.parse(m_state, m_tokens)
     if parser.plot_groups:
+        if side == style.FloatingPos.RIGHT:
+            for pg in parser.plot_groups:
+                pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
         dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
             labelfmt=r'%F:%T' if m_state.options['full-label'] else None)
+        if side == style.FloatingPos.RIGHT:
+            m_state.cur_subfigure().axes[2].update_style({'enabled':True})
     else:
         warn('No data to plot')
 

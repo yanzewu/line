@@ -175,8 +175,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
     # creating additional axes for right/top
     for j in (2, 3):
-        if m_subfig.axes[j].attr('visible') and (m_subfig.axes[j].label.attr('visible') or 
-            m_subfig.axes[j].tick.attr('visible')):
+        if m_subfig.axes[j].attr('enabled'):
             if m_subfig.axes[j].backend:
                 try:
                     m_subfig.axes[j].backend.remove()
@@ -249,11 +248,20 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
     logger.debug('Total %d datalines, %d drawlines, %d texts' % (
         len(m_subfig.datalines), len(m_subfig.drawlines), len(m_subfig.texts)))
 
+    legend_candidate = []
+
     # lines
     for dataline in m_subfig.datalines:
         m_style = dataline.computed_style
 
-        ax.plot( 
+        if m_style['side'] == (style.FloatingPos.LEFT, style.FloatingPos.TOP):
+            target_ax = m_subfig.axes[3].backend
+        elif m_style['side'] == (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM):
+            target_ax = m_subfig.axes[2].backend
+        else:
+            target_ax = ax
+
+        b = target_ax.plot( 
             dataline.data.get_x(),
             dataline.data.get_y(),
             clip_on=m_style['clip'],
@@ -271,11 +279,20 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             visible=m_style['visible'],
             zorder=m_style['zindex']
         )
+        if b and m_style['label']:
+            legend_candidate.append((b[0], m_style['label']))
 
     for bar in m_subfig.bars:
         m_style = bar.computed_style
 
-        ax.bar(
+        if m_style['side'] == (style.FloatingPos.LEFT, style.FloatingPos.TOP):
+            target_ax = m_subfig.axes[3].backend
+        elif m_style['side'] == (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM):
+            target_ax = m_subfig.axes[2].backend
+        else:
+            target_ax = ax
+
+        b = target_ax.bar(
             bar.data.get_x(),
             bar.data.get_y(),
             alpha=m_style['alpha'],
@@ -288,6 +305,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             linewidth=m_style['linewidth'],
             tick_label=None
         )
+        if b and m_style['label']:
+            legend_candidate.append((b[0], m_style['label']))
 
     for drawline in m_subfig.drawlines:
         m_style = drawline.computed_style
@@ -366,7 +385,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         a_begin, a_end, a_interval = m_subfig.axes[i].attr('range')
         a_ticks = m_subfig.axes[i].attr('tickpos')
         set_boundfunc = b.set_xbound if is_xside[i] else b.set_ybound
-        set_boundfunc(a_begin, a_end)
+        set_boundfunc(a_begin if a_begin else a_ticks[0], a_end if a_end else a_ticks[-1])
 
         set_tickfunc = b.set_xticks if is_xside[i] else b.set_yticks
         set_tickfunc(a_ticks)
@@ -406,6 +425,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             p, b = _translate_loc(*legend_pos)
 
         legend = ax.legend(
+            [lc[0] for lc in legend_candidate],
+            [lc[1] for lc in legend_candidate],
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],

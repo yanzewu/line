@@ -65,6 +65,16 @@ def translate_style_val(style_name:str, style_val:str):
         except ValueError as e:
             raise LineParseError(str(e))
 
+    elif style_name == 'side':
+        try:
+            s = style.str2pos(style_val)
+            if not isinstance(s, tuple) or not isinstance(s[0], style.FloatingPos) \
+                or not isinstance(s[1], style.FloatingPos):
+                raise LineParseError('Invalid side: "%s"' % style_val)
+            return s
+        except ValueError as e:
+            raise LineParseError(str(e))
+
     elif style_name == 'size':
         v1, v2 = style_val.split(',')
         return stod(v1), stod(v2)
