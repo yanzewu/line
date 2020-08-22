@@ -106,7 +106,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # range
     elif style_name.endswith('range'):
-        return style_val if style_val == 'auto' else parse_range(style_val)
+        return (None,None,None) if style_val == 'auto' else parse_range(style_val)
 
     # bool
     elif style_name == 'visible':

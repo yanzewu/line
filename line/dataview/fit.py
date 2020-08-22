@@ -76,7 +76,7 @@ def add_fitline(subfigure, fittedfunc, range_=None, xlabel='', ylabel='', **kwar
     """
     
     if range_ is None:
-        xr = subfigure.get_style('xrange')
+        xr = subfigure.axes[0].attr('range')
         step_ = xr[2] if xr[2] else (xr[1] - xr[0])/100
         range_ = (xr[0], xr[1], xr[2])
 

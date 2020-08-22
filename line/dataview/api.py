@@ -25,7 +25,7 @@ def fill_h(m_state, obj1, obj2=None, **kwargs):
     """
 
     if obj2 is None:
-        return fill.fill_h(m_state, obj1.data, None, **kwargs)
+        return fill.fill_h(m_state, obj1.data, **kwargs)
     elif isinstance(obj2, (int, float)):
         return fill.fill_h(m_state, obj1.data, obj2, **kwargs)
     else:

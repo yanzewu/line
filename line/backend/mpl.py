@@ -317,12 +317,12 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         if m_style['coord'] == 'data' and (xlo is None or xhi is None or ylo is None or yhi is None):
             if xlo is None or xhi is None:
                 trans = ax.get_yaxis_transform()
-                xlo = m_subfig.get_axes_coord(xlo, 0, 'left')
-                xhi = m_subfig.get_axes_coord(xhi, 0, 'right')
+                xlo = m_subfig.get_axes_coord(xlo if xlo is not None else 'left', 0)
+                xhi = m_subfig.get_axes_coord(xhi if xhi is not None else 'right', 0)
             else:
                 trans = ax.get_xaxis_transform()
-                ylo = m_subfig.get_axes_coord(ylo, 1, 'left')
-                yhi = m_subfig.get_axes_coord(yhi, 1, 'right')
+                ylo = m_subfig.get_axes_coord(ylo if ylo is not None else 'left', 1)
+                yhi = m_subfig.get_axes_coord(yhi if yhi is not None else 'right', 1)
         else:
             trans = ax.transData if m_style['coord'] == 'data' else ax.transAxes
 
@@ -385,10 +385,10 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         a_begin, a_end, a_interval = m_subfig.axes[i].attr('range')
         a_ticks = m_subfig.axes[i].attr('tickpos')
         set_boundfunc = b.set_xbound if is_xside[i] else b.set_ybound
-        set_boundfunc(a_begin if a_begin else a_ticks[0], a_end if a_end else a_ticks[-1])
 
         set_tickfunc = b.set_xticks if is_xside[i] else b.set_yticks
         set_tickfunc(a_ticks)
+        set_boundfunc(a_begin, a_end)
 
         # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
         target_axis = b.xaxis if is_xside[i] else b.yaxis

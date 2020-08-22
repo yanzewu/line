@@ -348,6 +348,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
 
     Args:
         keep_existed: Keep existed datalines.
+        side: Side of yaxis. (LEFT/RIGHT)
     """
     if keep_existed is None:
         if len(m_state.figures) > 0:
@@ -363,8 +364,11 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
                 pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
         dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
             labelfmt=r'%F:%T' if m_state.options['full-label'] else None)
+        m_state.cur_subfigure().set_automatic_labels()
         if side == style.FloatingPos.RIGHT:
             m_state.cur_subfigure().axes[2].update_style({'enabled':True})
+            m_state.cur_subfigure().axes[2].tick.update_style({'visible':True})
+            m_state.cur_subfigure().axes[2].label.update_style({'visible':True})
     else:
         warn('No data to plot')
 

@@ -55,6 +55,17 @@ fit line4 exp label='%T %N $%E$'
 
 display
 
+# plotr
+
+hold off
+plotr x
+plot x-5
+hold on
+plotr x+10 x-
+add x o-
+remove line1
+display
+
 # clear
 clear
 display

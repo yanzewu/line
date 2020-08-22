@@ -18,8 +18,8 @@ class Subfigure(FigObject):
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}, priority=self._style_priority(s)),
             'y2label': lambda s,v:self.axes[2].label.update_style({'text': v}, priority=self._style_priority(s)),
             'x2label': lambda s,v:self.axes[3].label.update_style({'text': v}, priority=self._style_priority(s)),
-            'xrange': self._set_xrange,
-            'yrange': self._set_yrange,
+            'xrange': lambda s,v:self.axes[0].update_style({'range': v}, priority=self._style_priority(s)),
+            'yrange': lambda s,v:self.axes[1].update_style({'range': v}, priority=self._style_priority(s)),
             'y2range': lambda s,v:self.axes[2].update_style({'range': v}, priority=self._style_priority(s)),
             'x2range': lambda s,v:self.axes[3].update_style({'range': v}, priority=self._style_priority(s)),
             'xscale': lambda s,v:self.axes[0].update_style({'scale': v}, priority=self._style_priority(s)),
@@ -43,7 +43,10 @@ class Subfigure(FigObject):
             'group': lambda oldst, newst: self.update_colorid() if newst else None,
         })
 
-        self.axes = [Axis('xaxis'), Axis('yaxis'), Axis('y2axis'), Axis('x2axis')]
+        self.axes = [Axis('xaxis', extent_callback = lambda: self.update_extents(0)), 
+            Axis('yaxis', extent_callback = lambda: self.update_extents(1)), 
+            Axis('y2axis', extent_callback = lambda: self.update_extents(2)), 
+            Axis('x2axis', extent_callback = lambda: self.update_extents(3))]
         self.legend = Legend('legend')
         self.title = Text('', (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP), 'title')
 
@@ -67,7 +70,7 @@ class Subfigure(FigObject):
         return name == 'gca' or self.name == name
 
     def get_children(self):
-        return self.axes + [self.legend] + [self.title] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts 
+        return [self.legend] + [self.title] + self.datalines + self.bars + self.drawlines + self.polygons + self.texts + self.axes
 
     def update_render_callback(self):
 
@@ -85,7 +88,7 @@ class Subfigure(FigObject):
         newidx = 1 if not element_queue else int(element_queue[-1].name[len(typename):])+1
         element_queue.append(
             class_(
-                *args, typename + str(newidx)
+                *args, name=typename + str(newidx)
             )
         )
         if auto_colorid:
@@ -105,23 +108,23 @@ class Subfigure(FigObject):
         r = self._add_element(DataLine, 'line', self.datalines, False, {},
             data, label, xlabel)
         self._refresh_colorid()
-        self.datalines[-1].update_style(style_dict)
-        self._refresh_label()
+        r.update_style(style_dict)
+        self._activate_axis(r)
         return r
 
     def add_smartdataline(self, data, label, xlabel, style_dict):
         r = self._add_element(SmartDataLine, 'line', self.datalines, False, {},
             data, label, xlabel)
         self._refresh_colorid()
-        self.datalines[-1].update_style(style_dict)
-        self._refresh_label()
+        r.update_style(style_dict)
+        self._activate_axis(r)
         return r            
 
     def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
 
         r = self._add_element(Bar, 'bar', self.bars, True, style_dict,
             data, label, xlabel, dynamic_bin)
-        self._refresh_label()
+        self._activate_axis(r)
         return r
 
     def add_drawline(self, start_pos, end_pos, style_dict):
@@ -140,51 +143,52 @@ class Subfigure(FigObject):
             text, pos)
     
     def remove_element(self, element):
-        """ Remove an element and recalculate indices
-        raises ValueError if element does not exist in queue
+        """ Remove an dynamical element (i.e. datalines, texts, polygons, ...)
+        For data elements (dataline, bar), the rest indices will be recalculated.
+
+        element: The element instance.
+        Raises exception if element is not dynamical.
         """
-        if isinstance(element, DataLine):
-            idx = self.datalines.index(element)
-            self.datalines.pop(idx)
-            for i in range(idx, len(self.datalines)):
-                self.datalines[i].name = 'line%d' % (i+1)
-
-        elif isinstance(element, DrawLine):
-            idx = self.drawlines.index(element)
-            self.drawlines.pop(idx)
-
-        elif isinstance(element, Polygon):
-            idx = self.polygons.index(element)
-            self.polygons.pop(idx)
-            
-        elif isinstance(element, Text):
-            idx = self.texts.index(element)
-            self.texts.pop(idx)
-            
-        else:
+        
+        try:
+            elem_queue = {DataLine:self.datalines, Bar:self.bars, DrawLine:self.drawlines, 
+                Polygon: self.polygons, Text:self.texts}[type(element)]
+            idx = elem_queue.index(element)
+        except (KeyError, ValueError) as e:
             raise errors.LineProcessError('Cannot remove element: "%s"' % element.name)
+        else:
+            elem_queue.pop(idx)
+            if elem_queue is self.datalines or elem_queue is self.drawlines:
+                prefix = 'line' if elem_queue is self.datalines else 'bar'
+                for i in range(idx, len(elem_queue)):
+                    elem_queue[i].name = '%s%d' % (prefix, i+1)
+            self.is_changed = True
 
-        self.is_changed = True
-
-    def clear(self):
+    def clear(self, remove_label=False):
         """ Clear lines and texts but keep style.
+        If `remove_label`, will remove the axis labels.
         """
         self.datalines.clear()
         self.bars.clear()
         self.drawlines.clear()
         self.polygons.clear()
         self.texts.clear()
-        for i in range(4):
-            self.axes[i].label.update_style({'text': ''})
+        if remove_label:
+            for i in range(4):
+                self.axes[i].label.update_style({'text': style.css.SpecialStyleValue.DEFAULT})
         self.is_changed = True
 
-    def get_axes_coord(self, d, axis=0, side='left'):
-
-        if d is not None:
-            lo, hi = self.axes[axis].attr['range']
-            return (d-lo)/(hi-lo)
+    def get_axes_coord(self, pos, axis_id):
+        """ Transform axis coord to data coord.
+        pos: Either a number, or 'left'/'right'.
+        """
+        if pos == 'left':
+            return 0.0
+        elif pos == 'right':
+            return 1.0
         else:
-            return 0 if side == 'left' else 1.0
+            lo, hi = self.axes[axis_id].attr['range']
+            return (pos-lo)/(hi-lo)
 
     def update_colorid(self):
         """ refresh colorid and groupid for each line.
@@ -195,46 +199,8 @@ class Subfigure(FigObject):
             l.update_style({'colorid':cidx, 'groupid':gidx})
         self.is_changed = True
 
-    def update_range_param(self):
-        datalist = self.datalines + self.bars
-    
-        if not datalist:
-            min_x, min_y, max_x, max_y = 0, 0, 1, 1
-        else:
-            min_x, min_y, max_x, max_y = np.inf, np.inf, -np.inf, -np.inf
-
-        for d in datalist:
-            x, y = d.data.get_x(), d.data.get_y()
-            if isinstance(d, Bar):
-                min_x = min(min_x, np.min(x) - d.get_style('barwidth')/2)
-                max_x = max(max_x, np.max(x) + d.get_style('barwidth')/2)
-                min_y = min(min_y, np.min(y), 0)
-                max_y = max(max_y, np.max(y))
-            else:
-                min_x, max_x = min(min_x, np.min(x)), max(max_x, np.max(x))
-                min_y, max_y = min(min_y, np.min(y)), max(max_y, np.max(y))
-
-        self.axes[0]._set_datarange(min_x, max_x)
-        self.axes[1]._set_datarange(min_y, max_y)
-
     def _style_priority(self, m_style):
         return 0 if m_style is self.style[0] else 1
-
-    def _set_xrange(self, m_style, value):
-        p = self._style_priority(m_style)
-        if value == 'auto':
-            self.update_range_param()
-            self.axes[0].update_style({'range':(None,None,None)}, priority=p)
-        else:
-            self.axes[0].update_style({'range':value}, priority=p)
-    
-    def _set_yrange(self, m_style, value):
-        p = self._style_priority(m_style)
-        if value == 'auto':
-            self.update_range_param()
-            self.axes[1].update_style({'range':(None,None,None)}, priority=p)
-        else:
-            self.axes[1].update_style({'range':value}, priority=p)
 
     def _set_legend(self, m_style, value):
         if isinstance(value, str):
@@ -242,37 +208,70 @@ class Subfigure(FigObject):
         for d, v in zip(self.datalines + self.bars, value):
             d.update_style({'label': str(v)}, priority=self._style_priority(m_style))
 
-    def _refresh_label(self):
-        """ Set automatic x/y label for gca.
+    def set_automatic_labels(self):
+        """ Try set automatic axis labels based on data label. If cannot
+        create a unified label, will not do anything.
         """
-        if not self.datalines and not self.bars:
-            return
+        side_identifiers = (style.FloatingPos.BOTTOM, style.FloatingPos.LEFT, style.FloatingPos.RIGHT, style.FloatingPos.TOP)
+        for i in range(4):
+            if 'text' in self.axes[i].label.style[1] and self.axes[i].label.style[1]['text'] != style.css.SpecialStyleValue.DEFAULT:
+                continue
+            _update_axis_label(
+                [d for d in self.datalines if side_identifiers[i] in d.get_style('side', raise_error=False, default=(style.FloatingPos.LEFT, style.FloatingPos.BOTTOM))],
+                [d for d in self.bars if side_identifiers[i] in d.get_style('side', raise_error=False, default=(style.FloatingPos.LEFT, style.FloatingPos.BOTTOM))],
+                self.axes[i],
+                i == 0 or i == 3,
+            )
 
-        xlabels = [d.get_style('xlabel') for d in self.datalines + self.bars]
-        if all((':' in x for x in xlabels)):    # Special Handler for File:column (usually in SheetCollection)
-            suffix = xlabels[0][xlabels[0].index(':')+1:]
-            if all((x[x.index(':')+1:] == suffix for x in xlabels)):
-                self.axes[0].label.update_style({'text': suffix})
-        else:
-            if len(set(xlabels)) == 1:
-                self.axes[0].label.update_style({'text': xlabels.pop()})
+    def update_extents(self, axis_id):
+        """ Return the overall data range of corresponding axes (axis_id = 0,1,2,3).
+        Must called after the style computation of all lines and bars.
+        """
+        _datalist = self.datalines + self.bars
+        side_identifiers = (style.FloatingPos.BOTTOM, style.FloatingPos.LEFT, style.FloatingPos.RIGHT, style.FloatingPos.TOP)
+        bound_identifiers = [(0,1), (2,3), (2,3), (0,1)]
 
-        histogram_counts = len([b for b in self.bars if b.dynamic_bin])
-
-        # TODO: clear label if necessary
-
-        if histogram_counts == 0:
-            ylabels = [d.get_style('label') for d in self.datalines]
-            if all((':' in y for y in ylabels)):
-                suffix = ylabels[0][ylabels[0].index(':')+1:]
-                if all((x[x.index(':')+1:] == suffix for x in ylabels)):
-                    self.axes[1].label.update_style({'text': suffix})
-            else:
-                if len(set(ylabels)) == 1:
-                    self.axes[1].label.update_style({'text': ylabels.pop()})
-
-        elif histogram_counts == len(self.bars) and not self.datalines:
-            self.axes[1].label.update_style({'text': 'Distribution'})
-        else:
-            return
         
+        dl = [d for d in _datalist if side_identifiers[axis_id] in d.attr('side')]
+        bi = bound_identifiers[axis_id]
+
+        if dl:
+            return min((d._ext_cache[bi[0]] for d in dl)), max((d._ext_cache[bi[1]] for d in dl))
+        else:
+            return 0.0, 1.0
+
+    def _activate_axis(self, b):
+        """ Activate corresponding axis
+        """
+        for i in range(4):
+            s = b.get_style('side', raise_error=False, default=(style.FloatingPos.LEFT, style.FloatingPos.BOTTOM))
+            self.axes[{style.FloatingPos.LEFT:1, style.FloatingPos.RIGHT:2}[s[0]]].update_style({'enabled': True})
+            self.axes[{style.FloatingPos.BOTTOM:0, style.FloatingPos.TOP:3}[s[1]]].update_style({'enabled': True})
+
+        
+def _update_axis_label(datalines, bars, axis, horizontal):
+    # subrotine called by subfigure.set_automatic_labels
+
+    # TODO: clear label if necessary
+
+    def _set_label(labels):
+        if all((':' in x for x in labels)):    # Special Handler for File:column (usually in SheetCollection)
+            suffix = labels[0][labels[0].index(':')+1:]
+            if all((x[x.index(':')+1:] == suffix for x in labels)):
+                return axis.label.update_style({'text': suffix})
+        elif len(set(labels)) == 1:
+            return axis.label.update_style({'text': labels.pop()})
+
+    if not datalines and not bars:
+        return
+
+    if horizontal:
+        return _set_label([d.get_style('xlabel') for d in datalines + bars])
+    
+    histogram_counts = len([b for b in bars if b.dynamic_bin])
+    if histogram_counts == 0 and datalines:     # all datalines
+        return _set_label([d.get_style('label') for d in datalines])
+    elif histogram_counts == len(bars) and not datalines:   # all bars
+        return axis.label.update_style({'text':'Distribution'})
+    else:
+        return

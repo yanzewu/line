@@ -44,7 +44,7 @@ def do_plot(m_state, plot_groups, keep_existed=False, labelfmt=None, auto_range=
             chart_type=chart_type))
     
     if auto_range or (auto_range is None and m_state.options['auto-adjust-range']):
-        m_state.cur_subfigure().update_style({'xrange':'auto', 'yrange':'auto'})
+        m_state.cur_subfigure().update_style({'xrange':(None,None,None), 'yrange':(None,None,None)})
     
     return r
     
@@ -63,6 +63,7 @@ def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
             datapack.StaticPairedDataPack(m_xdata, m_ydata), m_ylabel, pg.xlabel, False, pg.style)
     elif chart_type == 'hist':
         pg.style.setdefault('norm', 'Distribution')
+        pg.style.setdefault('width', 1.0)
         return subfigure.add_bar(
             datapack.DistributionDataPack(m_ydata, pg.style.get('bin', 10), pg.style.get('norm', 'Distribution')),
             m_ylabel, pg.ylabel, True, pg.style)

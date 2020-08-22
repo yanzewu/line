@@ -11,59 +11,71 @@ from . import FigObject
 
 class Axis(FigObject):
 
-    def __init__(self, axis_name):
+    def __init__(self, axis_name, extent_callback=None):
 
         self.label = Label(axis_name[:-4] + 'label')
         self.tick = Tick(axis_name[:-4] + 'tick')
         self.grid = Grid(axis_name[:-4] + 'grid')
 
-        self.vmin = 0.0
-        self.vmax = 1.0
+        self.extent_callback = extent_callback  # called to get data extent
         self.backend = None
 
         super().__init__('axis', axis_name, {
-            'range':self._set_range,
-            'scale':self._set_scale
+            'scale':self._set_scale,
+        }, {}, {
+            'range': lambda o,n: self._update_ticks(),
+            'scale': self._update_scale,
         })
 
     def get_children(self):
         return [self.label, self.tick, self.grid]
 
-    def _set_range(self, m_style, value):
-        minpos = self.vmin if value[0] is None else value[0]
-        maxpos = self.vmax if value[1] is None else value[1]
-
-        m_style['range'] = (minpos, maxpos, value[2])
-        if m_style == self.style[1]:
-            self._refresh_ticks(m_style['range'], self.get_style('scale'))
-        # TODO minpos, maxpos are not always vmin, vmax; they will have some padding around data.
-
     def _set_scale(self, m_style, value):
-        m_style['scale'] = value
-        if m_style == self.style[1]:
-            r = self.get_style('range')
-            r = (r[0], r[1], None)
-            self._refresh_ticks(r, value)
+        try:
+            fmt = self.get_style('format')
+        except KeyError:
+            fmt = r'%.4G'
 
-    def _set_datarange(self, vmin, vmax):
-        # just set a cache of data range. Different from _set_range.
-        self.vmin = vmin
-        self.vmax = vmax
+        # reset format between log/normal
+        if value == 'linear' and fmt in ('%mp', '%mP'):
+            self.tick.update_style({'format': style.css.SpecialStyleValue.DEFAULT})
+        elif value == 'log' and fmt not in ('%mp', '%mP'):
+            self.tick.update_style({'format': r'%mp'})
 
-    def _refresh_ticks(self, m_range, m_scale):
-        minpos, maxpos, step = m_range
+    def _update_scale(self, oldval, value):
+        r = self.computed_style['range']
+        self.computed_style['range'] = (r[0], r[1], None)   # clear the step
+        self._update_ticks()
 
-        if m_scale == 'linear':
-            self.update_style({'tickpos': scale.get_ticks(minpos, maxpos, step)})
-            try:
-                if self.tick.get_style('format') == '%mp':
-                    self.tick.update_style({'format': r'%.4G'})
-            except KeyError:
-                pass
-        elif m_scale == 'log':
+    def _update_ticks(self):
+        r = self.computed_style['range']
+        automatic = False
+        if (r[0] is None or r[1] is None) and self.extent_callback:
+            automatic = True
+            extent = self.extent_callback()
+        else:
+            extent = (0.0, 1.0)
+
+        minpos = extent[0] if r[0] is None else r[0]
+        maxpos = extent[1] if r[1] is None else r[1]
+        step = r[2]
+        # TODO minpos, maxpos are not always vmin, vmax; they may have some padding around data.
+
+        if self.computed_style['scale'] == 'linear':
+            tickpos = scale.get_ticks(minpos, maxpos, step)
+            bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
+            self.computed_style['tickpos'] = tickpos
+            self.computed_style['range'] = (bound[0], bound[-1],
+                self.computed_style['tickpos'][1] - self.computed_style['tickpos'][0])
+            # This is a trick: If range is None instead of actual value, the updater will be called
+            # every time.
+            
+        elif self.computed_style['scale'] == 'log':
             numticks = int(1.0/step) if step else None
-            self.update_style({'tickpos': scale.get_ticks_log(minpos, maxpos, numticks)})
-            self.tick.update_style({'format':'%mp'})
+            tickpos = scale.get_ticks_log(minpos, maxpos, numticks)
+            bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
+            self.computed_style['tickpos'] = tickpos
+            self.computed_style['range'] = (minpos, maxpos, 1.0/numticks)
 
 
 class Tick(FigObject):
@@ -125,6 +137,8 @@ class DataLine(FigObject):
         super().__init__('line', name, {
             'color':_set_color,
             'label':self._set_label,
+        }, {}, {
+            'side': lambda o,n: self._update_ext()
         })
         self.update_style({
             'label':label, 'xlabel':xlabel, 'skippoint':1
@@ -143,6 +157,10 @@ class DataLine(FigObject):
         else:
             m_style['label'] = label
 
+    def _update_ext(self):
+        self._ext_cache = (np.min(self.data.get_x()), np.max(self.data.get_x()), 
+            np.min(self.data.get_y()), np.max(self.data.get_y()))
+
 
 class SmartDataLine(FigObject):
 
@@ -153,7 +171,8 @@ class SmartDataLine(FigObject):
             'color':_set_color,
             'range': self._set_range,
         }, {}, {
-            'range': self._update_range,
+            'range': self._update_ext,
+            'side': lambda o,n: self._update_ext(None, self.computed_style['range']),
         })
         self.update_style({
             'label':label, 'xlabel':xlabel
@@ -162,9 +181,11 @@ class SmartDataLine(FigObject):
     def _set_range(self, m_style, value):
         m_style['range'] = value
 
-    def _update_range(self, oldval, value):
+    def _update_ext(self, oldval, value):
         step_ = value[2] if value[2] else (value[1] - value[0])/100
         self.data.update(np.arange(value[0], value[1] + step_, step_))
+        self._ext_cache = (value[0], value[1] + step_, 
+            np.min(self.data.get_y()), np.max(self.data.get_y()))
 
 
 class Bar(FigObject):
@@ -183,10 +204,14 @@ class Bar(FigObject):
             'color':self._set_color,
             'bin':self._set_bin,
             'norm':self._set_norm,
-            'width': self._set_width,
+        }, {}, {
+            'bin': self._update_bin,
+            'norm': self._update_norm,
+            'width': self._update_width,
+            'side': lambda o,n: self._update_ext,
         })
         self.update_style({
-            'label':label, 'xlabel':xlabel, 'width':1.0
+            'label':label, 'xlabel':xlabel,
         })
 
     def _set_color(self, m_style, value):
@@ -198,27 +223,36 @@ class Bar(FigObject):
             raise LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['bin'] = value
-            self.data.set_bins(value)
-            self._update_barwidth()
 
     def _set_norm(self, m_style, value):
         if not self.dynamic_bin:
             raise LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['norm'] = value
-            self.data.set_norm(value)
 
-    def _update_barwidth(self):
-        self.update_style({
-            'barwidth':self.get_style('width')*(self.data.get_x()[1]-self.data.get_x()[0])
-            })
-
-    def _set_width(self, m_style, width):
-        m_style['width'] = width
+    def _update_bin(self, oldval, value):
         if self.dynamic_bin:
-            self._update_barwidth()
+            self.data.set_bins(value)
+            self.computed_style['barwidth'] = self.computed_style['width'] * (self.data.get_x()[1]-self.data.get_x()[0])
+            self._update_ext()
+
+    def _update_norm(self, oldval, value):
+        if self.dynamic_bin:
+            self.data.set_norm(value)
+            self._update_ext()
+
+    def _update_width(self, oldval, value):
+        if self.dynamic_bin:
+            self.computed_style['barwidth'] = value * (self.data.get_x()[1]-self.data.get_x()[0])
         else:
-            m_style['barwidth'] = width
+            self.computed_style['barwidth'] = value
+        self._update_ext()
+
+    def _update_ext(self):
+        x, y = self.data.get_x(), self.data.get_y()
+        self._ext_cache = (np.min(x) - self.computed_style['barwidth']/2,
+            np.max(x) + self.computed_style['barwidth']/2,
+            np.min(y), np.max(y))
 
 
 class DrawLine(FigObject):
