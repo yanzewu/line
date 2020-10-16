@@ -53,3 +53,29 @@ $u = 4
 print $u
 call fun2 5.0 $u
 
+if $("true") then print "true-1"
+    print "true-2"
+else print "should not happen"
+    print "should not happen"
+end
+
+if "false" then
+    print "should not happen"
+else
+    print "false"
+end
+
+if "false" then
+    print "should not happen"
+end
+
+if "true" then
+    print "true-3"
+end
+
+let fun3 = do
+    print "true-4"
+done
+
+if "true" call fun3
+if "false" call fun3

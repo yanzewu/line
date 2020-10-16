@@ -11,6 +11,7 @@ class CodeBlock:
     def __init__(self):
         self.loop_var = None
         self.loop_range = None
+        self.cond = None
         self.stmts = []
 
 LineDebugInfo = namedtuple('LineDebugInfo', ['filename', 'lineid', 'token_pos'])
@@ -27,7 +28,12 @@ class VMHost:
 
         import numpy as np
         
-        self.variables = {'__varx': np.arange(-5, 5, 1), 'arg':lambda x:self.arg_stack[-1][x], 'set':self.set_variable}
+        self.variables = {
+            '__varx': np.arange(-5, 5, 1), 
+            'arg':lambda x:self.arg_stack[-1][int(x)] if int(x) < len(self.arg_stack[-1]) else '', 
+            'cond': lambda x,a,b: a if x else b,
+            'set':self.set_variable,
+            }
         
 
     def process(self, state, tokens, line_debug_info):
@@ -51,11 +57,18 @@ class VMHost:
             return self.exec_special(state, tokens, line_debug_info)
             
         elif self.mode == 'record' or self.mode == 'recorddo':
-            if parse_util.test_token_inc(tokens, 'done'):
+            if parse_util.test_token_inc(tokens, 'done') or parse_util.test_token_inc(tokens, 'end'):
                 return self.exec_done(state)
             else:
-                self.record(tokens, line_debug_info)
-                return 0
+                return self.record(tokens, line_debug_info)
+        elif self.mode == 'recordif':
+            if parse_util.test_token_inc(tokens, 'else'):
+                self._push_record('else', CodeBlock())
+                return self.record(tokens, line_debug_info)
+            elif parse_util.test_token_inc(tokens, 'end'):
+                return self.exec_done(state)
+            else:
+                return self.record(tokens, line_debug_info)
         else:
             raise ValueError(self.mode)
 
@@ -74,6 +87,25 @@ class VMHost:
             self._push_record('for', block)
             self.record(tokens, line_debug_info)
             self.mode = 'recorddo'
+
+        elif parse_util.test_token_inc(tokens, 'if'):
+            expr = parse_util.parse_expr(tokens)
+            cond = process.process_expr(state, expr)
+            if isinstance(cond, str):
+                cond = parse_util.stob(cond)
+
+            if parse_util.test_token_inc(tokens, "then"):
+                block = CodeBlock()
+                block.cond = cond
+                self._push_record('if', block)
+                self.record(tokens, line_debug_info)
+                self.mode = 'recordif'
+                self.records['else'] = None     # clear else part, prevent misexecution
+            elif parse_util.lookup(tokens) == 'call':
+                if cond:
+                    return self.exec_special(state, tokens, line_debug_info)
+            else:
+                raise errors.LineParseError('"then" or "call" required')
 
         elif parse_util.test_token_inc(tokens, 'let'):
             fname = parse_util.get_token(tokens)
@@ -106,12 +138,20 @@ class VMHost:
         return 0
 
     def exec_done(self, state):
-        if self.mode == 'recorddo':
+        if self.mode == 'recorddo': # for-loop: will execute it right away
             block = self.records.get(self.cur_record_name, None)
             self.mode = 'exec'
             return self.exec_block(state, block)
         elif self.mode == 'record':
             self.mode = 'exec'
+        elif self.mode == 'recordif':
+            blockif = self.records.get('if', None)
+            blockelse = self.records.get('else', None)
+            self.mode = 'exec'
+            if blockif.cond:
+                return self.exec_block(state, blockif)
+            elif blockelse:
+                return self.exec_block(state, blockelse)
         
         return 0
 
@@ -132,6 +172,7 @@ class VMHost:
 
     def record(self, tokens, line_debug_info):
         self._cur_record().stmts.append((tokens.copy(), line_debug_info))
+        return 0
 
     def get_variable(self, name):
         return self.variables[process.expr_proc.ExprEvaler.convert_varname(name)]

@@ -54,6 +54,7 @@ class ExprEvaler:
         self.m_file_caches = m_file_caches  # file cache, transparent for outside
         self.m_locals = {}                  # runtime evaluated variables
         self.m_globals['python'] = self.evaluate_system # the single special command requires call to self
+        self.m_globals['system'] = self.evaluate_shell
 
     def load(self, expr, omit_dollar=False, variable_prefix='__var'):
         self.expr = canonicalize(expr, omit_dollar, variable_prefix=variable_prefix)
@@ -87,6 +88,22 @@ class ExprEvaler:
         evaler = ExprEvaler(self.m_globals, self.m_file_caches)
         evaler.load(expr, omit_dollar=True, variable_prefix='')
         return evaler._eval(False)
+
+    def evaluate_shell(self, expr):
+        if not isinstance(expr, str):
+            raise LineProcessError('string required')
+        
+        safety = self.m_globals['state']().options['safety']
+        if safety == 0:
+            pass
+        elif safety == 1:
+            warn('Executing shell code which may not be safe.')
+        else:
+            if not io_util.query_cond('Execute shell code?', True, default=False):
+                raise LineProcessError('Cannot execute shell code because user cancelled')
+        
+        import os
+        return os.system(expr)
 
     def evaluate(self):
         """ Evaluate expression; Return an array-like object.

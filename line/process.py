@@ -187,7 +187,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # select subfigure
     elif command == 'subfigure':
-        arg = stod(get_token(m_tokens))
+        arg = get_token(m_tokens)
         
         if m_state.cur_figurename is None:
             m_state.create_figure()
@@ -197,12 +197,15 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_fig = m_state.cur_figure()
 
         if lookup(m_tokens) == ',':
-            vs = arg
+            vs = stod(arg)
             _, hs, _, subfig_idx = zipeval([make_assert_token(','), stod, make_assert_token(','), stod], m_tokens)
             if (hs, vs) != tuple(m_fig.attr('split')):
                 process_split(m_state, hs, vs)
         else:
-            subfig_idx = stod(arg)
+            if arg.startswith('$'):
+                subfig_idx = process_expr(m_state, arg)
+            else:
+                subfig_idx = stod(arg)
 
         assert_no_token(m_tokens)
 
