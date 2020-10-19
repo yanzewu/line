@@ -96,7 +96,8 @@ command_keywords = {
     'split', 'hsplit', 'vsplit',
     'show',
     'subfigure',
-    'text'
+    'text',
+    'update',
 }
 
 command_alias = {

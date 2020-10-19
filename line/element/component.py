@@ -137,6 +137,7 @@ class DataLine(FigObject):
         super().__init__('line', name, {
             'color':_set_color,
             'label':self._set_label,
+            'data': lambda s,v: _set_data(self, v),
         }, {}, {
             'side': lambda o,n: self._update_ext()
         })
@@ -170,6 +171,7 @@ class SmartDataLine(FigObject):
         super().__init__('line', name, {
             'color':_set_color,
             'range': self._set_range,
+            'data': lambda s,v: _set_data(self, v),
         }, {}, {
             'range': self._update_ext,
             'side': lambda o,n: self._update_ext(None, self.computed_style['range']),
@@ -187,6 +189,9 @@ class SmartDataLine(FigObject):
         self._ext_cache = (value[0], value[1] + step_, 
             np.min(self.data.get_y()), np.max(self.data.get_y()))
 
+    def _update_data(self, data):
+        self.data = data
+        self._update_ext()
 
 class Bar(FigObject):
 
@@ -204,6 +209,7 @@ class Bar(FigObject):
             'color':self._set_color,
             'bin':self._set_bin,
             'norm':self._set_norm,
+            'data': lambda s,v: _set_data(self, v),
         }, {}, {
             'bin': self._update_bin,
             'norm': self._update_norm,
@@ -329,3 +335,7 @@ def _set_font(m_style, value):
     m_style['fontfamily'] = value[0]
     if value[1] is None:
         m_style['fontsize'] = value[1]
+
+def _set_data(target, value):
+    target.data = value
+    target._update_ext()

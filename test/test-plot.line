@@ -53,3 +53,6 @@ $b = a[2]
 plot a 2, b
 plot a t:y1, b 0
 display
+
+update line1,line2 a t:y2,y1
+display

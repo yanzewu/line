@@ -105,6 +105,16 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'hist':
         parse_and_process_hist(m_state, m_tokens)
 
+    elif command == 'update':
+        selection = parse_style_selector(m_tokens)
+        elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
+        parser = plot_proc.PlotParser()
+        parser.parse(m_state, m_tokens)
+        if parser.plot_groups:
+            dataview.plot.do_update(m_state, elements, parser.plot_groups)
+        else:
+            warn('No data to plot')
+
     elif command == 'fit':
         selection = parse_style_selector(m_tokens)
         elements = css.StyleSheet(selection).select(m_state.cur_subfigure())

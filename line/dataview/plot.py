@@ -69,3 +69,29 @@ def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
             m_ylabel, pg.ylabel, True, pg.style)
         # m_ylabel is not used for axis label.
 
+
+def do_update(m_state, targets, plot_groups, chart_type='line', auto_range=None):
+    """ Update the data for targets without changing styles (styles in plot_groups will not be used).
+
+    targets: Instances of graphic elements with corresponding chart type, i.e. DataLine for line and Bar for hist/bar;
+    plot_groups: PlottingGroup instances;
+    """
+    if len(targets) != len(plot_groups):
+        raise ValueError("Number of targets and plot_groups are not same")
+
+    for t, pg in zip(targets, plot_groups):
+        m_xdata = np.array(pg.xdata).flatten()
+        m_ydata = np.array(pg.ydata).flatten()
+
+        if chart_type == 'line' or chart_type == 'bar':
+            assert t.typename == chart_type # this is lazy
+            t.update_style(data=datapack.StaticPairedDataPack(m_xdata, m_ydata))
+        elif chart_type == 'hist':
+            assert t.typename == 'bar'
+            t.update_style(data=datapack.DistributionDataPack(m_ydata, t.get_style('bin'), t.get_style('norm')))
+            
+    if auto_range or (auto_range is None and m_state.options['auto-adjust-range']):
+        m_state.cur_subfigure().update_style({'xrange':(None,None,None), 'yrange':(None,None,None)})
+    
+    m_state.cur_subfigure().is_changed = True
+    return targets
