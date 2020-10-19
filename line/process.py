@@ -3,6 +3,7 @@ import logging
 from collections import deque
 import os
 import re
+import time
 
 import numpy as np
 
@@ -294,8 +295,14 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'load':
         filename = get_token(m_tokens)
-        process_load(m_state, filename, list(m_tokens))
+        process_load(m_state, filename, [process_expr(m_state, t) if t.startswith('$') else strip_quote(t) for t in (m_tokens)])
 
+    elif command == 'pause':
+        interval = stof(get_token(m_tokens))
+        if interval > 0:
+            time.sleep(interval)
+        else:
+            input('Press Enter to continue...')
     else:
         raise LineParseError('No command named "%s"' % command)
 
@@ -365,6 +372,11 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         if side == style.FloatingPos.RIGHT:
             for pg in parser.plot_groups:
                 pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
+        for pg in parser.plot_groups:   # expressions
+            for s in pg.style:
+                if isinstance(pg.style[s], str) and pg.style[s].startswith('$('):
+                    pg.style[s] = process_expr(m_state, pg.style[s])
+
         dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
             labelfmt=r'%F:%T' if m_state.options['full-label'] else None)
         m_state.cur_subfigure().set_automatic_labels()

@@ -454,7 +454,7 @@ Usage:
 
     load filename [args...]
 
-The arguments will be available via `arg()` function.
+The arguments will be available via `arg()` function. Number of arguments can be obtained via `argc()` function.
 
 ### cd
 ---
@@ -479,6 +479,41 @@ Related options:
 - --prompt-save-when-quit=true/false: Prompt to save current figure when quitting. (Default: false).
 - --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
 
+### pause
+---
+
+Pause the program.
+
+Usage:
+
+    pause [time]
+
+Args:
+
+- time: In seconds. If negative, will prompt "Press Enter to continue...".
+
+### if
+---
+
+Conditional expression.
+
+Usage:
+
+    if [expression] then (command)
+        (commands...)
+    else (command)
+        (commands...)
+    end
+
+    if [expression] then (command)
+        (commands...)
+    end
+
+Args:
+
+- expression: An [expression](#expressions) string. Will parse `[Tt]rue` and `[Ff]alse` if yields a string. An empty string is treated as `false`.
+- command: Controls (if/for/let) must appear in a new line after "then" or "else". Indent is not required.
+
 ### for
 ---
 
@@ -488,13 +523,13 @@ Usage:
 
     for [variable] = [expression] do (command)
         (commands ...)
-    done
+    end
 
 Args:
 
 - variable: string, with or without the dollar mark;
 - expression: An [expression](#expressions) string.
-- command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+- command: Controls (if/for/let) must appear in a new line after "do". Indent is not required.
 
 The expression must yield an iterable object (such as list or array) or string. In the latter case, the loop variables are the split results of the string.
 
@@ -509,12 +544,12 @@ Usage:
     let [variable] = [expression]
     let [function] = do (command)
         (commands...)
-    done
+    end
 
 Args:
 - variable/function: string, with or without the dollar mark;
 - expression: An [expression](#expressions) string.
-- command: Any expression except function definition or another for loop (nested loop is not supported now). Indent is not required.
+- command: Controls (if/for/let) must appear in a new line after "do". Indent is not required.
 
 The function defined by `do` is similar to a function in shell, which is merely a set of code snippet.
 
@@ -586,9 +621,13 @@ stack(mat1, mat2, ...) | Stack datasheets horizontally
 col('column_id') | Locate a column by title or index (only available in [plot](#plot), [add](#add) or [hist](#hist))
 cols('column_id') | Locate columns by wildcard or index like '1-5' (only available in [plot](#plot), [add](#add) or [hist](#hist))
 expand('wildcard') | Expand the wildcard into list of files
+len(object) | Get the length of string/array
 arg(index) | Get args passed in shell, by [load](#load) command or by [call](#call) command
+argc() | Get number of args passed in shell, by [load](#load) command or by [call](#call) command
 set('name', value) | Set the value of a variable
+cond(c, t, f) | If c then t else f. c will not be parsed if it is a string.
 python('expr'), $!('expr') | Evaluating the expression by Python `eval()`
+system('command') | Shell command. Returns whatever the shell returns.
 
 
 ### Evaluating Expressions

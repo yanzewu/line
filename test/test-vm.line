@@ -79,3 +79,33 @@ done
 
 if "true" call fun3
 if "false" call fun3
+
+for i = $([1,2]) do
+    for j = $([3,4]) do
+        print $i $j
+    end
+    if $(i==2) then
+        let fun4 = do
+            for k = $([5,6]) do print $k
+            end
+        end
+        call fun4
+    end
+
+end
+
+let fun5 = do
+    if $(arg(1) == 0) then
+        print "0!"
+    else 
+        if $(arg(1) == 1) then
+            print "1!"
+        else
+            print "2!"
+        end
+    end
+end
+
+call fun5 0
+call fun5 1
+call fun5 2

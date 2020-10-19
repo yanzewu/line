@@ -84,6 +84,7 @@ command_keywords = {
     'input',
     'load',
     'line', 'hline', 'vline',
+    'pause',
     'plot',
     'plotr',
     'print',

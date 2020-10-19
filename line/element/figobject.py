@@ -28,8 +28,8 @@ class FigObject:
         self.style_change_handler = style_change_handler
         self.render_callback = None
 
-    def update_style(self, style_dict, priority=1):
-        """ Update style from style_dict.
+    def update_style(self, style_dict={}, priority=1, **ex_styles):
+        """ Update style from style_dict (and ex_styles).
         If a name is in custom_style_setter, it will be called to get real value;
         Otherwise will call default setter.
 
@@ -39,8 +39,8 @@ class FigObject:
         has_updated = False
 
         target = self.style[priority]
-
-        for d, v in style_dict.items():
+        ex_styles.update(style_dict)
+        for d, v in ex_styles.items():
             if d in self.custom_style_setter:
                 self.custom_style_setter[d](target, v)
                 has_updated = True

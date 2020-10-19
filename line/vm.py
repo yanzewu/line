@@ -25,12 +25,14 @@ class VMHost:
         self.cur_record_name = None
 
         self.arg_stack = []
+        self.block_level = 0    # control block stack height
 
         import numpy as np
         
         self.variables = {
             '__varx': np.arange(-5, 5, 1), 
             'arg':lambda x:self.arg_stack[-1][int(x)] if int(x) < len(self.arg_stack[-1]) else '', 
+            'argc': lambda: len(self.arg_stack[-1]),
             'cond': lambda x,a,b: a if x else b,
             'set':self.set_variable,
             }
@@ -56,19 +58,26 @@ class VMHost:
             self.variables['state'] = lambda: state
             return self.exec_special(state, tokens, line_debug_info)
             
-        elif self.mode == 'record' or self.mode == 'recorddo':
-            if parse_util.test_token_inc(tokens, 'done') or parse_util.test_token_inc(tokens, 'end'):
-                return self.exec_done(state)
+        elif self.mode in ('record', 'recorddo', 'recordif'):
+            if parse_util.lookup(tokens) in ('done', 'end'):
+                self.block_level -= 1
+                if self.block_level == 0:
+                    return self.exec_done(state)
+                else:
+                    return self.record(tokens, line_debug_info)
+            elif self.mode == 'recordif' and parse_util.lookup(tokens) == 'else':
+                if self.records['else'] is None:   # else is greedy matched
+                    parse_util.get_token(tokens)
+                    self._push_record('else', CodeBlock())
+                    return self.record(tokens, line_debug_info)
+                else:
+                    return self.record(tokens, line_debug_info)
             else:
+                if parse_util.lookup(tokens) in ('if', 'for') or (
+                    parse_util.lookup(tokens) == 'let' and parse_util.lookup(tokens, 3) == 'do'):
+                    self.block_level += 1
                 return self.record(tokens, line_debug_info)
-        elif self.mode == 'recordif':
-            if parse_util.test_token_inc(tokens, 'else'):
-                self._push_record('else', CodeBlock())
-                return self.record(tokens, line_debug_info)
-            elif parse_util.test_token_inc(tokens, 'end'):
-                return self.exec_done(state)
-            else:
-                return self.record(tokens, line_debug_info)
+
         else:
             raise ValueError(self.mode)
 
@@ -85,6 +94,7 @@ class VMHost:
                 ret = ret.split()
             block.loop_range = ret
             self._push_record('for', block)
+            self.block_level += 1
             self.record(tokens, line_debug_info)
             self.mode = 'recorddo'
 
@@ -92,12 +102,13 @@ class VMHost:
             expr = parse_util.parse_expr(tokens)
             cond = process.process_expr(state, expr)
             if isinstance(cond, str):
-                cond = parse_util.stob(cond)
+                cond = parse_util.stob(cond) if cond != "" else False
 
             if parse_util.test_token_inc(tokens, "then"):
                 block = CodeBlock()
                 block.cond = cond
                 self._push_record('if', block)
+                self.block_level += 1
                 self.record(tokens, line_debug_info)
                 self.mode = 'recordif'
                 self.records['else'] = None     # clear else part, prevent misexecution
@@ -112,6 +123,7 @@ class VMHost:
             parse_util.assert_token(parse_util.get_token(tokens), '=')
             if parse_util.test_token_inc(tokens, 'do'):
                 self._push_record(fname, CodeBlock())
+                self.block_level += 1
                 self.mode = 'record'
             else:
                 expr = parse_util.parse_expr(tokens)

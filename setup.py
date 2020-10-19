@@ -19,7 +19,6 @@ setup(
         'numpy >= 1.13.0',
         'pandas >= 0.22.0',
         'matplotlib >= 3.0.0',
-        'pyqt5 >= 5.0'
     ],
     entry_points = {
         'console_scripts': [

@@ -44,6 +44,7 @@ class ExprEvaler:
             'expand': io_util.expand,
             'load_stdin': model.load_stdin,
             'save_stdout': model.save_stdout,
+            'len': len,
             'col':None,
             'cols': None,
             'hint':None,

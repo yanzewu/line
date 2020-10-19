@@ -12,7 +12,7 @@ Creating nice academic-style plot with least typing.
 Prerequesties:
 
 - Python >= 3.5 (Necessary)
-- Matplotlib >= 3.0 (Necessary)
+- Matplotlib == 3.0/3.1 (Necessary)
 - Numpy >= 1.13 (Necessary)
 - Pandas >= 0.22 (Necessary)
 
