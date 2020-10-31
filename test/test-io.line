@@ -21,7 +21,7 @@ plot sin(x)
 save
 figure 2
 plot cos(x)
-save test/1.png
+save $("test/1.png")
 save test/2.png
 figure 1
 save test/1.png

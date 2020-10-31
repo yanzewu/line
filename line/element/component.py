@@ -36,6 +36,7 @@ class Axis(FigObject):
         except KeyError:
             fmt = r'%.4G'
 
+        m_style['scale'] = value
         # reset format between log/normal
         if value == 'linear' and fmt in ('%mp', '%mP'):
             self.tick.update_style({'format': style.css.SpecialStyleValue.DEFAULT})
@@ -75,7 +76,7 @@ class Axis(FigObject):
             tickpos = scale.get_ticks_log(minpos, maxpos, numticks)
             bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
             self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (minpos, maxpos, 1.0/numticks)
+            self.computed_style['range'] = (minpos, maxpos, 1.0/numticks if numticks else None)
 
 
 class Tick(FigObject):
@@ -90,12 +91,12 @@ class Tick(FigObject):
 
         # special formatter for log
         if r'%mp' in value:
-            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$10^{%d}$' % np.log10(x)) if (x > 0 and x < 0.01 or x > 100) else '%.4G' % x)
+            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$\mathregular{10^{%d}}$' % np.log10(x)) if (x > 0 and x < 0.01 or x > 100) else '%.4G' % x)
         elif r'%mP' in value:
-            self.computed_style['formatter'] = lambda x, pos: value.replace('%mP', ('$10^{%d}$' % np.log10(x)) if x > 0 else '%.4G' % x)
+            self.computed_style['formatter'] = lambda x, pos: value.replace('%mP', ('$\mathregular{10^{%d}}$' % np.log10(x)) if x > 0 else '%.4G' % x)
         elif 'm' in value:
             value1 = value.replace('m', 'g')
-            self.computed_style['formatter'] = lambda x, pos: '$%s$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
+            self.computed_style['formatter'] = lambda x, pos: '$\mathregular{%s}$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
         else:
             self.computed_style['formatter'] = lambda x, pos:value % x
 

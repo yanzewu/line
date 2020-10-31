@@ -8,11 +8,6 @@ from . import option_util
 
 
 default_options = {}
-
-default_font = 'CMU Serif'
-default_math_font = 'cm'
-default_fonts = ['CMU Serif', 'Times New Roman', 'Arial', 'serif']  # font fallback
-default_figure_size_inches = [7.2, 4.8]
 default_style_entries = {}
 
 

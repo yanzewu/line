@@ -21,8 +21,9 @@ logger = logging.getLogger('line')
 # things between initialize() and finalize() can be viewed as a show() process
 # so everything need to be redraw once closed.
 
-matplotlib.rcParams['mathtext.fontset'] = defaults.default_math_font
-matplotlib.rcParams['font.family'] = defaults.default_fonts
+matplotlib.rcParams['mathtext.fontset'] = defaults.default_options['font-family-math']
+#matplotlib.rcParams['font.family'] = 'serif'
+#matplotlib.rcParams['font.serif'] = defaults.default_options['font-family']
 
 if isinstance(defaults.default_options['mpl-backend'], str):
     defaults.default_options['mpl-backend'] = [defaults.default_options['mpl-backend']]
@@ -457,6 +458,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             n = tick_styles[i]['minor'] + 1
             if n > 1:
                 target_axis.set_minor_locator(ticker.LogLocator(subs=[10/n*j for j in range(1, n)]))
+            else:
+                target_axis.set_minor_locator(ticker.LogLocator(subs=[1.0]))
 
     # grid (only x, y)
     for i, n in enumerate('xy'):

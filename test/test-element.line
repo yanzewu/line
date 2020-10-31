@@ -52,11 +52,14 @@ hist 'example/hist-data.txt'
 fit line1,bar1 quad
 plot exp(x)
 fit line4 exp label='%T %N $%E$'
+yscale log
+yrange 0.1:0.2:1000
 
 display
 
 # plotr
 
+yscale linear
 hold off
 plotr x
 plot x-5

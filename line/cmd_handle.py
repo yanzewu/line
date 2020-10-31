@@ -35,6 +35,7 @@ class CMDHandler:
     RET_EXIT = 1
     RET_CONTINUE = 2
     RET_USERERROR = 3
+    RET_SYSERROR = 4    # only used here
 
     _debug = False
     _input_inited = False
@@ -103,7 +104,7 @@ class CMDHandler:
         with open(filename, 'r') as f:
             self.m_state.is_interactive = do_interactive
             self._filename = filename
-            self.proc_lines(f.readlines())
+            return self.proc_lines(f.readlines())
 
     def proc_lines(self, lines):
         backend.initialize(self.m_state)
@@ -111,6 +112,7 @@ class CMDHandler:
             try:
                 ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, j)
             except Exception as e:
+                ret = self.RET_SYSERROR
                 if self._debug:
                     raise
                 else:
@@ -145,6 +147,7 @@ class CMDHandler:
                 self.m_state.is_interactive = False
 
         backend.finalize(self.m_state)
+        return ret if ret != self.RET_EXIT else 0
 
     def proc_input(self, ps=PS1):
         self.m_state.is_interactive = True
@@ -210,6 +213,7 @@ class CMDHandler:
             ret = self.proc_input()
         backend.finalize(self.m_state)
         self.finalize_input()
+        return 0
 
     def handle_line(self, line, token_buffer, token_begin_pos, execute=True, lineid=0):
         """ Preprocessing and execute

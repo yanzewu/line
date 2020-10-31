@@ -37,23 +37,26 @@ By passing optional arguments to line, you can control the program behavior. The
 
 This works in all three modes. The options can also be changed via `set option name=value` in the commands or (globally) by modifying [options.ini](../line/styles/options.ini).
 
-Available options are:
+Available options are (options with * can only take effects by setting in options.ini or command arguments):
 
-name | avaiable values | Default | function
+name | avaiable values | default | function
 --- | --- | --- | ---
 auto-adjust-range | true/false | true | Adjust the range of axis automatically when plotting new data;
 auto-compact | true/false | true | Always make the figure compact;
-autoload-file-as-variable | true/false | true | Load files through filenames automatically (if disabled, you have to use `load()` function to load them);
 data-title | true/false/auto | auto | Treat the first row of data as title. (Default: auto).
 data-delimiter | any char/'white'/'auto' | auto | Delimiter of data
 delayed-init | true/false | true | Delayed loading modules in interactive mode
-display-when-quit | true/false | false | Always try to display the figure when quitting
+display-when-quit | true/false | false | Always try to display the figure when exiting program (except when having errors)
+*font-family-math | cm/stix | cm | Latex font family used by backend
 full-label | true/false | false| Always use "filename:column" format for labels
 ignore-data-comment | true/false | true | Ignore lines begin with '#'
+*mpl-backend | string split by ',' | Qt5Agg,Qt4Agg,TkAgg | Displaying backend used by MPL
+*mpl-silent-backend | string | Agg | File writing backend used by MPL
+*physical-figure-size | float,float | 7.2,4.8 | The physical figure size used in DPI scaling
 prompt-always | true/false | false | Prompt in file mode
 prompt-multi-removal | true/false | true | Prompt when removing more than one element
 prompt-overwrite | true/false | true | Prompt when saving to an existing file
-prompt-save-when-quit | true/false | false | Prompt "save current figure" when quitting
+prompt-save-when-quit | true/false | false | Prompt "save current figure" when quitting interactive mode
 rescale-when-split | true/false | true | Change figure's size when splitting
 safety | 0/1/2 | 1 | When executing python code, 0=>continues; 1=>displays a warning; 2=>prompts for allowance
 
@@ -74,12 +77,14 @@ Contents:
 - [grid](#special-set-commands)
 - [hist](#hist)
 - [hold](#special-set-commands)
+- [if](#if)
 - [input](#input)
 - [legend](#special-set-commands)
 - [let](#let)
 - [load](#load)
 - [line,hline,vline](#line%44-hline%44-vline)
 - [palette](#special-set-commands)
+- [pause](#pause)
 - [plot,p](#plot)
 - [print](#print)
 - [quit,exit,q](#quit)
@@ -92,6 +97,7 @@ Contents:
 - [show](#show)
 - [title](#special-set-commands)
 - [text](#text)
+- [update](#update)
 - [xlabel,ylabel](#special-set-commands)
 - [xrange,yrange](#special-set-commands)
 - [xscale,yscale](#special-set-commands)
@@ -401,7 +407,7 @@ Usage:
 
     save (filename)
 
-If filename is not present, save will prompt for a new filename. It will also prompt for a new filename (or overwrite) if file exists.
+If filename is not present, save will prompt for a new filename. It will also prompt for a new filename (or overwrite) if file exists. Filename may be a variable or expression (will try to convert the result to string).
 
 Related options:
 
@@ -492,7 +498,7 @@ Usage:
 
 Related options:
 - --prompt-save-when-quit=true/false: Prompt to save current figure when quitting. (Default: false).
-- --display-when-quit=true/false: Display figure when quitting in non-interactive mode. (Default: false).
+- --display-when-quit=true/false: Display figure when quitting the program. (Default: false).
 
 ### pause
 ---

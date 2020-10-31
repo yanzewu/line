@@ -215,6 +215,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         else:
             if arg.startswith('$'):
                 subfig_idx = process_expr(m_state, arg)
+                if isinstance(subfig_idx, str):
+                    subfig_idx = stod(arg)
             else:
                 subfig_idx = stod(arg)
 
@@ -232,7 +234,11 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             warn('Using current filename: %s' % m_state.cur_save_filename)
             filename = m_state.cur_save_filename
         else:
-            filename = get_token(m_tokens)
+            if lookup_raw(m_tokens, ret_string=True).startswith('$'):
+                filename = str(process_expr(m_state, parse_expr(m_tokens)))
+            else:
+                filename = get_token(m_tokens)
+
         assert_no_token(m_tokens)
 
         process_save(m_state, filename)
@@ -261,9 +267,6 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         print(outstr)
 
     elif command == 'quit':
-        if m_state.options['display-when-quit'] and not m_state.is_interactive:
-            backend.show(m_state)
-
         if m_state.options['prompt-save-when-quit']:
             if len(m_state.figures) == 1:
                 if io_util.query_cond('Save current figure? ', do_prompt, False):

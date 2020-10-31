@@ -52,8 +52,8 @@ class Figure(FigObject):
             m_style['dpi'] = value
             return
         m_style['size'] = [
-            defaults.default_figure_size_inches[0]*m_style['dpi'],
-            defaults.default_figure_size_inches[1]*m_style['dpi']]
+            defaults.default_options['physical-figure-size'][0]*m_style['dpi'],
+            defaults.default_options['physical-figure-size'][1]*m_style['dpi']]
 
     def _set_spacing_and_margin(self, m_style, key, idx, val, class_=list):
 
