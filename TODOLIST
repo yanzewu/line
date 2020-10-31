@@ -8,6 +8,4 @@ Features
 [LOW] Smarter completion (need a library other than readline).
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
-[LOW] Figure title.
-[MID] Figure-wise legend
 [MID] Treat warning as error for file input.

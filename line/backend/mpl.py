@@ -121,10 +121,66 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
         m_plt_fig.add_axes(ax)
         logger.debug('Subfigure found at %s' % str(ax.get_position().bounds))
 
+    renderer = tight_layout.get_renderer(m_fig.backend)
     if redraw_subfigures:
         for subfig in m_fig.subfigures:
-            _update_subfigure(subfig, tight_layout.get_renderer(m_fig.backend))
+            _update_subfigure(subfig, renderer)
             logger.debug('Updated subfigure %s' % subfig.name)
+
+    m_fig.computed_style['frame'] = style.Rect(*m_fig.backend.get_window_extent(renderer).bounds)
+
+    if m_fig.title.attr('text') and m_fig.title.attr('visible'):
+        st = m_fig.backend.suptitle(m_fig.title.attr('text'),
+            fontsize=m_fig.title.attr('fontsize'),
+            fontfamily=m_fig.title.attr('fontfamily'),
+        )
+        m_fig.title.computed_style['frame'] = style.Rect(st.get_window_extent(renderer).bounds)
+        # TODO in mpl figure title does not care legend position so they may overlap
+
+    if m_fig.legend.attr('source') and m_fig.legend.attr('visible'):
+
+        m_subfig = [s for s in m_fig.subfigures if s.name == m_fig.legend.attr('source')][0]
+
+        m_style = m_fig.legend.computed_style
+
+        legend_pos = m_fig.legend.attr('pos')
+        if legend_pos == style.FloatingPos.AUTO:
+            p = 'upper center'  # best does not really make sense here...
+            b = None
+        else:
+            p, b = _translate_loc(*legend_pos)
+        # only inner positions are allowed
+
+        # bbox. Usually it's just figure bbox; The only exception is top,center with title,
+        # where we have to consider the space of title
+        b = None
+        if p == 9 and m_fig.title.attr('text') and m_fig.title.attr('visible') and m_fig.computed_style['frame'][3] > 0:
+            b = (0, 0, 1.0, m_fig.title.computed_style['frame'][1] / m_fig.computed_style['frame'][3])
+
+        legend = m_fig.backend.legend(
+            [lc[0] for lc in m_subfig._legend_candidates],
+            [lc[1] for lc in m_subfig._legend_candidates],
+            fancybox=False,
+            facecolor=m_style['color'],
+            edgecolor=m_style['linecolor'],
+            fontsize=m_style['fontsize'],
+            loc=p,
+            bbox_to_anchor=b,
+            ncol=m_style['column'],
+            frameon=True,
+            framealpha=m_style['alpha'],
+        )
+
+        lt = m_style['linetype'].to_str()
+        frame = legend.get_frame()
+        frame.set_linewidth(m_style['linewidth'])
+        frame.set_linestyle(lt if lt else 'None')
+        frame.set_zorder(m_style['zindex'])
+
+        for t in legend.get_texts():
+            t.set_fontfamily(m_style['fontfamily'])
+
+        m_fig.legend.computed_style['frame'] = style.Rect(*legend.get_window_extent(renderer).bounds)
 
     #plt.show(block=False)
 
@@ -248,8 +304,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
     logger.debug('Total %d datalines, %d drawlines, %d texts' % (
         len(m_subfig.datalines), len(m_subfig.drawlines), len(m_subfig.texts)))
 
-    legend_candidate = []
-
+    m_subfig._legend_candidates.clear()
     # lines
     for dataline in m_subfig.datalines:
         m_style = dataline.computed_style
@@ -280,7 +335,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             zorder=m_style['zindex']
         )
         if b and m_style['label']:
-            legend_candidate.append((b[0], m_style['label']))
+            m_subfig._legend_candidates.append((b[0], m_style['label']))
 
     for bar in m_subfig.bars:
         m_style = bar.computed_style
@@ -306,7 +361,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             tick_label=None
         )
         if b and m_style['label']:
-            legend_candidate.append((b[0], m_style['label']))
+            m_subfig._legend_candidates.append((b[0], m_style['label']))
 
     for drawline in m_subfig.drawlines:
         m_style = drawline.computed_style
@@ -425,8 +480,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             p, b = _translate_loc(*legend_pos)
 
         legend = ax.legend(
-            [lc[0] for lc in legend_candidate],
-            [lc[1] for lc in legend_candidate],
+            [lc[0] for lc in m_subfig._legend_candidates],
+            [lc[1] for lc in m_subfig._legend_candidates],
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],

@@ -84,6 +84,8 @@ def parse_single_style_selector(t):
     elif t[0] == '.':
         return css.ClassSelector(t[1:])
     else:
+        if t == 'legend':
+            return css.NameSelector(t)
         if t in keywords.element_keywords:
             return css.TypeSelector(t)
         else:

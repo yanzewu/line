@@ -1,5 +1,34 @@
 
 import numpy as np
+from ..style import FloatingPos
+
+def get_compact_figure_padding(figure):
+
+    figure_size = figure.attr('frame')
+    paddings = [0,0,0,0]
+    legend_size = figure.legend.attr('frame') if figure.legend.attr('visible') and figure.legend.attr('source') else (0,0,0,0)
+    title_h = figure.title.attr('frame').height if figure.title.attr('visible') and figure.title.attr('text') else 0
+
+    legend_pos = figure.legend.attr('pos')  # resize only happens when it is a floating position
+    if isinstance(legend_pos, tuple):
+        fp = [FloatingPos.LEFT, FloatingPos.BOTTOM, FloatingPos.RIGHT, FloatingPos.TOP]
+        for i in [3,1,0,2]:
+            if fp[i] in legend_pos:
+                paddings[i] = 10 + legend_size[2 + (i%2)]    # 0,2=>2 (width) 1,3=>3 (height)
+                break
+
+    if title_h > 0:
+        if legend_pos == (FloatingPos.CENTER, FloatingPos.TOP):
+            paddings[3] = figure_size.height - legend_size.bottom()
+        else:
+            paddings[3] = max(paddings[3], title_h)     # we don't care if they overlap
+
+    return [
+        max(paddings[0]/figure_size.width + 0.02, 0.03),    # 0.02 is MPL default
+        max(paddings[1]/figure_size.height + 0.02, 0.03),
+        max(paddings[2]/figure_size.width + 0.02, 0.03),
+        max(paddings[3]/figure_size.height + 0.02, 0.03),  # if user want to customize, they can disable --auto-compact 
+    ]
 
 
 def get_compact_subfigure_padding(subfigure):
@@ -16,21 +45,21 @@ def get_compact_subfigure_padding(subfigure):
     offset_left, offset_right = _get_outmost_ticklabel_offset(subfigure, 'x') if has_tick_x else (0, 0)
     offset_bottom, offset_top = _get_outmost_ticklabel_offset(subfigure, 'y') if has_tick_y else (0, 0)
     
-    axis_left_d = subfigure.axes[1].attr('frame').width if subfigure.axes[1].attr('visible') else 0
-    axis_bottom_d = subfigure.axes[0].attr('frame').height if subfigure.axes[0].attr('visible') else 0
-    axis_right_d = subfigure.axes[2].attr('frame').width if subfigure.axes[2].attr('visible') else 0
-    axis_top_d = subfigure.axes[3].attr('frame').height if subfigure.axes[3].attr('visible') else 0
+    axis_left_d = -subfigure.axes[1].attr('frame').left() + subfig_size.left() if subfigure.axes[1].attr('visible') else 0
+    axis_bottom_d = -subfigure.axes[0].attr('frame').bottom() + subfig_size.bottom() if subfigure.axes[0].attr('visible') else 0
+    axis_right_d = subfigure.axes[2].attr('frame').right() - subfig_size.right() if subfigure.axes[2].attr('visible') else 0
+    axis_top_d = subfigure.axes[3].attr('frame').top() - subfig_size.top() if subfigure.axes[3].attr('visible') else 0
 
     fig_size_h = subfig_size.width / (rsize[0] - padding[0] - padding[2])
     fig_size_v = subfig_size.height / (rsize[1] - padding[1] - padding[3])
 
-    title_h = subfigure.title.attr('frame').height if subfigure.title.attr('visible') and subfigure.title.attr('text') else 0
+    title_h = subfigure.title.attr('frame').top() - subfig_size.top() if subfigure.title.attr('visible') and subfigure.title.attr('text') else 0
     legend_offset = _get_legend_offset(subfigure, subfigure.legend)
 
     padding_left = 10 + max(offset_left, axis_left_d, legend_offset[0])
     padding_bottom = 10 + max(offset_bottom, axis_bottom_d, legend_offset[1])
     padding_right = 10 + max(offset_right, axis_right_d, legend_offset[2])
-    padding_top = 10 + max(offset_top, title_h + axis_top_d, legend_offset[3])
+    padding_top = 10 + max(offset_top, title_h + max(axis_top_d, 0), legend_offset[3])
 
     return [padding_left / fig_size_h, padding_bottom / fig_size_v, 
         padding_right / fig_size_h, padding_top / fig_size_v]

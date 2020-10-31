@@ -2,6 +2,8 @@
 from . import FigObject
 from . import Subfigure
 from . import defaults
+from .component import Text, SupLegend
+from ..style import FloatingPos
 
 class Figure(FigObject):
 
@@ -9,6 +11,9 @@ class Figure(FigObject):
     def __init__(self, figure_name):
         
         self.subfigures = [Subfigure('subfigure1')]        # list of subfigures
+        self.title = Text('', (FloatingPos.CENTER, FloatingPos.TOP), 'suptitle')
+        self.legend = SupLegend('suplegend')
+
         self.cur_subfigure = 0      # index of subfigure
         self.is_changed = True      # changed
         self.needs_rerender = 0     # 0 -- nothing; 1 -- compact only; 2 -- compact + render
@@ -25,6 +30,7 @@ class Figure(FigObject):
             'margin-left': lambda s,v: self._set_spacing_and_margin(s, 'margin', 0, v),
             'margin-right': lambda s,v:self._set_spacing_and_margin(s, 'margin', 2, v),
             'margin-top': lambda s,v:  self._set_spacing_and_margin(s, 'margin', 3, v),
+            'title': lambda s,v: self.title.update_style({'text': v}),
         }, {
             'hspacing': lambda x: x['spacing'][0],
             'vspacing': lambda x: x['spacing'][1]
@@ -61,9 +67,9 @@ class Figure(FigObject):
 
     def get_children(self):
         if self.set_dynamical:
-            return [self.subfigures[self.cur_subfigure]]
+            return [self.subfigures[self.cur_subfigure], self.title, self.legend]
         else:
-            return self.subfigures
+            return self.subfigures + [self.title, self.legend]
 
     def clear_backend(self):
         self.backend = None
@@ -72,6 +78,8 @@ class Figure(FigObject):
 
     def update_render_callback(self):
         self.render_callback = self._render_callback
+        self.legend.render_callback = self._render_callback
+        self.title.render_callback = self._render_callback
         for s in self.subfigures:
             s.render_callback = self.render_callback
             s.update_render_callback()

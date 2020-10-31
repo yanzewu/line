@@ -22,6 +22,30 @@ split 1,2
 split 3,2
 split 1,1
 
+# figurewise title and legend
+
+plot x
+add x+2
+add x+3
+split 2,2
+set figure title=abc
+
+set title=def
+#set suplegend source=subfigure3
+set suplegend source=subfigure1
+set suplegend column=3
+set suplegend pos=top,center
+set suplegend alpha=1
+display
+
+set suplegend pos=left,center column=1
+display
+
+set suplegend pos=bottom,center column=3
+subfigure 4
+xlabel x
+display
+
 # figure
 
 figure 1

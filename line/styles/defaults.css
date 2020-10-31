@@ -8,6 +8,9 @@ figure {
     margin: 0.03,0.03,0.03,0.03;
     spacing: 0.01,0.01;
     split: 1,1;
+    fontfamily: 'Times New Roman';
+    fontsize: 16;
+    color: black;
 }
 
 subfigure {
@@ -158,4 +161,5 @@ legend {
     visible: true;
     pos: auto;
     zindex: 0;
+    source: '';
 }

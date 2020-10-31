@@ -60,6 +60,8 @@ class Subfigure(FigObject):
         self.backend = None
         self.on_size_changed = None
 
+        self._legend_candidates = []
+
     def _set_padding(self, m_style, idx, val):
         
         if 'padding' not in m_style:

@@ -34,6 +34,7 @@ style_keywords = {
     'scale', 'xscale', 'yscale', 'x2scale', 'y2scale',
     'size', 'rsize',
     'skippoint',
+    'source',
     'hspacing', 'vspacing', 'spacing',
     'title',
     'tick', 'xtick', 'ytick', 'x2tick', 'y2tick',

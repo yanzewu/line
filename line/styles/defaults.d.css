@@ -45,11 +45,21 @@ text {
     visible: inherit;
 }
 
-legend {
+#legend {
     linecolor: inherit;
     fontfamily: inherit;
     fontsize: inherit;
     visible: inherit;
+}
+
+#suptitle {
+    visible: default;
+}
+
+#suplegend {
+    linecolor: default;
+    visible: default;
+    pos: top,center;
 }
 
 /* Minor axis */

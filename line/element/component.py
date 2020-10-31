@@ -128,6 +128,17 @@ class Legend(FigObject):
                     self.render_callback(2)
                 break
             
+class SupLegend(FigObject):
+    def __init__(self, name):
+        super().__init__('legend', name, style_change_handler={
+            'fontsize': lambda a, b: self.render_callback(2) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(2) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback(2) if self.render_callback else None,
+            'pos': lambda a, b: self.render_callback(2) if self.render_callback else None,
+            'column': lambda a, b: self.render_callback(2) if self.render_callback else None,
+            'source': lambda a, b: self.render_callback(2) if self.render_callback else None,
+        })
+    
 
 class DataLine(FigObject):
 

@@ -323,6 +323,12 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             m_state.refresh_style(True)
         return 0
 
+    # when figure.legend.source = subfigure, a change may lead to figure.legend change.
+    if m_state.cur_figure().legend.computed_style and \
+        m_state.cur_figure().legend.attr('source') == m_state.cur_subfigure().name and \
+        m_state.cur_subfigure().is_changed:
+        m_state.cur_subfigure().is_changed = True
+
     # update figure
     if m_state.cur_figure().is_changed or m_state.cur_subfigure().is_changed:
         render_cur_figure(m_state)
@@ -341,11 +347,14 @@ def render_cur_figure(m_state:state.GlobalState):
         if m_state.options['auto-compact'] and rerender_times > 0:            
             if rerender_times >= 1:
                 backend.update_figure(m_state, True)
+            m_state.cur_figure().update_style(margin=subfigure_arr.get_compact_figure_padding(m_state.cur_figure()))
             for sf in m_state.cur_figure().subfigures:
                 sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
             if len(m_state.cur_figure().subfigures) > 1:
                 m_state.refresh_style(True)
                 split.align_subfigures(m_state.cur_figure(), 'axis')
+            else:
+                m_state.refresh_style(False)
 
             # Rendering > 2 only works in multiple subfigures.
             m_state.cur_figure().needs_rerender = rerender_times - 1 \
@@ -503,6 +512,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, 'compact'):
         render_cur_figure(m_state)
+        m_state.cur_figure().update_style(margin=subfigure_arr.get_compact_figure_padding(m_state.cur_figure()))
         for sf in m_state.cur_figure().subfigures:
             sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
 
