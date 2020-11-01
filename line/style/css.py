@@ -341,6 +341,9 @@ class StyleSheet:
     def find(self, key):
         return self.data[key]
 
+    def find_type(self, key):
+        return self.data[TypeSelector(key)]
+
 
 def compute_inheritance(stylable, parent_style, default_stylesheet):
     """ Compute inheritance and write into computed_style

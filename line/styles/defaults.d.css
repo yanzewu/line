@@ -1,24 +1,28 @@
 
 /* Inheritance */
 
+subfigure {
+    fontfamily: inherit;
+    fontprops: inherit;
+}
 
 label {
     fontfamily: inherit;
-    fontsize: inherit;
+    fontprops: inherit;
     color: inherit;
     visible: inherit;
 }
 
 tick {
     fontfamily: inherit; 
-    fontsize: inherit;
+    fontprops: inherit;
     color: inherit;
     visible: inherit;
 }
 
 axis {
     fontfamily: inherit;
-    fontsize: inherit;
+    fontprops: inherit;
     visible: inherit;
     range: ':';
     scale: linear;
@@ -40,7 +44,7 @@ drawline {
 
 text {
     fontfamily: inherit;
-    fontsize: inherit;
+    fontprops: inherit;
     color: inherit;
     visible: inherit;
 }
@@ -48,15 +52,19 @@ text {
 #legend {
     linecolor: inherit;
     fontfamily: inherit;
-    fontsize: inherit;
+    fontprops: inherit;
     visible: inherit;
 }
 
 #suptitle {
+    fontfamily: inherit;
+    fontprops: inherit;
     visible: default;
 }
 
 #suplegend {
+    fontfamily: inherit;
+    fontprops: inherit;
     linecolor: default;
     visible: default;
     pos: top,center;
@@ -122,13 +130,13 @@ text {
     orient: out;
     linewidth: 1;
     length: 6;
-    fontsize: 18;
+    fontprops: 18;
 }
 
 .originlab label{
-    fontsize: 20;
+    fontprops: 20;
 }
 
 .originlab legend{
-    fontsize: 20;
+    fontprops: 20;
 }

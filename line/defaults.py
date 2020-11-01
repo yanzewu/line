@@ -9,6 +9,7 @@ from . import option_util
 
 default_options = {}
 default_style_entries = {}
+default_style_sheet = None  # we export default CSS here to help elements initialize themselves
 
 
 def parse_default_options(option_list, option_range=None, raise_error=False):
@@ -41,13 +42,16 @@ def read_default_options():
 
 def init_global_state(m_state):
 
+    global default_style_sheet
+
     from .style import css
     from .style import palette
 
     m_state.options = default_options
     style_dir = os.path.join(os.path.dirname(__file__) , 'styles')
     with open(os.path.join(style_dir, 'defaults.css'), 'r') as f:
-        m_state.default_stylesheet = css.load_css(f)
+        default_style_sheet = css.load_css(f)
+        m_state.default_stylesheet = default_style_sheet
     with open(os.path.join(style_dir, 'defaults.d.css')) as f:
         m_state.update_local_stylesheet(css.load_css(f))
 

@@ -8,8 +8,8 @@ figure {
     margin: 0.03,0.03,0.03,0.03;
     spacing: 0.01,0.01;
     split: 1,1;
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: black;
 }
 
@@ -18,8 +18,8 @@ subfigure {
     palette: 'default';
     group: none;
     visible: true;
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: black;
     linecolor: black;
     rsize: 1.0,1.0;
@@ -30,8 +30,8 @@ subfigure {
 axis {
     linewidth: 0.5;
     linetype: 'solid';
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: black;
     range: '0:1';
     scale: linear;
@@ -41,8 +41,8 @@ axis {
 }
 
 label {
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: black;
     visible: true;
     text: '';
@@ -50,8 +50,8 @@ label {
 }
 
 tick {
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     format: '%.4G';
     color: black;
     orient: 'in';
@@ -138,8 +138,8 @@ polygon {
 }
 
 text {
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: black;
     visible: true;
     coord: 'axis';
@@ -155,8 +155,8 @@ legend {
     linewidth: 0.5;
     linecolor: black;
     linetype: 'solid';
-    fontfamily: 'Times New Roman';
-    fontsize: 16;
+    fontfamily: serif;
+    fontprops: normal,large;
     color: white;
     visible: true;
     pos: auto;

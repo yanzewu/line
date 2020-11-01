@@ -12,7 +12,7 @@ style_keywords = {
     'enabled',
     'edgecolor', 'edgewidth',
     'fillcolor', 'fillstyle',
-    'font', 'fontfamily', 'fontsize',
+    'fontfamily', 'fontweight', 'fontstyle', 'fontsize', 'fontprops',
     'format',
     'groupid',
     'height',
@@ -45,7 +45,7 @@ style_keywords = {
 }
 
 inheritable_styles = {
-    'visible', 'fontfamily', 'fontsize', 'color', 'linecolor'
+    'visible', 'fontfamily', 'fontprops', 'color', 'linecolor'
 }
 
 style_alias = {
@@ -64,6 +64,7 @@ style_alias = {
     'ytics':'ytick',
     'xlim': 'xrange',
     'ylim': 'yrange',
+    'font': 'fontfamily',
     'fontname': 'fontfamily',
 }
 

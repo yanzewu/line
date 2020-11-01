@@ -3,10 +3,12 @@ import numpy as np
 import re
 
 from ..graphing import scale
+from .. import defaults
 
 from . import style
 from . import errors
 from . import FigObject
+from ._aux import _set_color, _set_data, _gen_fontprops_setter, _gen_fontprops_getter
 
 
 class Axis(FigObject):
@@ -22,7 +24,10 @@ class Axis(FigObject):
 
         super().__init__('axis', axis_name, {
             'scale':self._set_scale,
-        }, {}, {
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('axis')),
+        }, {
+            **_gen_fontprops_getter(self),
+        }, {
             'range': lambda o,n: self._update_ticks(),
             'scale': self._update_scale,
         })
@@ -81,9 +86,12 @@ class Axis(FigObject):
 
 class Tick(FigObject):
     def __init__(self, name):
-        super().__init__('tick', name, {}, {}, {
+        super().__init__('tick', name, {
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('tick')),}, {
+            **_gen_fontprops_getter(self)}, {
             'format': self._update_formatter,
-            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
             })
 
@@ -109,8 +117,10 @@ class Grid(FigObject):
 
 class Legend(FigObject):
     def __init__(self, name):
-        super().__init__('legend', name, style_change_handler={
-            'fontsize': lambda a, b: self._check_render(),
+        super().__init__('legend', name, {
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
+            **_gen_fontprops_getter(self)}, {
+            'fontprops': lambda a, b: self._check_render(),
             'fontfamily': lambda a, b: self._check_render(),
             'visible': lambda a, b: self._check_render(),
             'pos': lambda a, b: self._check_render(),
@@ -131,8 +141,10 @@ class Legend(FigObject):
             
 class SupLegend(FigObject):
     def __init__(self, name):
-        super().__init__('legend', name, style_change_handler={
-            'fontsize': lambda a, b: self.render_callback(2) if self.render_callback else None,
+        super().__init__('legend', name, {
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
+            **_gen_fontprops_getter(self)}, {
+            'fontprops': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'fontfamily': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'pos': lambda a, b: self.render_callback(2) if self.render_callback else None,
@@ -293,6 +305,7 @@ class Polygon(FigObject):
         })
 
     def _set_color(self, m_style, value):
+        # Note this is different from _set_color.
         m_style['fillcolor'] = value
         m_style['linecolor'] = value
 
@@ -302,52 +315,26 @@ class Text(FigObject):
     def __init__(self, text, pos, name):
 
         super().__init__('text', name, {
-            'font':_set_font
-        }, {
-            'font':lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
-        }, {
-            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('text')),}, {
+            **_gen_fontprops_getter(self)}, {
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
-            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
+            'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'pos': lambda a, b: self.render_callback() if self.render_callback else None, 
             'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
         })
         self.update_style({'text':text, 'pos':pos})
-
-    def _set_font(self, m_style, value):
-        m_style['fontfamily'] = value[0]
-        m_style['fontsize'] = value[1]
 
 
 class Label(FigObject):
     def __init__(self, name):
 
         super().__init__('label', name, {
-            'font':_set_font
-        }, {
-            'font':lambda x: '%s,%d' % (x['fontfamily'], x['fontsize'])
-        }, {
-            'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
-            'fontsize': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('label')),}, {
+            **_gen_fontprops_getter(self)}, {
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
-            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
+            'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'pos': lambda a, b: self.render_callback() if self.render_callback else None, 
+            'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
+            'visible': lambda a, b: self.render_callback() if self.render_callback else None,
         })
-
-    def _set_font(self, m_style, value):
-        m_style['fontfamily'] = value[0]
-        m_style['fontsize'] = value[1]
-
-
-def _set_color(m_style, value):
-    m_style['linecolor'] = value
-    m_style['edgecolor'] = value
-
-
-def _set_font(m_style, value):
-    m_style['fontfamily'] = value[0]
-    if value[1] is None:
-        m_style['fontsize'] = value[1]
-
-def _set_data(target, value):
-    target.data = value
-    target._update_ext()

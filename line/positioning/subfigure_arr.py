@@ -1,12 +1,13 @@
 
 import numpy as np
-from ..style import FloatingPos
+from ..style import FloatingPos, Rect
 
 def get_compact_figure_padding(figure):
 
     figure_size = figure.attr('frame')
     paddings = [0,0,0,0]
-    legend_size = figure.legend.attr('frame') if figure.legend.attr('visible') and figure.legend.attr('source') else (0,0,0,0)
+    legend_enabled = figure.legend.attr('visible') and figure.legend.attr('source')
+    legend_size = figure.legend.attr('frame') if legend_enabled else Rect(0,0,0,0)
     title_h = figure.title.attr('frame').height if figure.title.attr('visible') and figure.title.attr('text') else 0
 
     legend_pos = figure.legend.attr('pos')  # resize only happens when it is a floating position
@@ -18,7 +19,7 @@ def get_compact_figure_padding(figure):
                 break
 
     if title_h > 0:
-        if legend_pos == (FloatingPos.CENTER, FloatingPos.TOP):
+        if legend_pos == (FloatingPos.CENTER, FloatingPos.TOP) and legend_enabled:
             paddings[3] = figure_size.height - legend_size.bottom()
         else:
             paddings[3] = max(paddings[3], title_h)     # we don't care if they overlap

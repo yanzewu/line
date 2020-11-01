@@ -210,6 +210,20 @@ class Padding:
     def __str__(self):
         return '(%g,%g,%g,%g)' % tuple(self.data)
 
+    def __len__(self):
+        return 4
+
+    def __eq__(self, other):
+        if isinstance(other, Padding):
+            return self.data == other.data
+        elif isinstance(other, (list, tuple)):
+            return self.data == other
+        else:
+            return False
+
+    def copy(self):
+        return Padding(*self.data)
+
     def width(self):
         return 1 - self.data[0] - self.data[2]
 
@@ -246,5 +260,90 @@ class Rect:
     def bottom(self):
         return self.y
 
+    def __len__(self):
+        return 4
+
     def __repr__(self):
         return '(x=%.2f, y=%.2f, w=%.2f, h=%.2f)' % (self.x, self.y, self.width, self.height)
+
+
+class FontProperty:
+    """ Properties other than fontfamily
+    """
+
+    _OPTIONS = {
+        'style': ('normal', 'italic', 'oblique'),
+        'variant': ('normal', 'small-caps'),
+        'stretch': ( 'ultra-condensed', 'extra-condensed', 'condensed', 'semi-condensed', 'normal', 
+            'semi-expanded', 'expanded', 'extra-expanded', 'ultra-expanded'),
+        'weight': ('ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman', 
+        'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black' ),
+        'size': ('xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'),
+    }
+
+    _UPDATORS = {
+        'style': lambda x: x if x in FontProperty._OPTIONS['style'] else None,
+        'variant': lambda x: x if x in FontProperty._OPTIONS['variant'] else None,
+        'stretch': lambda x: x if x in FontProperty._OPTIONS['stretch'] else int(x),
+        'weight': lambda x: x if x in FontProperty._OPTIONS['weight'] else int(x),
+        'size': lambda x: x if x in FontProperty._OPTIONS['size'] else int(x),
+    }
+
+    def __init__(self, *args, **kwargs):
+        """ If passed as args, its usage will be auto determined:
+                - Any numbers (either in string or int) will be treated as size.
+                - "normal" will reset all values other than size.
+        If passed as kwargs, will try to fit the option, and numbers will be assigned to the property.
+        """
+        self._holder = {
+            'style':'normal', 'variant':'normal', 'stretch':'normal', 'weight':'normal', 'size':'medium'
+        }
+
+        for a in args:
+            if isinstance(a, int) or (isinstance(a, str) and a.isdigit()):
+                self._holder['size'] = int(a)
+            elif a == 'normal':
+                self._holder.update({'style':'normal', 'variant':'normal', 'stretch':'normal', 'weight':'normal'})
+            else:
+                valid_a = False
+                for o in self._OPTIONS:
+                    if a in self._OPTIONS[o]:   # Ideally use a backmap
+                        self._holder[o] = a
+                        valid_a = True
+                        break
+                if not valid_a:
+                    raise ValueError('Invalid argument for fontproperty: %s' % a)
+
+        for k, v in kwargs.items():
+            self.update(k, v)
+
+    def export(self):
+        return self._holder
+
+    def update(self, option, value):
+        if option in self._UPDATORS:
+            v = self._UPDATORS[option](value)
+            if v is None:
+                raise ValueError('Incorrect value for font%s: %s' % (option, value))
+            else:
+                self._holder[option] = v
+        else:
+            raise ValueError('Incorrect option: font%s' % option)
+
+    def copy(self):
+        f = FontProperty()
+        f._holder = self._holder.copy()
+        return f
+
+    def __getitem__(self, key):
+        return self._holder[key]
+
+    def __setitem__(self, key, val):
+        return self.update(key, val)
+
+    def __eq__(self, other):
+        return self._holder == other._holder if isinstance(other, FontProperty) else False
+
+    def __repr__(self):
+        return "{size=%r, style=%r, weight=%r, stretch=%r, variant=%r}" % (
+            self._holder['size'], self._holder['style'], self._holder['weight'], self._holder['stretch'], self._holder['variant'])

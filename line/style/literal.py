@@ -39,12 +39,11 @@ def translate_style_val(style_name:str, style_val:str):
         except ValueError:
             return style.PointType[style_val.upper()]
 
-    elif style_name == 'font':
-        if ',' in style_val:
-            fontname, fontsize = style_val.split(',')
-            return fontname, stod(fontsize)
-        else:
-            return style_val, None
+    elif style_name == 'fontprops':
+        try:
+            return style.FontProperty(*style_val.split(','))
+        except ValueError as e:
+            raise LineParseError(str(e))
 
     elif style_name == 'orient':
         if style_val not in ('in', 'out'):
@@ -98,7 +97,7 @@ def translate_style_val(style_name:str, style_val:str):
     # require multiple num value
     elif style_name in ('rsize', 'rpos', 'spacing'):
         v1, v2 = style_val.split(',')
-        return stof(v1), stof(v2)
+        return [stof(v1), stof(v2)]
 
     elif style_name in ('margin', 'padding'):
         vs = style_val.split(',')
@@ -113,7 +112,7 @@ def translate_style_val(style_name:str, style_val:str):
         return stob(style_val)
 
     # int
-    elif style_name in ('fontsize', 'skippoint', 'zindex'):
+    elif style_name in ('skippoint', 'zindex'):
         return stod(style_val)
 
     # float

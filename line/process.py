@@ -600,8 +600,13 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
                     warn('Skip invalid style "%s"' % style_name)
                     continue
                 print('%s:' % style_name)
-                print('\n'.join(('%s\t%s' % (e.name, e.computed_style.get(style_name, '<None>')) 
-                    for e in elements)))
+                output = []
+                for e in elements:
+                    try:
+                        output.append('%s\t%s' % (e.name, e.computed_style[style_name]))
+                    except KeyError:
+                        output.append('%s\t%s' % (e.name, e.get_style(style_name, '<None>')))
+                print('\n'.join(output))
 
 
 def parse_and_process_fill(m_state:state.GlobalState, m_tokens):

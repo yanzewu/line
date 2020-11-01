@@ -132,8 +132,8 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
 
     if m_fig.title.attr('text') and m_fig.title.attr('visible'):
         st = m_fig.backend.suptitle(m_fig.title.attr('text'),
-            fontsize=m_fig.title.attr('fontsize'),
-            fontfamily=m_fig.title.attr('fontfamily'),
+            fontproperties=font_manager.FontProperties(
+                family=m_fig.title.attr('fontfamily'), **m_fig.title.attr('fontprops').export())
         )
         m_fig.title.computed_style['frame'] = style.Rect(st.get_window_extent(renderer).bounds)
         # TODO in mpl figure title does not care legend position so they may overlap
@@ -164,7 +164,7 @@ def _update_figure(m_fig:state.Figure, name:str, redraw_subfigures=True):
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
-            fontsize=m_style['fontsize'],
+            prop=font_manager.FontProperties(family=m_style['fontfamily'], **m_style['fontprops'].export()),
             loc=p,
             bbox_to_anchor=b,
             ncol=m_style['column'],
@@ -208,8 +208,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
     if m_subfig.title.attr('text') and m_subfig.title.attr('visible'):
         ax.set_title(m_subfig.title.attr('text'),
-            fontsize=m_subfig.title.attr('fontsize'),
-            fontfamily=m_subfig.title.attr('fontfamily')
+            fontproperties=font_manager.FontProperties(
+                family=m_subfig.title.attr('fontfamily'), **m_subfig.title.attr('fontprops').export()),
         )
 
     spine_names = ('bottom', 'left', 'right', 'top')
@@ -257,8 +257,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         set_labelfunc(
             m_subfig.axes[i].label.attr('text'),
             color=label_styles[i]['color'],
-            fontfamily=label_styles[i]['fontfamily'],
-            fontsize=label_styles[i]['fontsize'],
+            fontproperties=font_manager.FontProperties(
+                family=label_styles[i]['fontfamily'], **label_styles[i]['fontprops'].export()),
             visible=label_styles[i]['visible'],
             **{posname: label_styles[i]['pos'][0]},
         )
@@ -291,8 +291,8 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         # tick labels
         major_tick_labels = b.get_xmajorticklabels() if is_xside[i] else b.get_ymajorticklabels()
         for mtl in major_tick_labels:
-            mtl.set_fontfamily(tick_styles[i]['fontfamily'])
-            mtl.set_fontsize(tick_styles[i]['fontsize'])
+            mtl.set_fontproperties(font_manager.FontProperties(
+                family=tick_styles[i]['fontfamily'], **tick_styles[i]['fontprops'].export())),
             mtl.set_visible(tick_styles[i]['visible'])
 
         # tick format
@@ -425,8 +425,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             y,
             text.attr('text'),
             color=m_style['color'],
-            fontfamily=m_style['fontfamily'],
-            fontsize=m_style['fontsize'],
+            fontproperties=font_manager.FontProperties(family=m_style['fontfamily'], **m_style['fontprops'].export()),
             transform=ax.transData if m_style['coord'] == 'data' else ax.transAxes,
             visible=m_style['visible'],
             zorder=m_style['zindex']
@@ -488,7 +487,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             fancybox=False,
             facecolor=m_style['color'],
             edgecolor=m_style['linecolor'],
-            fontsize=m_style['fontsize'],
+            prop=font_manager.FontProperties(family=m_style['fontfamily'], **m_style['fontprops'].export()),
             loc=p,
             bbox_to_anchor=b,
             ncol=m_style['column'],

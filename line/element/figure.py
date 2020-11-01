@@ -3,6 +3,8 @@ from . import FigObject
 from . import Subfigure
 from . import defaults
 from .component import Text, SupLegend
+from ._aux import _gen_fontprops_setter, _gen_fontprops_getter, _gen_margin_setter, \
+    _gen_margin_getter, _gen_spacing_setter, _gen_spacing_getter, _gen_size_setter, _gen_size_getter
 from ..style import FloatingPos
 
 class Figure(FigObject):
@@ -22,18 +24,16 @@ class Figure(FigObject):
 
         super().__init__('figure', figure_name, {
             'dpi':self._set_dpi,
-            'width': lambda s, v: self._set_spacing_and_margin(s, 'size', 0, v),
-            'height': lambda s, v: self._set_spacing_and_margin(s, 'size', 1, v),
-            'hspacing':lambda s, v: self._set_spacing_and_margin(s, 'spacing', 0, v),
-            'vspacing': lambda s, v: self._set_spacing_and_margin(s, 'spacing', 1, v),
-            'margin-bottom': lambda s,v: self._set_spacing_and_margin(s, 'margin', 1, v),
-            'margin-left': lambda s,v: self._set_spacing_and_margin(s, 'margin', 0, v),
-            'margin-right': lambda s,v:self._set_spacing_and_margin(s, 'margin', 2, v),
-            'margin-top': lambda s,v:  self._set_spacing_and_margin(s, 'margin', 3, v),
             'title': lambda s,v: self.title.update_style({'text': v}),
+            **_gen_size_setter(self, defaults.default_style_sheet.find_type('figure')),
+            **_gen_margin_setter(self, defaults.default_style_sheet.find_type('figure')),
+            **_gen_spacing_setter(self, defaults.default_style_sheet.find_type('figure')),
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('figure')),
         }, {
-            'hspacing': lambda x: x['spacing'][0],
-            'vspacing': lambda x: x['spacing'][1]
+            **_gen_size_getter(self),
+            **_gen_margin_getter(self),
+            **_gen_spacing_getter(self),
+            **_gen_fontprops_getter(self),
         }, {
             'size': lambda a, b: self.render_callback() if self.render_callback else None,
             'margin': lambda a, b: self.render_callback() if self.render_callback else None,
@@ -54,13 +54,6 @@ class Figure(FigObject):
         m_style['size'] = [
             defaults.default_options['physical-figure-size'][0]*m_style['dpi'],
             defaults.default_options['physical-figure-size'][1]*m_style['dpi']]
-
-    def _set_spacing_and_margin(self, m_style, key, idx, val, class_=list):
-
-        if key not in m_style or not isinstance(m_style[key], class_):
-            m_style[key] = class_(self.get_style(key))
-
-        m_style[key][idx] = val
 
     def has_name(self, name):
         return name == 'gcf' or name == self.name

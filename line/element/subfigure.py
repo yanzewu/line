@@ -3,17 +3,14 @@ from . import FigObject
 from . import errors
 
 from .component import *
-from .component import _set_font
+from .. import defaults
+from ._aux import _gen_fontprops_getter, _gen_fontprops_setter, _gen_padding_getter, _gen_padding_setter
 
 class Subfigure(FigObject):
 
     def __init__(self, subfigure_name):
 
         super().__init__('subfigure', subfigure_name, {
-            'padding-bottom': lambda s,v:self._set_padding(s, 1, v),
-            'padding-left': lambda s,v: self._set_padding(s, 0, v),
-            'padding-right': lambda s,v:self._set_padding(s, 2, v),
-            'padding-top': lambda s,v:  self._set_padding(s, 3, v),
             'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}, priority=self._style_priority(s)),
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}, priority=self._style_priority(s)),
             'y2label': lambda s,v:self.axes[2].label.update_style({'text': v}, priority=self._style_priority(s)),
@@ -26,9 +23,10 @@ class Subfigure(FigObject):
             'yscale': lambda s,v:self.axes[1].update_style({'scale': v}, priority=self._style_priority(s)),
             'y2scale': lambda s,v:self.axes[2].update_style({'scale': v}, priority=self._style_priority(s)),
             'x2scale': lambda s,v:self.axes[3].update_style({'scale': v}, priority=self._style_priority(s)),
-            'font': _set_font,
             'title': lambda s,v: self.title.update_style({'text': v}),
             'legend': self._set_legend,
+            **_gen_padding_setter(self, defaults.default_style_sheet.find_type('subfigure')),
+            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('subfigure')),
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),
@@ -38,7 +36,8 @@ class Subfigure(FigObject):
             'yrange': lambda x:self.axes[1].get_style('range'),
             'y2range': lambda x:self.axes[2].get_style('range'),
             'x2range': lambda x:self.axes[3].get_style('range'),
-            'font': lambda x:'%s,%d' % (x['fontfamily'], x['fontsize'])
+            **_gen_padding_getter(self),
+            **_gen_fontprops_getter(self),
         }, {
             'group': lambda oldst, newst: self.update_colorid() if newst else None,
         })
@@ -62,11 +61,6 @@ class Subfigure(FigObject):
 
         self._legend_candidates = []
 
-    def _set_padding(self, m_style, idx, val):
-        
-        if 'padding' not in m_style:
-            m_style['padding'] = list(self.get_style('padding'))
-        m_style['padding'][idx] = val
 
     def has_name(self, name):
         return name == 'gca' or self.name == name

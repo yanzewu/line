@@ -72,6 +72,16 @@ grid lt=- lc=black zindex=-1
 
 display
 
+# inheritance, font
+clear
+plot x
+set figure fontprops=italic,bold,x-large
+set gca fontprops=light,medium
+style yaxis fontsize=14 fontstyle=italic
+set ylabel fontsize=20
+set figure title=title
+display
+
 # data components
 
 hold on

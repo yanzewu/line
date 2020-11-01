@@ -29,7 +29,7 @@ line 0.1,0.1 0.5,0.1 coord=axis
 # text
 text 123 0,0.5
 text 123 top,left
-text "123" bottom,right font=Arial,9
+text "123" bottom,right font=Arial fontsize=9
 set text2 text="456"
 
 hold on
