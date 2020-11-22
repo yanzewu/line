@@ -2,12 +2,13 @@
 """
 
 import logging
+import warnings
 
 from . import style
 from .style import css, translate_style_val
 from . import keywords
 
-from .errors import LineParseError, warn, print_as_warning
+from .errors import LineParseError, format_error
 from .parse_util import *
 
 logger = logging.getLogger('line')
@@ -130,7 +131,7 @@ def parse_style(m_tokens, termflag='', require_equal=False, recog_comma=True, re
                 if raise_error:
                     raise LineParseError('Invalid style descriptor: "%s"' % style_desc)
                 else:
-                    warn('Skip invalid style descriptor "%s"' % style_desc)
+                    warnings.warn('Skip invalid style descriptor "%s"' % style_desc)
             else:
                 m_styles.update(build_line_style(lc, lt, pt))
         else:
@@ -177,7 +178,7 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
     
     # validity of style
     if is_invalid:
-        warn('Skip invalid style "%s"' % style_name)
+        warnings.warn('Skip invalid style "%s"' % style_name)
         return None, None
 
     if recog_expression and style_val.startswith('$('):
@@ -189,8 +190,8 @@ def parse_single_style(m_tokens, require_equal=False, recog_comma=True, recog_co
         if raise_error:
             raise LineParseError('Invalid style parameter for "%s": %s' % (style_name, style_val))
         else:
-            print_as_warning(e)
-            warn('Skip invalid style parameter for "%s": %s' % (style_name, style_val))
+            warnings.warn(format_error(e))
+            warnings.warn('Skip invalid style parameter for "%s": %s' % (style_name, style_val))
             return None, None
     else:
         return style_name, style_val_real

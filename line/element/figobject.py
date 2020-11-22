@@ -1,5 +1,6 @@
 
 import copy
+import warnings
 
 from . import css
 from . import defaults
@@ -48,7 +49,7 @@ class FigObject:
                 target[d] = v
                 has_updated = True
             else:
-                errors.warn('Skipping invalid style: "%s"' % d)
+                warnings.warn('Skipping invalid style: "%s"' % d)
 
         return has_updated
 

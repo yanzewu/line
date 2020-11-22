@@ -1,6 +1,7 @@
 
 import logging
 from collections import deque
+from warnings import warn
 import os
 import re
 import time
@@ -12,7 +13,7 @@ from . import keywords
 from . import io_util
 from . import state
 from . import backend
-from . import cmd_handle
+from . import terminal
 from . import group_proc
 
 from .positioning import subfigure_arr
@@ -21,7 +22,7 @@ from .style import css
 from .style import palette
 
 from .style_proc import *
-from .errors import LineParseError, LineProcessError, warn
+from .errors import LineParseError, LineProcessError
 
 expr_proc = None
 plot_proc = None
@@ -269,13 +270,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'quit':
         if m_state.options['prompt-save-when-quit']:
             if len(m_state.figures) == 1:
-                if io_util.query_cond('Save current figure? ', do_prompt, False):
+                if terminal.query_cond('Save current figure? ', do_prompt, False):
                     process_save(m_state, m_state.cur_save_filename)
 
             for name, figure in m_state.figures.items():
                 m_state.cur_save_filename = None
                 m_state.cur_figurename = name
-                if io_util.query_cond('Save figure %s? ' % name, do_prompt, False):
+                if terminal.query_cond('Save figure %s? ' % name, do_prompt, False):
                     process_save(m_state, '')
                 if m_state.is_interactive:
                     backend.close_figure(m_state)
@@ -448,7 +449,7 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
         return
 
     if len(elements) + len(figures_to_remove) > 1:
-        if io_util.query_cond('Remove elements %s %s? ' % (
+        if terminal.query_cond('Remove elements %s %s? ' % (
             ' '.join(e.name for e in elements), ' '.join(f for f in figures_to_remove)), 
             m_state.options['prompt-multi-removal'] and (m_state.options['prompt-always'] or 
             m_state.is_interactive), True):
@@ -650,16 +651,16 @@ def process_save(m_state:state.GlobalState, filename:str):
 
     if not filename:
         if m_state.cur_save_filename:
-            filename = io_util.query_cond('Enter filename here (default: %s): ' % m_state.cur_save_filename,
+            filename = terminal.query_cond('Enter filename here (default: %s): ' % m_state.cur_save_filename,
             do_prompt, m_state.cur_save_filename, False)
         else:
-            filename = io_util.query_cond('Enter filename here: ', do_prompt, None, False)
+            filename = terminal.query_cond('Enter filename here: ', do_prompt, None, False)
         if not filename:
             logger.info('Saving cancelled')
             return
 
     if m_state.options['prompt-overwrite'] and io_util.file_exist(filename):
-        if not io_util.query_cond('Overwrite current file "%s"? ' % filename, do_prompt, False):
+        if not terminal.query_cond('Overwrite current file "%s"? ' % filename, do_prompt, False):
             warn('Canceled')
             return
 
@@ -686,7 +687,7 @@ def process_expr(m_state:state.GlobalState, expr):
     return evaler.evaluate()
 
 def process_load(m_state:state.GlobalState, filename, args):
-    handler = cmd_handle.CMDHandler(m_state)
+    handler = terminal.CMDHandler(m_state)
     is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
     backend.finalize(m_state)
     

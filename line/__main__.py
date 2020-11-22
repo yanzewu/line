@@ -4,7 +4,7 @@ import logging
 import warnings
 
 from . import defaults
-from . import cmd_handle
+from . import terminal
 from .process import process_display
 
 def main():
@@ -32,7 +32,7 @@ Additional options can be shown by `line -e 'show option'`'''
             exit(0)
         elif arg in ('-d', '--debug'):
             logging.getLogger('line').setLevel(logging.DEBUG)
-            cmd_handle.CMDHandler._debug = True
+            terminal.CMDHandler._debug = True
         elif arg.startswith('--'):
             kwargs.append(arg[2:].split('='))
         else:
@@ -41,10 +41,10 @@ Additional options can be shown by `line -e 'show option'`'''
     defaults.default_options.update(defaults.parse_default_options(kwargs, 
         option_range=defaults.default_options.keys(), raise_error=True))
 
-    if not cmd_handle.CMDHandler._debug:
-        warnings.filterwarnings('ignore')
+    if not terminal.CMDHandler._debug:
+        warnings.filterwarnings(action='ignore', category=DeprecationWarning)
 
-    cmd_handler = cmd_handle.CMDHandler(preload_input=(len(args) == 0) and
+    cmd_handler = terminal.CMDHandler(preload_input=(len(args) == 0) and
         defaults.default_options['delayed-init'])
     if len(args) == 0:
         cmd_handler.m_state._vmhost.push_args(['[interactive]'])

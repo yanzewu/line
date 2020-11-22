@@ -2,19 +2,21 @@
 import re
 import sys
 import logging
+import warnings
 import os.path
 from collections import deque
 import rlcompleter
 import readline
 import threading
 
-from . import state
-from . import process
-from . import vm
-from . import completion
-from .errors import LineParseError, print_error
-from . import defaults
-from . import backend
+from .. import defaults
+from .. import state
+from .. import process
+from .. import vm
+from ..errors import LineParseError, format_error
+from .. import backend
+
+from . import completion_util
 
 logger = logging.getLogger('line')
 sh = logging.StreamHandler()
@@ -23,6 +25,8 @@ logger.addHandler(sh)
 
 
 class CMDHandler:
+    """ The shell for backward compatibility (without using prompt-toolkit)
+    """
 
     PS1 = 'line> '
     PS2 = '> '
@@ -287,7 +291,7 @@ class CMDHandler:
         """
 
         if state == 0:
-            self.completion_buffer = completion.get_keywords() + completion.get_filelist(text)
+            self.completion_buffer = completion_util.get_keywords() + completion_util.get_filelist(text)
             # tokens = self.token_buffer.copy()
             # try:
             #     ret = self.handle_line(text, tokens, execute=False)
@@ -312,3 +316,27 @@ class CMDHandler:
         # return self.completion_buffer[state] if state < len(self.completion_buffer) else None
 
         
+def query_cond(question, cond, default, set_true=True):
+    """ If cond is True, ask question and get answer, otherwise use default.
+    if `set_ture`, automatically convert positive answer to True, and other False.
+    """
+    if cond:
+        answer = input(question)
+        if set_true:
+            answer = answer in ('y', 'Y', 'yes', 'Yes')
+        return answer
+    else:
+        return default
+
+
+def print_error(e):
+    print(format_error(e), file=sys.stderr)
+
+
+def show_warning(message, *args):
+    if isinstance(message, UserWarning):
+        print(message)
+    else:
+        return warnings.showwarning(message, *args)
+
+warnings.showwarning = show_warning

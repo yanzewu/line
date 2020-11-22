@@ -19,19 +19,6 @@ def file_or_wildcard_exist(filename):
     return '*' in filename or '?' in filename or file_exist(filename)
 
 
-def query_cond(question, cond, default, set_true=True):
-    """ If cond is True, ask question and get answer, otherwise use default.
-    if `set_ture`, automatically convert positive answer to True, and other False.
-    """
-    if cond:
-        answer = input(question)
-        if set_true:
-            answer = answer in ('y', 'Y', 'yes', 'Yes')
-        return answer
-    else:
-        return default
-
-
 def expand(filename, sort=True):
     """ If `sort` is `True`, compare two string by
     (1) extract the common part (PREFIX)

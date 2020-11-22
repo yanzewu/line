@@ -26,11 +26,10 @@ class LineProcessError(Exception):
         return self.message
 
 
-def warn(message):
-    print('Warning:', message, file=sys.stderr)
+#def format_error(e):
+#    return sys.exc_info()[1]
 
-
-def print_sys_error(e):
+def format_sys_error(e):
     """ General formatting of system error
     """
     exc_type = type(e)
@@ -40,21 +39,19 @@ def print_sys_error(e):
     func_name = tb_frame.name
     line_no = tb_frame.lineno
 
-    print('[%s:%d %s()] %s: %s' % (file_name, line_no, func_name, exc_type.__name__, e), file=sys.stderr)
+    return '[%s:%d %s()] %s: %s' % (file_name, line_no, func_name, exc_type.__name__, e)
 
-def print_as_warning(e):
-    warn(sys.exc_info()[1])
-
-def print_line_error(e):
+def format_line_error(e):
     if isinstance(e, LineParseError):
-        print('Parsing Error: %s' % e, file=sys.stderr)
+        return 'Parsing Error: %s' % e
     elif isinstance(e, LineProcessError):
-        print('Runtime Error: %s' % e, file=sys.stderr)
+        return 'Runtime Error: %s' % e
 
-def print_error(e:Exception):
+def format_error(e):
 
     if isinstance(e, (LineParseError, LineProcessError)):
-        print_line_error(e)
-
+        return format_line_error(e)
+    elif isinstance(e, Warning):
+        return str(e)
     else:
-        print_sys_error(e)
+        return format_sys_error(e)

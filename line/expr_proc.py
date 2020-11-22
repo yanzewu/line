@@ -3,11 +3,12 @@ import re
 import logging
 import numpy as np
 import pandas as pd
+import warnings
 
 from . import stat_util
 from . import model
 from . import io_util
-from .errors import LineParseError, LineProcessError, print_error, warn
+from .errors import LineParseError, LineProcessError
 
 _VAR_EXPR = re.compile(r'\$[_0-9a-zA-Z\*\?\.]+\b')
 _TOKEN_EXPR = re.compile(r'\b[_a-zA-Z]([0-9a-zA-Z][_0-9a-zA-Z\.]*)?(?!\()\b')
@@ -79,13 +80,9 @@ class ExprEvaler:
             raise LineProcessError('string required')
         
         safety = self.m_globals['state']().options['safety']
-        if safety == 0:
-            pass
-        elif safety == 1:
-            warn('Executing external code which may not be safe.')
-        else:
-            if not io_util.query_cond('Execute python code?', True, default=False):
-                raise LineProcessError('Cannot execute python code because user cancelled')
+        if safety != 0:
+            warnings.warn('Executing native python code which may not be safe.')
+
         evaler = ExprEvaler(self.m_globals, self.m_file_caches)
         evaler.load(expr, omit_dollar=True, variable_prefix='')
         return evaler._eval(False)
@@ -95,13 +92,8 @@ class ExprEvaler:
             raise LineProcessError('string required')
         
         safety = self.m_globals['state']().options['safety']
-        if safety == 0:
-            pass
-        elif safety == 1:
-            warn('Executing shell code which may not be safe.')
-        else:
-            if not io_util.query_cond('Execute shell code?', True, default=False):
-                raise LineProcessError('Cannot execute shell code because user cancelled')
+        if safety != 0:
+            warnings.warn('Executing shell code which may not be safe.')
         
         import os
         return os.system(expr)
