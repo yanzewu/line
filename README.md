@@ -15,6 +15,8 @@ Prerequesties:
 - Matplotlib == 3.0/3.1 (Necessary)
 - Numpy >= 1.13 (Necessary)
 - Pandas >= 0.22 (Necessary)
+- Prompt-toolkit >= 3.0 (Optional, for colorful prompts)
+- IPython >= 7.19.0 (Optional)
 
 The package is written in pure python and is directly executable. To install it into python library:
 

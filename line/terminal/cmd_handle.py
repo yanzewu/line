@@ -110,6 +110,10 @@ class CMDHandler:
             self._filename = filename
             return self.proc_lines(f.readlines())
 
+    def proc_stdin(self):
+        self._filename = '<stdin>'
+        return self.proc_lines(sys.stdin.readlines())
+
     def proc_lines(self, lines):
         backend.initialize(self.m_state)
         for j, line in enumerate(lines):

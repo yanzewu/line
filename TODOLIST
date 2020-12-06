@@ -5,7 +5,5 @@ Fixes
 
 Features
 ---
-[LOW] Smarter completion (need a library other than readline).
 [LOW] Heatmap support (also colorbar).
 [LOW] Errorbar support.
-[MID] Treat warning as error for file input.

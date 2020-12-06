@@ -38,38 +38,44 @@ Additional options can be shown by `line -e 'show option'`'''
         else:
             args.append(arg)
     
+    if len(args) == 0:
+        if sys.stdin.isatty():
+            mode = 'interactive'
+        else:
+            mode = 'stdin'
+
     defaults.default_options.update(defaults.parse_default_options(kwargs, 
         option_range=defaults.default_options.keys(), raise_error=True))
 
     if not terminal.CMDHandler._debug:
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+    warnings.simplefilter('always', UserWarning)
 
-    cmd_handler = terminal.CMDHandler(preload_input=(len(args) == 0) and
+    cmd_handler = terminal.CMDHandler(preload_input=(mode == 'interactive') and
         defaults.default_options['delayed-init'])
     if len(args) == 0:
-        cmd_handler.m_state._vmhost.push_args(['[interactive]'])
+        cmd_handler.m_state._vmhost.push_args(['[stdin]'])
     else:
         cmd_handler.m_state._vmhost.push_args(args)
 
     ret_code = 0
-    if len(args) == 0:
-        cmd_handler.read_source()
+    cmd_handler.read_source()
+    logging.getLogger('line').debug('Entering %s mode' % mode)
+    if mode == 'interactive':
         cmd_handler.m_state.is_interactive = True
         ret_code = cmd_handler.input_loop()
+    elif mode == 'stdin':
+        ret_code = cmd_handler.proc_stdin()
     elif mode == 'script':
-        cmd_handler.read_source()
         ret_code = cmd_handler.proc_file(args[0])
     elif mode == 'eval':
-        cmd_handler.read_source()
         cmd_handler._filename = '<command>'
         ret_code = cmd_handler.proc_lines([' '.join(args)])
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
-        cmd_handler.read_source()
         line0 = ('plot ' + args[0]).replace('\\', '/')
         ret_code = cmd_handler.proc_lines([line0])
-    else:
-        exit(1)
+
 
     if ret_code == 0 and cmd_handler.m_state.options['display-when-quit']:
         process_display(cmd_handler.m_state)

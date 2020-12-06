@@ -27,6 +27,8 @@ class VMHost:
         self.arg_stack = []
         self.block_level = 0    # control block stack height
         self.pc = None
+        self.backtrace = None
+        self.error = None
 
         import numpy as np
         
@@ -42,6 +44,7 @@ class VMHost:
     def process(self, state, tokens, line_debug_info:LineDebugInfo):
         try:
             self.pc = (line_debug_info, tokens)     # point to LDI, tokens
+            self.error = None
             return self.process_unsafe(state, tokens, line_debug_info)
         except Exception as e:
             if self.debug:
@@ -50,9 +53,11 @@ class VMHost:
                 p = -len(tokens)-1
                 if p <= -len(line_debug_info.token_pos):
                     p = 0
-                return 3,  LineDebugInfo(line_debug_info.filename, 
-                    line_debug_info.lineid, 
-                    line_debug_info.token_pos[p]), e
+                self.error = e
+                self.backtrace = LineDebugInfo(line_debug_info.filename, 
+                    line_debug_info.lineid,
+                    line_debug_info.token_pos[p])
+                return 3, self.backtrace, self.error
 
     def process_unsafe(self, state, tokens, line_debug_info):
         
