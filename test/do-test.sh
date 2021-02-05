@@ -1,6 +1,7 @@
 
 set -e
-
+python test-lexer.py
+python test-plot.py
 cd ../
 printf "\n--------- testing lex ----------\n"
 python -m line -d test/test-lex.line

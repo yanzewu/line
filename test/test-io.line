@@ -1,11 +1,12 @@
 
 # cd
 
-show pwd
+pwd
 cd example
-show pwd
+pwd
 cd ..
-show pwd
+pwd
+ls
 
 # load
 

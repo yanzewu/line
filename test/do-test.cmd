@@ -1,4 +1,6 @@
 @echo off
+python test-lexer.py
+python test-plot.py
 cd ../
 echo. & echo "--------- testing lex ----------" & echo.
 python -m line -d test/test-lex.line

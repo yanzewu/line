@@ -17,7 +17,8 @@ def showwarning(message:Warning, category, filename, lineno, file=None, line=Non
         if session.has_instance():
             ldi, tokens = session.get_vm().pc
             print_error_formatted(
-                message, LineDebugInfo(ldi.filename, ldi.lineid, ldi.token_pos[-len(tokens)-1]), session.is_interactive())
+                message, LineDebugInfo(ldi.filename, ldi.lineid, ldi.token_pos[max(-len(tokens)-1, -len(ldi.token_pos))]), 
+                    session.is_interactive(), extra_indent=6 if session.is_interactive() else 0)
         else:
             print_formatted_text(FormattedText([
                 ('magenta', 'Warning: '),
@@ -47,7 +48,10 @@ def print_error_formatted(error, dbg_info:LineDebugInfo, is_interactive:bool, co
     """ Display formatted error string.
     If `is_interactive': Will show column position instead of display column index;
     """
-    if is_interactive and dbg_info.lineid == 0: # just display the line
+    if isinstance(dbg_info.token_pos, tuple):
+        dbg_info = LineDebugInfo(dbg_info.filename, dbg_info.token_pos[0], dbg_info.token_pos[1])
+
+    if is_interactive and not code_line: # just display the line
         display_code = False
         print_formatted_text(FormattedText([
             ('white', ' ' * (extra_indent + dbg_info.token_pos)),
@@ -77,5 +81,5 @@ def print_error_formatted(error, dbg_info:LineDebugInfo, is_interactive:bool, co
     if display_code and code_line:
         print_formatted_text('    ' + code_line, file=sys.stderr)
         print_formatted_text(FormattedText([
-            ('white', ' ' * (extra_indent + dbg_info.token_pos + 4)),
+            ('white', ' ' * (dbg_info.token_pos + 4)),
             ('green', '^')]), file=sys.stderr)

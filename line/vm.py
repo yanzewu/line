@@ -131,6 +131,7 @@ class VMHost:
             if parse_util.test_token_inc(tokens, 'do'):
                 self._push_record(fname, CodeBlock())
                 self.block_level += 1
+                self.record(tokens, line_debug_info)
                 self.mode = 'record'
             else:
                 expr = parse_util.parse_expr(tokens)

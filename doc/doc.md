@@ -83,10 +83,12 @@ Contents:
 - [let](#let)
 - [load](#load)
 - [line,hline,vline](#line%44-hline%44-vline)
+- [ls](#pwd%44-ls))
 - [palette](#special-set-commands)
 - [pause](#pause)
 - [plot,p](#plot)
 - [print](#print)
+- [pwd](#pwd%44-ls))
 - [quit,exit,q](#quit)
 - [remove](#remove)
 - [replot](#replot)
@@ -308,7 +310,6 @@ Args:
 - selection1,selection2: Selections of elements, see [Element Selector](#element-selector) for details.
 - stylename: [Name of style](#list-of-valid-style-values). All styles parameters will be shown if not given.
 - `show currentfile` shows current save filename;
-- `show pwd` shows current directory;
 - `show palettes` shows all palettes available;
 - `show option` shows current global option.
     
@@ -484,6 +485,15 @@ Change directory.
 Usage:
 
     cd path
+
+### pwd, ls
+---
+Show current directory and files.
+
+Usage:
+
+    pwd
+    ls
 
 ### quit
 ---

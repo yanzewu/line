@@ -307,6 +307,15 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         else:
             raise LineProcessError('Directory "%s" does not exist' % dest)
 
+    elif command == 'ls':
+        files = os.listdir()
+        if len(files) < 40 or terminal.query_cond('List all %d files? ' % len(files), 
+            m_state.options['prompt-always'] or m_state.is_interactive, not m_state.is_interactive):
+            print('\t'.join(files))
+
+    elif command == 'pwd':
+        print(os.getcwd())
+
     elif command == 'load':
         filename = get_token(m_tokens)
         process_load(m_state, filename, [process_expr(m_state, t) if t.startswith('$') else strip_quote(t) for t in (m_tokens)])
@@ -557,9 +566,6 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
     if test_token_inc(m_tokens, 'currentfile'):
         print('File saved:', m_state.cur_save_filename)
 
-    elif test_token_inc(m_tokens, 'pwd'):
-        print(os.getcwd())
-
     elif test_token_inc(m_tokens, ('option',  'options')):
         if len(m_tokens) == 0:
             print('OPTION                          VALUE')
@@ -682,9 +688,13 @@ def process_display(m_state:state.GlobalState):
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)
-    evaler.load(expr, True)
-    logger.debug(evaler.expr)
-    return evaler.evaluate()
+    if expr.startswith('$!('):
+        logger.debug(expr)
+        return evaler.evaluate_system(expr[2:])
+    else:
+        evaler.load(expr, True)
+        logger.debug(evaler.expr)
+        return evaler.evaluate()
 
 def process_load(m_state:state.GlobalState, filename, args):
     handler = terminal.CMDHandler(m_state)

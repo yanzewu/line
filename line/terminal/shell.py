@@ -20,7 +20,7 @@ from ..vm import LineDebugInfo
 
 from . import completion
 from . import logging_util
-
+from . import lexer
 
 # init the output devices
 
@@ -126,39 +126,33 @@ class CMDHandler:
         except IOError:
             pass
 
-
-    def input_loop(self):
+    def proc_input(self):
         """ The shell loop. Will always return 0 after finalization.
         """
         self.init_input()
         self.m_state.is_interactive = True
-        backend.initialize(self.m_state)
-        ps = self.PS1
-        while True:
+        self.ps = CMDHandler.PS1
+
+        def fetch_next_line(forced):
             if self._input_cache is not None:
                 line = self._input_cache
                 self._input_cache = None
+                return line
             else:
+                self.ps = CMDHandler.PS1 if not forced else CMDHandler.PS2
                 try:
-                    line = CMDHandler._input_session.prompt(ps, completer=completion.Completer())
+                    return CMDHandler._input_session.prompt(self.ps, completer=completion.Completer())
                 except KeyboardInterrupt:
-                    break
+                    return None
 
-            ret = self.proc_line_interactive(line, ps)
-            if ret != self.RET_CONTINUE:
-                self.lexer_cleanup()
-                ps = self.PS1
-            else:
-                ps = self.PS2
+        def fetch_previous_line(offset):
+            return CMDHandler._input_session.history.get_strings()[offset-1] if offset < 0 else None
 
-            if ret == self.RET_EXIT:
-                break
-            elif ret == self.RET_USERERROR:
-                self.print_error(None, len(ps))
-            
-        backend.finalize(self.m_state)
+        self.proc_(fetch_next_line, fetch_previous_line, False, True)
         self.finalize_input()
         return 0
+
+    input_loop = proc_input
 
     def proc_file(self, filename, do_interactive=False):
         with open(filename, 'r') as f:
@@ -171,148 +165,78 @@ class CMDHandler:
         return self.proc_lines(sys.stdin.readlines())
 
     def proc_lines(self, lines):
-        """ Process a list of lines.
-        Returns 0 if process ended up normally without error; Otherwise return RET_USERERROR or RET_SYSERROR
+        j = [-1]
+        def fetch_next_line(forced):
+            j[0] += 1
+            return lines[j[0]].strip('\n') if j[0] < len(lines) else None
+
+        def fetch_previous_line(offset):
+            return lines[j[0]+offset].strip('\n')
+
+        return self.proc_(fetch_next_line, fetch_previous_line, True, False)
+
+    def proc_(self, fetch_next_line, fetch_previous_line, exit_on_error=True, is_interactive=False):
+        """ The REPL loop.
+        fetch_next_line(forced:bool)->str: Should return the next line without break ('\n'); 
+            If continuing last line, `forced` will be true.
+        fetch_previous_line(offset:int)->str: Should return current lineid + offset (if 0 then current line).
+        exit_on_error: Break when an error occurs (even if it is handled);
+            Otherwise only returns when ret == RET_EXIT or RET_SYSERROR.
+        is_interactive: Being able to respond command `input`.
         """
-        backend.initialize(self.m_state)
-        for j, line in enumerate(lines):
-            ret = self.proc_line_noniteractive(line, j)
-            if ret != self.RET_CONTINUE:
-                self.lexer_cleanup()
-            if ret == self.RET_USERERROR:
-                self.print_error(lines, 0)
-                break
-            elif ret == self.RET_EXIT or ret == self.RET_SYSERROR:
-                break
 
-        backend.finalize(self.m_state)
-        return ret if ret != self.RET_EXIT else 0
+        l = lexer.Lexer()
+        backend.initialize(session.get_state())
+        ret = 0
+        emittor = l.run(fetch_next_line)
 
-    def proc_line_noniteractive(self, line, lineid:int):
-        """ Process one line in noninteractive mode.
-        Returns the return code.
-        """
-        try:
-            ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, lineid)
-        except Exception as e:
-            if CMDHandler._debug:
-                raise
-            else:
-                logging_util.print_error_string(format_error(e))
-                return self.RET_SYSERROR
-        else:
-            if ret == 0:
-                if self.m_state.is_interactive:     # initiate an input_loop, when switch to input mode
-                    self.input_loop()
-                    self.m_state.is_interactive = False
-                return 0
-            elif ret == self.RET_EXIT or ret == self.RET_CONTINUE:  # FIXME here lineid is constant; cannot handle the case of multiple
-                return ret
-            elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
-                return self.RET_USERERROR
-            else:
-                logging_util.print_error_string('Undefined return: %r' % ret)
-                return self.RET_SYSERROR
-
-    def proc_line_interactive(self, line, ps):
-        """ Process one line in interactive mode.
-        Returns the return code.
-        """
-        
-        try:
-            ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
-        except Exception as e:
-            if CMDHandler._debug:
-                raise
-            else:   # This should only be VM errors
-                logging_util.print_error_string(format_error(e))
-                return self.RET_SYSERROR
-        else:
-            if ret == 0 or ret == self.RET_EXIT or ret == self.RET_CONTINUE:
-                return ret
-            elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
-                return self.RET_USERERROR
-            else:
-                logging_util.print_error_string('Undefined return: %r' % ret)
-                return self.RET_SYSERROR
-
-    def print_error(self, lines, extra_indent=0):
-        backtrace = session.get_vm().backtrace
-        error = session.get_vm().error
-
-        line = lines[backtrace.lineid].strip('\n') if lines else None
-        logging_util.print_error_formatted(error, backtrace, session.is_interactive(), line, extra_indent)
-
-    # === LEXER ===
-
-    def lexer_cleanup(self):
-        self.token_buffer.clear()
-        self.token_begin_pos.clear()
-
-    def handle_line(self, line:str, token_buffer:deque, token_begin_pos:int, execute=True, lineid=0):
-        """ Tokenize and execute.
-        """
-        logger.debug('Handle input line: %s' % line)
-        if self._unpaired_quote is not None:
-            j = line.find(self._unpaired_quote)
-            if j != -1:
-                self.token_buffer[-1] += line[:j+1] # TODO check if '\n' is necessary
-                line = line[j+1:]
-                self._unpaired_quote = None
-            else:
-                self.token_buffer[-1] += line.strip('\n')
-                return self.RET_CONTINUE
-
-        token_iter = self.TOKEN_MATCHER.finditer(line)
-        
         while True:
-            cur_token = next(token_iter, None)
-            if cur_token is None:
-                break
+            try:
+                tokens, tp = next(emittor)
+            except LineParseError as e: # TODO clean lexer or initiate a new one
+                if self._debug:
+                    raise
+                else:
+                    logging_util.print_error_formatted(e, 
+                        LineDebugInfo(self._filename, 0, (l.lineid, l.head)), 
+                        session.get_state().is_interactive,
+                        fetch_previous_line(0),
+                        len(self.ps) if is_interactive else 0)
 
-            if cur_token.group('a'):    # string
-                string = cur_token.group('a')
-                token_buffer.append(string)
-                token_begin_pos.append(cur_token.start())
-                if string[-1] != string[0]:
-                    self._unpaired_quote = string[0]
-                    # raise LineParseError("Quote not match")
-                    return self.RET_CONTINUE
-
-            elif cur_token.group('b'):  # variable or others
-                token_buffer.append(cur_token.group('b'))
-                token_begin_pos.append(cur_token.start())
-
-            elif cur_token.group('c'):  # special characters
-                char = cur_token.group('c')
-                if char in ',:=':
-                    token_buffer.append(char)
-                    token_begin_pos.append(cur_token.start())
-                elif char == '#':
-                    break
-                elif char == '\\':
-                    return self.RET_CONTINUE
-                elif char == ';':
-                    if execute:
-                        ret = self.m_state._vmhost.process(self.m_state, self.token_buffer, 
-                            LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
-                        if ret != 0:
-                            return ret
-                        else:
-                            token_buffer.clear()
-                            token_begin_pos.clear()
-                    else:
-                        token_buffer.clear()
-                        token_begin_pos.clear()
-
+                    emittor = l.run(fetch_next_line)
+                    ret = self.RET_USERERROR
+            except StopIteration:
+                ret = self.RET_EXIT
+            except KeyboardInterrupt:
+                ret = self.RET_EXIT
             else:
-                raise RuntimeError()
+                if not tokens:
+                    continue
+                logger.debug("Tokens are: %s" % list(tokens))
+                ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(self._filename, 0, tp))
+                if ret == 0:
+                    if not is_interactive and self.m_state.is_interactive:     # initiate an input_loop, when switch to input mode
+                        self.proc_input()
+                        self.m_state.is_interactive = False
+                elif ret == self.RET_EXIT:
+                    pass
+                elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
+                    m_vm = session.get_vm()
+                    logging_util.print_error_formatted(m_vm.error, 
+                        m_vm.backtrace, 
+                        session.get_state().is_interactive,
+                        fetch_previous_line(m_vm.backtrace.token_pos[0] - l.lineid),
+                        len(self.ps) if is_interactive else 0)
+                    ret = ret[0]
+                else:
+                    logging_util.print_error_string('Undefined return: %r' % ret)
+                    ret = self.RET_SYSERROR
 
-        if execute:
-            return self.m_state._vmhost.process(self.m_state, self.token_buffer, 
-                LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
-        else:
-            return 0
+            if not (ret == self.RET_USERERROR and not exit_on_error or ret == 0):
+                break
+                
+        backend.finalize(session.get_state())
+        return 0 if ret == self.RET_EXIT else ret
 
         
 class ReadlineHistory(pt.history.FileHistory):
