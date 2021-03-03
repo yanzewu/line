@@ -126,6 +126,10 @@ extended_set_keywords = {
     'style'
 }
 
+control_keywords = {
+    'if', 'then', 'else', 'for', 'do', 'let', 'call',
+}
+
 def is_style_keyword(token):
 
     return token in style_alias or token in style_keywords

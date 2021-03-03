@@ -4,7 +4,7 @@ from collections import namedtuple
 from . import process
 from . import parse_util
 from . import errors
-
+from . import keywords
 
 class CodeBlock:
 
@@ -18,8 +18,13 @@ LineDebugInfo = namedtuple('LineDebugInfo', ['filename', 'lineid', 'token_pos'])
 
 class VMHost:
 
+    MODE_EXEC = 0
+    MODE_RECORD = 1
+    MODE_RECORD_IF = 2
+    MODE_RECORD_LOOP = 3
+
     def __init__(self, debug=False):
-        self.mode = 'exec'
+        self.mode = VMHost.MODE_EXEC
         self.debug = debug
         self.records = {}
         self.cur_record_name = None
@@ -61,18 +66,18 @@ class VMHost:
 
     def process_unsafe(self, state, tokens, line_debug_info):
         
-        if self.mode == 'exec':
+        if self.mode == VMHost.MODE_EXEC:
             self.variables['state'] = lambda: state
             return self.exec_special(state, tokens, line_debug_info)
             
-        elif self.mode in ('record', 'recorddo', 'recordif'):
+        elif self.mode in (VMHost.MODE_RECORD, VMHost.MODE_RECORD_LOOP, VMHost.MODE_RECORD_IF):
             if parse_util.lookup(tokens) in ('done', 'end'):
                 self.block_level -= 1
                 if self.block_level == 0:
                     return self.exec_done(state)
                 else:
                     return self.record(tokens, line_debug_info)
-            elif self.mode == 'recordif' and parse_util.lookup(tokens) == 'else':
+            elif self.mode == VMHost.MODE_RECORD_IF and parse_util.lookup(tokens) == 'else':
                 if self.records['else'] is None:   # else is greedy matched
                     parse_util.get_token(tokens)
                     self._push_record('else', CodeBlock())
@@ -103,7 +108,7 @@ class VMHost:
             self._push_record('for', block)
             self.block_level += 1
             self.record(tokens, line_debug_info)
-            self.mode = 'recorddo'
+            self.mode = VMHost.MODE_RECORD_LOOP
 
         elif parse_util.test_token_inc(tokens, 'if'):
             expr = parse_util.parse_expr(tokens)
@@ -117,7 +122,7 @@ class VMHost:
                 self._push_record('if', block)
                 self.block_level += 1
                 self.record(tokens, line_debug_info)
-                self.mode = 'recordif'
+                self.mode = VMHost.MODE_RECORD_IF
                 self.records['else'] = None     # clear else part, prevent misexecution
             elif parse_util.lookup(tokens) == 'call':
                 if cond:
@@ -132,7 +137,7 @@ class VMHost:
                 self._push_record(fname, CodeBlock())
                 self.block_level += 1
                 self.record(tokens, line_debug_info)
-                self.mode = 'record'
+                self.mode = VMHost.MODE_RECORD
             else:
                 expr = parse_util.parse_expr(tokens)
                 parse_util.assert_no_token(tokens)
@@ -140,34 +145,41 @@ class VMHost:
                 self.set_variable(fname, ret)
 
         elif parse_util.test_token_inc(tokens, 'call'):
-            function = parse_util.get_token(tokens)
-            block = self.records.get(function, None)
-            if not block:
-                raise errors.LineProcessError("Undefined function: %s" % function)
-            new_args = [function]
-            while len(tokens) > 0:
-                new_args.append(process.process_expr(state, parse_util.parse_expr(tokens)))
-            self.arg_stack.append(new_args)
-            r = self.exec_block(state, block)
-            self.arg_stack.pop()
-            if r != 0:
-                return r
+            return self.exec_invoke(state, tokens)
         else:
             return process.parse_and_process_command(tokens, state)
 
         return 0
 
+    def exec_invoke(self, state, tokens):
+        function = parse_util.get_token(tokens)
+        if function in keywords.control_keywords:
+            raise errors.LineParseError("Cannot use %s as function name" % function)
+        block = self.records.get(function, None)
+        if not block:
+            raise errors.LineProcessError("Undefined function: %s" % function)
+        new_args = [function]
+        while len(tokens) > 0:
+            if parse_util.lookup_raw(tokens).startswith('$'):
+                new_args.append(process.process_expr(state, parse_util.parse_expr(tokens)))
+            else:
+                new_args.append(parse_util.get_token(tokens))
+        self.arg_stack.append(new_args)
+        r = self.exec_block(state, block)
+        self.arg_stack.pop()
+        return r
+
     def exec_done(self, state):
-        if self.mode == 'recorddo': # for-loop: will execute it right away
+        if self.mode == VMHost.MODE_RECORD_LOOP: # for-loop: will execute it right away
             block = self.records.get(self.cur_record_name, None)
-            self.mode = 'exec'
+            self.mode = VMHost.MODE_EXEC
             return self.exec_block(state, block)
-        elif self.mode == 'record':
-            self.mode = 'exec'
-        elif self.mode == 'recordif':
+        elif self.mode == VMHost.MODE_RECORD:
+            self.mode = VMHost.MODE_EXEC
+        elif self.mode == VMHost.MODE_RECORD_IF:
             blockif = self.records.get('if', None)
             blockelse = self.records.get('else', None)
-            self.mode = 'exec'
+            self.mode = VMHost.MODE_EXEC
             if blockif.cond:
                 return self.exec_block(state, blockif)
             elif blockelse:

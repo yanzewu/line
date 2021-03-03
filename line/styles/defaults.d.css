@@ -140,3 +140,30 @@ text {
 .originlab legend{
     fontprops: 20;
 }
+
+.nature {
+    fontfamily: Arial;
+    fontprops: 20;
+}
+
+.nature axis {
+    linewidth: 1.5;
+}
+
+.nature tick {
+    minor: 0;
+    length-minor: 0;
+    length: 8;
+    orient: out;
+    linewidth: 1.5;
+}
+
+.nature legend {
+    linewidth: 1.5;
+}
+
+.nature line {
+    linewidth: 2;
+    pointsize: 8;
+    edgewidth: 1.5;
+}

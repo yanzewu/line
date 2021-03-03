@@ -95,10 +95,10 @@ for i = $([1,2]) do
 end
 
 let fun5 = do
-    if $(arg(1) == 0) then
+    if $(arg(1) == "0") then
         print "0!"
     else 
-        if $(arg(1) == 1) then
+        if $(arg(1) == "1") then
             print "1!"
         else
             print "2!"
@@ -109,3 +109,7 @@ end
 call fun5 0
 call fun5 1
 call fun5 2
+
+fun5 0
+let fun6 = do print "fun6"; done
+fun6

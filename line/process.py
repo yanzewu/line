@@ -326,6 +326,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             time.sleep(interval)
         else:
             input('Press Enter to continue...')
+    elif m_state.options['direct-function-call'] and m_state._vmhost and command in m_state._vmhost.records:
+        m_tokens.appendleft(command)
+        return m_state._vmhost.exec_invoke(m_state, m_tokens)
     else:
         raise LineParseError('No command named "%s"' % command)
 
