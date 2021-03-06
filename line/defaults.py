@@ -22,7 +22,9 @@ def parse_default_options(option_list, option_range=None, raise_error=False):
         custom_handler_dict={
             'data-delimiter': lambda x: x,
             'data-title': lambda x: x if x == 'auto' else option_util.to_bool(x),
+            'display-when-quit': lambda x: option_util.to_bool(x) if x.lower() in ('true', 'false') else x,
             'safety': lambda x: int(x),
+            'port': lambda x:int(x),
         })
 
 

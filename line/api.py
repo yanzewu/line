@@ -19,6 +19,10 @@ def _init_state():
     _m_state.is_interactive = False
     _process.initialize()
 
+    if defaults.default_options['remote']:
+        from . import remote
+        remote.start_application(defaults.default_options['port'])
+
 
 def _get_state():
     if _m_state is None:

@@ -215,7 +215,7 @@ class CMDHandler:
 
     def input_loop(self):
         self.init_input()
-        backend.initialize(self.m_state)
+        backend.initialize(self.m_state, silent=session.get_state().options['remote'])
         ret = 0
         while ret == 0:
             ret = self.proc_input()

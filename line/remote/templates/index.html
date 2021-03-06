@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="{{ url_for('static', filename='line.css')}}" rel='stylesheet' type='text/css'>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+
+var id = Math.random().toString(36).substr(2, 7);
+
+function render_block(block) {
+    var code_line = `<span class='prompt-prefix'>line> </span><span class='prompt-command'>${block.code}</span><br>`;
+    var svg_line = block.has_svg ? block.svg_text : '';
+    var img_line = block.has_img ? `<a class='prompt-link' href='img?id=${block.img_id}'>${block.img_name}</a>` : '';
+
+    return `<div width="100%" class='code-block'>${code_line}${svg_line}${img_line}</div>`;
+}
+
+var looper = function(){$.ajax({url: "s", 
+    type: "get",
+    data: {'id': id},
+    success: result => {
+        if (!result) return;
+        result.data.forEach(d => {
+            $('#div_display').append(render_block(d))
+        })
+    },
+})};
+
+$(document).ready(function(){
+    looper();
+    setInterval(looper, 3000)
+});
+
+    </script>
+</head>
+<body>
+    <div id='div_display'></div>
+</body>
+</html>

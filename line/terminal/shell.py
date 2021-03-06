@@ -8,6 +8,7 @@ import prompt_toolkit as pt
 import threading
 import asyncio
 import warnings
+import signal
 pt_inputhooks = None
 
 from .. import defaults
@@ -57,6 +58,7 @@ class CMDHandler:
         self.token_begin_pos = []
         self._filename = None
         self._unpaired_quote = None
+        signal.signal(signal.SIGINT, lambda x, f: sys.exit(1))
 
         if preload_input:
             th = threading.Thread(target=self.get_input_cache)
@@ -186,7 +188,7 @@ class CMDHandler:
         """
 
         l = lexer.Lexer()
-        backend.initialize(session.get_state())
+        backend.initialize(session.get_state(), silent=session.get_state().options['remote'] or not is_interactive)
         ret = 0
         emittor = l.run(fetch_next_line)
 
@@ -213,7 +215,7 @@ class CMDHandler:
                 if not tokens:
                     continue
                 logger.debug("Tokens are: %s" % list(tokens))
-                ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(self._filename, 0, tp))
+                ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(self._filename, l.lineid, tp))
                 if ret == 0:
                     if not is_interactive and self.m_state.is_interactive:     # initiate an input_loop, when switch to input mode
                         self.proc_input()

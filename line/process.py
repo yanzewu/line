@@ -4,6 +4,7 @@ from collections import deque
 from warnings import warn
 import os
 import re
+import io
 import time
 
 import numpy as np
@@ -240,9 +241,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             else:
                 filename = get_token(m_tokens)
 
+        remote_save = False
+        if lookup(m_tokens) == '--remote' and m_state.options['remote']:
+            get_token(m_tokens)
+            remote_save = True
         assert_no_token(m_tokens)
 
-        process_save(m_state, filename)
+        process_save(m_state, filename, remote_save)
 
     elif command == 'clear':
         m_state.cur_subfigure().clear()
@@ -653,10 +658,10 @@ def process_split(m_state:state.GlobalState, hsplitnum, vsplitnum):
     split.align_subfigures(m_state.cur_figure(), 'axis')
 
 
-def process_save(m_state:state.GlobalState, filename:str):
+def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
     """ Saving current figure.
     """
-    do_prompt = m_state.is_interactive or m_state.options['prompt-always']
+    do_prompt = (m_state.is_interactive or m_state.options['prompt-always']) and not remote_save
 
     if not filename:
         if m_state.cur_save_filename:
@@ -674,20 +679,47 @@ def process_save(m_state:state.GlobalState, filename:str):
             return
 
     render_cur_figure(m_state)
-    backend.save_figure(m_state, filename)
+    if remote_save:
+        process_save_remote(m_state, filename[-3:] if filename[-4] == '.' else 'png', filename)
+    else:
+        backend.save_figure(m_state, filename)
     m_state.cur_save_filename = filename
 
 def process_display(m_state:state.GlobalState):
-    if not m_state.is_interactive:
+
+    if not m_state.is_interactive or m_state.options['remote']:
         backend.finalize(m_state)
-        backend.initialize(m_state, silent=False)
+        backend.initialize(m_state, silent=m_state.options['remote'])   # not remote --> must be displayable
         if m_state.cur_figurename:
             cf = m_state.cur_figurename
             for f in m_state.figures:
                 m_state.cur_figurename = f
                 render_cur_figure(m_state)
             m_state.cur_figurename = cf
-            backend.show(m_state)
+            if not m_state.options['remote']:
+                backend.show(m_state)
+            else:
+                # TODO display every figure?
+                process_save_remote(m_state)
+                
+
+def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', wait_client=True):
+    """ Save current figure to remote. Will wait client to connect if wait_client is set.
+    """
+    from . import remote
+
+    if fmt == 'svg':
+        f = io.StringIO()
+    else:
+        f = io.BytesIO()
+    backend.save_figure(m_state, f, format=fmt)
+    f.seek(0)
+    img_id = remote.place_image_data(f.read(), fmt=fmt)
+
+    display_info = 'display @ [%s:%d]' % (m_state._vmhost.pc[0].filename, m_state._vmhost.pc[0].lineid) if m_state._vmhost else 'display'
+    remote.place_block(display_info, img_id=img_id, is_svg=fmt=='svg', img_name=filename)
+    if wait_client:
+        remote.wait_client()
 
 def process_expr(m_state:state.GlobalState, expr):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)
@@ -722,4 +754,4 @@ def process_load(m_state:state.GlobalState, filename, args):
     m_state._vmhost.pop_args()
     os.chdir(cwd)
     m_state.is_interactive = is_interactive
-    backend.initialize(m_state)
+    backend.initialize(m_state, silent=m_state.options['remote'] or not is_interactive)

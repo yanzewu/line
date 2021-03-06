@@ -1,0 +1,19 @@
+.code-block {
+    font-family: 'Dejavu Sans Mono', Consolas, monospace;
+    font-size: large;
+}
+
+.prompt-prefix {
+    font-weight: bold;
+    color: brown;
+}
+
+.prompt-command {
+    font-family: 'Dejavu Sans Mono', Consolas, monospace;
+    font-size: large;
+}
+
+.code-block {
+    border-top: whitesmoke 0.5px solid;
+    padding: 5px;
+}

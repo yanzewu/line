@@ -5,7 +5,7 @@ import warnings
 
 from . import defaults
 from . import terminal
-from .process import process_display
+from .process import process_display, process_save
 
 def main():
 
@@ -51,6 +51,12 @@ Additional options can be shown by `line -e 'show option'`'''
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
     warnings.simplefilter('always', UserWarning)
 
+    if defaults.default_options.get('remote', False):
+        from . import remote
+        remote.start_application(port=defaults.default_options.get('port', 8100))
+        filename = args[0] if mode == 'script' else '<%s>' % mode
+        remote.place_block(code='open %s' % filename)
+
     cmd_handler = terminal.CMDHandler(preload_input=(mode == 'interactive') and
         defaults.default_options['delayed-init'])
     if len(args) == 0:
@@ -78,7 +84,11 @@ Additional options can be shown by `line -e 'show option'`'''
 
 
     if ret_code == 0 and cmd_handler.m_state.options['display-when-quit']:
-        process_display(cmd_handler.m_state)
+        f = cmd_handler.m_state.options['display-when-quit']
+        if isinstance(f, str):
+            process_save(cmd_handler.m_state, f)
+        else:
+            process_display(cmd_handler.m_state)
 
 
 if __name__ == '__main__':

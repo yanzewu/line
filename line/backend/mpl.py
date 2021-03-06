@@ -31,12 +31,18 @@ primary_backend = defaults.default_options['mpl-backend'][0]
 alternative_backends = defaults.default_options['mpl-backend'][1:]
 silent_backend = defaults.default_options['mpl-silent-backend']
 
+interactive_plot = False    # whether use hot update or delayed update
+
 def initialize(m_state:state.GlobalState, silent=None):
     """ silent: If `True`, use silent_backend instead of primary_backend;
                 If `None`, detect `m_state.is_interactive`.
+        interactive_plot will used only if m_state.is_interactive == true and silent == true/none
     """
     if silent is None:
         silent = not m_state.is_interactive
+
+    global interactive_plot
+    interactive_plot = m_state.is_interactive and not silent
 
     try:
         if not silent:
@@ -57,13 +63,13 @@ def initialize(m_state:state.GlobalState, silent=None):
         if not switch_success:
             logger.info('Cannot switch to any alternative backend. Use default instead')
         
-    if m_state.is_interactive:
+    if interactive_plot:
         plt.ion()
         for name, figure in m_state.figures.items():
             _update_figure(figure, name)
 
 def finalize(m_state:state.GlobalState):
-    if m_state.is_interactive:
+    if interactive_plot:
         plt.ioff()
         for figure in m_state.figures.values():
             figure.clear_backend()
@@ -523,16 +529,16 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
     m_subfig.title.computed_style['frame'] = style.Rect(ax.title.get_window_extent(renderer).bounds)
 
 
-def save_figure(m_state:state.GlobalState, filename):
+def save_figure(m_state:state.GlobalState, filename, format=None):
     """ Save current figure. Update if necessary.
     """
 
-    if not m_state.is_interactive:  # delayed evaluation
+    if not interactive_plot:  # delayed evaluation
         update_figure(m_state)
     plt.savefig(
-        filename, dpi=m_state.cur_figure().get_style('dpi')
+        filename, dpi=m_state.cur_figure().get_style('dpi'), format=format
     )
-    if not m_state.is_interactive:
+    if not interactive_plot:
         m_state.cur_figure().clear_backend()
 
 
