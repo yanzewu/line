@@ -34,7 +34,7 @@ Additional options can be shown by `line -e 'show option'`'''
             logging.getLogger('line').setLevel(logging.DEBUG)
             terminal.CMDHandler._debug = True
         elif arg.startswith('--'):
-            kwargs.append(arg[2:].split('='))
+            kwargs.append(arg[2:].split('=', 1) if '=' in arg else (arg[2:], 'true'))
         else:
             args.append(arg)
     
@@ -53,7 +53,11 @@ Additional options can be shown by `line -e 'show option'`'''
 
     if defaults.default_options.get('remote', False):
         from . import remote
-        remote.start_application(port=defaults.default_options.get('port', 8100))
+        if not terminal.CMDHandler._debug:
+            remote.mute_logging()
+        port = defaults.default_options.get('port', 8100)
+        remote.start_application(port=port)
+        warnings.warn('Plotting on remote devices on port %d' % port)
         filename = args[0] if mode == 'script' else '<%s>' % mode
         remote.place_block(code='open %s' % filename)
 

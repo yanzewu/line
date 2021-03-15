@@ -134,6 +134,7 @@ class CMDHandler:
         self.init_input()
         self.m_state.is_interactive = True
         self.ps = CMDHandler.PS1
+        self._filename = '<interactive>'
 
         def fetch_next_line(forced):
             if self._input_cache is not None:

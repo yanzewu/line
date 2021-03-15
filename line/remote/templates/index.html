@@ -10,25 +10,25 @@ var id = Math.random().toString(36).substr(2, 7);
 function render_block(block) {
     var code_line = `<span class='prompt-prefix'>line> </span><span class='prompt-command'>${block.code}</span><br>`;
     var svg_line = block.has_svg ? block.svg_text : '';
-    var img_line = block.has_img ? `<a class='prompt-link' href='img?id=${block.img_id}'>${block.img_name}</a>` : '';
+    var img_line = block.has_img ? `<a class='prompt-link' href='${block.img_url}' download='${block.img_name}'>${block.img_name}</a>` : '';
 
     return `<div width="100%" class='code-block'>${code_line}${svg_line}${img_line}</div>`;
 }
 
-var looper = function(){$.ajax({url: "s", 
-    type: "get",
-    data: {'id': id},
-    success: result => {
-        if (!result) return;
+
+
+$(document).ready(function(){
+
+    var source = new EventSource(`/s?id=${ id }`);
+    source.onmessage = event => {
+        if (!event || !event.data) return;
+        //console.log(event.data);
+        var result = JSON.parse(event.data);
         result.data.forEach(d => {
             $('#div_display').append(render_block(d))
         })
-    },
-})};
+    };
 
-$(document).ready(function(){
-    looper();
-    setInterval(looper, 3000)
 });
 
     </script>

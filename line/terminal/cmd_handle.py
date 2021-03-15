@@ -215,6 +215,7 @@ class CMDHandler:
 
     def input_loop(self):
         self.init_input()
+        self._filename = '<interactive>'
         backend.initialize(self.m_state, silent=session.get_state().options['remote'])
         ret = 0
         while ret == 0:

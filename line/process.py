@@ -673,13 +673,14 @@ def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
             logger.info('Saving cancelled')
             return
 
-    if m_state.options['prompt-overwrite'] and io_util.file_exist(filename):
+    if not remote_save and m_state.options['prompt-overwrite'] and io_util.file_exist(filename):
         if not terminal.query_cond('Overwrite current file "%s"? ' % filename, do_prompt, False):
             warn('Canceled')
             return
 
     render_cur_figure(m_state)
     if remote_save:
+        # TODO suffix has many corner cases -- either use mpl's implementation or check them
         process_save_remote(m_state, filename[-3:] if filename[-4] == '.' else 'png', filename)
     else:
         backend.save_figure(m_state, filename)
@@ -707,6 +708,7 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
     """ Save current figure to remote. Will wait client to connect if wait_client is set.
     """
     from . import remote
+    from html import escape
 
     if fmt == 'svg':
         f = io.StringIO()
@@ -714,9 +716,10 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
         f = io.BytesIO()
     backend.save_figure(m_state, f, format=fmt)
     f.seek(0)
-    img_id = remote.place_image_data(f.read(), fmt=fmt)
+    img_id = remote.place_image_data(f.read(), filename=filename if filename.endswith(fmt) else '%s.%s' % (filename, fmt))
 
-    display_info = 'display @ [%s:%d]' % (m_state._vmhost.pc[0].filename, m_state._vmhost.pc[0].lineid) if m_state._vmhost else 'display'
+    display_cmd = 'display' if fmt == 'svg' else 'save'
+    display_info = '%s @ [%s:%d]' % (display_cmd, escape(m_state._vmhost.pc[0].filename), m_state._vmhost.pc[0].lineid) if m_state._vmhost else display_cmd
     remote.place_block(display_info, img_id=img_id, is_svg=fmt=='svg', img_name=filename)
     if wait_client:
         remote.wait_client()
