@@ -2,7 +2,6 @@
 Fixes
 ---
 [LOW] Incorrect DPI when there is system-wide scaling on Windows
-[HIGH] Compatibility to MPL 3.2+
 
 Features
 ---

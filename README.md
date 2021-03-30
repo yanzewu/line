@@ -12,11 +12,12 @@ Creating nice academic-style plot with least typing.
 Prerequesties:
 
 - Python >= 3.5 (Necessary)
-- Matplotlib == 3.0/3.1 (Necessary)
+- Matplotlib >= 3.0 (Necessary)
 - Numpy >= 1.13 (Necessary)
 - Pandas >= 0.22 (Necessary)
 - Prompt-toolkit >= 3.0 (Optional, for colorful prompts)
-- IPython >= 7.19.0 (Optional)
+- IPython >= 7.19.0 (Optional, for prompts)
+- Flask >= 1.1 (Optional, for remote plotting)
 
 The package is written in pure python and is directly executable. To install it into python library:
 
@@ -30,6 +31,7 @@ The plotting grammar of Line is similar (but looser) with Gnuplot. The major dif
 - No requirement for frequent `replot`. The replotting is automatically done when there is anything changed (but certainly you can manually replot);
 - Uniform description of style elements. Line uses CSS model to select and modify element styles, therefore the syntax for getting/setting styles are simple and straightforward;
 - A better palette system. Setting palette only requires one command, and one can easily change the color order via modifying `groupid` or using `group` command.
+- Remote plotting.
 
 ## Quickstart
 

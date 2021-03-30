@@ -468,11 +468,12 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
     # grid (only x, y)
     for i, n in enumerate('xy'):
-        ax.grid(grid_styles[i]['visible'], which='major', axis=n, 
-            linewidth=grid_styles[i]['linewidth'],
-            linestyle=grid_styles[i]['linetype'].to_str(),
-            color=grid_styles[i]['linecolor'],
-            visible=grid_styles[i]['visible']
+        if grid_styles[i]['visible']:
+            ax.grid(True, which='major', axis=n, 
+                linewidth=grid_styles[i]['linewidth'],
+                linestyle=grid_styles[i]['linetype'].to_str(),
+                color=grid_styles[i]['linecolor'],
+                visible=grid_styles[i]['visible']
         )
 
     # legend

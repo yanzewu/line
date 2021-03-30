@@ -33,8 +33,8 @@ if __name__ == '__main__':
     ])
 
     # brackets
-    test_a_session(["a$(b{ c}(d)) $!( e \\", "f) ${g ' h", "i'} "], [
-        (deque(['a', '$(b{c}(d))', '$!(ef)', "${g' h\ni'}"]), [(0, 0), (0, 1), (0, 13), (1, 3)])
+    test_a_session(["a$(b{ c}(d)) $!( e \\", "f) ${g ' h", "i,j'} "], [
+        (deque(['a', '$(b{c}(d))', '$!(ef)', "${g' h\ni,j'}"]), [(0, 0), (0, 1), (0, 13), (1, 3)])
     ])
 
     test_a_session(["$('abc') 'def'"], [(deque(["$('abc')", "'def'"]), [(0, 0), (0, 9)])])

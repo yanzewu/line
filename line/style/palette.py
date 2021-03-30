@@ -55,9 +55,10 @@ def _load_palette_mpl():
     """ Try importing all palettes from Matplotlib.
     """
 
-    from matplotlib import cm
+    from matplotlib import pyplot
 
-    for name, cmap in cm.cmap_d.items():
+    for name in pyplot.colormaps():
+        cmap = pyplot.get_cmap(name)
         try:
             PALETTES['mpl.' + name] = [(0,0,0)] + list(cmap.colors)
         except AttributeError:

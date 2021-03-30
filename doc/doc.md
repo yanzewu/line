@@ -10,6 +10,7 @@ Structure of this documentation:
 - [Command Reference](#command-reference)
 - [Expressions](#expressions)
 - [Styles](#styles)
+- [Remote Plotting](#remote-plotting)
 
 ## Command Line Options
 
@@ -41,18 +42,22 @@ Available options are (options with * can only take effects by setting in option
 
 name | avaiable values | default | function
 --- | --- | --- | ---
-auto-adjust-range | true/false | true | Adjust the range of axis automatically when plotting new data;
-auto-compact | true/false | true | Always make the figure compact;
-data-title | true/false/auto | auto | Treat the first row of data as title. (Default: auto).
+auto-adjust-range | true/false | true | Adjust the range of axis automatically when plotting new data
+auto-compact | true/false | true | Always make the figure compact
+data-title | true/false/auto | auto | Treat the first row of data as title
 data-delimiter | any char/'white'/'auto' | auto | Delimiter of data
 delayed-init | true/false | true | Delayed loading modules in interactive mode
 display-when-quit | true/false | false | Always try to display the figure when exiting program (except when having errors)
+direct-function-call | true/false | true | Allows calling custom function without 'call' prefix
+*fancy-prompt | true/false | true | Uses prompt_toolkit as input frontend (requires prompt_toolkit>=3 and ipython)
 *font-family-math | cm/stix | cm | Latex font family used by backend
 full-label | true/false | false| Always use "filename:column" format for labels
 ignore-data-comment | true/false | true | Ignore lines begin with '#'
 *mpl-backend | string split by ',' | Qt5Agg,Qt4Agg,TkAgg | Displaying backend used by MPL
 *mpl-silent-backend | string | Agg | File writing backend used by MPL
+*remote | true/false | false | Plotting on [remote backend](#remote-plotting) (requires flask)
 *physical-figure-size | float,float | 7.2,4.8 | The physical figure size used in DPI scaling
+*port | int | 8100 | Port of remote plotting
 prompt-always | true/false | false | Prompt in file mode
 prompt-multi-removal | true/false | true | Prompt when removing more than one element
 prompt-overwrite | true/false | true | Prompt when saving to an existing file
@@ -263,11 +268,15 @@ Example:
 
     set default figure dpi high
     set line lw=2
+    set line lw=$(1+1)
     set line +paircross
     set gca hold on
+    set gca legend=$(["legend1", "legend2"])
 
 Args:
 - selection1,selection2: [Element Selector](#element-selector). If not given, the style is applied to current subfigure. Note in `set default` and `set future`, the selection cannot be omitted and has certain constraint.
+- style, val: Style should be a valid style for certain elements. Value may be a plain value (parsed automatically) or expression enclosed in `$( ... )`.
+- class: The style classes to be added or removed.
 - `set default` modifies default value of styles, same as updating `default.css` (but not permanently). Only element type selector can be used in `set default`.
 - `set future` modifies the global stylesheet, same as updating `default.d.css` (but not permanently). The selectors for `set future` should only be classes.
 - `set palette (type)` changes palette for line (default), bar, polygon or drawline. The avaiable palette names can be viewed via `show palette` command. Custom palette can be created in [palettes.json](../line/styles/palettes.json).
@@ -406,13 +415,16 @@ Save current figure to file.
 
 Usage:
 
-    save (filename)
+    save (filename) (remote)
 
 If filename is not present, save will prompt for a new filename. It will also prompt for a new filename (or overwrite) if file exists. Filename may be a variable or expression (will try to convert the result to string).
+
+If remote is specified, then generate a data url of the image on the remote end.
 
 Related options:
 
 - --prompt-overwrite=true/false: Prompt before overwritting a file. (Default: true). To use this option in non-interactive mode, set --prompt-always to true.
+- --remote=true/false: Enable/disable remote saving;
 
 ### clear
 ---
@@ -467,6 +479,7 @@ Usage:
 
     display
 
+In remote mode, `display` will always display on the remote backend.
 
 ### load
 ---
@@ -596,6 +609,9 @@ Usage:
 
 The function must be defined by `let ... do` command. The arguments will be available via `arg()` function in the function body.
 
+Related options:
+- --direct-function-call: If true, then the "call" prefix is not required.
+
 
 ## Expressions
 
@@ -607,7 +623,7 @@ Line handles simple arithmetic expressions. The grammar is similar to Python or 
 - Internal function: See the list below. Note this is different from the user-defined functions (the latter is evaluated by `call` command);
 - String: With either single quotation or double quotation;
 
-It's suggested to quote expression by bracket `()` to avoid ambiguity with the other part of the command. Alternatively, the dollar sign `$` can be put in front of left bracket, which can be used as an identifier of expressions in commands like `set` or `print`.
+It's suggested to quote expression by bracket `()` to avoid ambiguity with the other part of the command. Alternatively, the dollar sign `$` can be put in front of left bracket, which can be used as an identifier of expressions in commands like [set](#set) or [print](#print).
 
 Examples:
 
@@ -757,14 +773,17 @@ These styles are inheritable:
 The hierachy of elements:
 
 - figure
+    - title
+    - legend
     - subfigure
-        - xaxis, yaxis, x2axis, y2axis
-            - xlabel, ylabel, x2label, y2label
-            - xtick, ytick, x2tick, y2tick
-            - xgrid, ygrid
-        - datalines
+        - (\*)axis (\*=x,y,x2,y2)
+            - (\*)label
+            - (\*)tick
+            - (\*)grid (only for x and y)
+        - data displayers (datalines, bars, polygons)
         - drawlines
         - texts
+        - title
         - legend
 
 ![](FigureModel.png)
@@ -845,3 +864,18 @@ visible | 'true'/'false'
 vspacing | float
 width | float
 zindex | int
+
+## Remote Plotting
+
+Line supports plotting on remote devices by passing `--remote` on args or setting `remote=true` in option.ini. The default port is 8100, and can be specified by `--port`. For exmaple, when executing
+
+    line --remote -e "plot x;display"
+
+and open http://127.0.0.1:8100 on the browser, you should see a figure.
+
+Commands that behave differently in display:
+
+- save: `save [filename] remote` will save file (as a link) on remote backend;
+- display: Display the image on remote backend. This also works for --display-when-quit.
+
+The remote server is not intended to be used for multiple users or in an insecure environment. The server will shutdown only when a client connects and all clients have retrived the latest data. You can also shutdown the server manually by Ctrl+C.

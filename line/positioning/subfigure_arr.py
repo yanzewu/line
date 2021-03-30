@@ -46,10 +46,10 @@ def get_compact_subfigure_padding(subfigure):
     offset_left, offset_right = _get_outmost_ticklabel_offset(subfigure, 'x') if has_tick_x else (0, 0)
     offset_bottom, offset_top = _get_outmost_ticklabel_offset(subfigure, 'y') if has_tick_y else (0, 0)
     
-    axis_left_d = -subfigure.axes[1].attr('frame').left() + subfig_size.left() if subfigure.axes[1].attr('visible') else 0
-    axis_bottom_d = -subfigure.axes[0].attr('frame').bottom() + subfig_size.bottom() if subfigure.axes[0].attr('visible') else 0
-    axis_right_d = subfigure.axes[2].attr('frame').right() - subfig_size.right() if subfigure.axes[2].attr('visible') else 0
-    axis_top_d = subfigure.axes[3].attr('frame').top() - subfig_size.top() if subfigure.axes[3].attr('visible') else 0
+    axis_left_d = subfigure.axes[1].attr('frame').width if subfigure.axes[1].attr('visible') else 0
+    axis_bottom_d = subfigure.axes[0].attr('frame').height if subfigure.axes[0].attr('visible') else 0
+    axis_right_d = subfigure.axes[2].attr('frame').width if subfigure.axes[2].attr('visible') else 0
+    axis_top_d = subfigure.axes[3].attr('frame').height if subfigure.axes[3].attr('visible') else 0
 
     fig_size_h = subfig_size.width / (rsize[0] - padding[0] - padding[2])
     fig_size_v = subfig_size.height / (rsize[1] - padding[1] - padding[3])
@@ -74,8 +74,8 @@ def _get_label_and_tick_size(subfigure, axis):
     m_tick = subfigure.axes[axis_idx].tick
     m_label = subfigure.axes[axis_idx].label
 
-    has_label = m_label.attr('visible')
-    has_tick = m_tick.attr('visible')
+    has_label = m_label.attr('visible') and subfigure.axes[axis_idx].attr('visible')
+    has_tick = m_tick.attr('visible') and subfigure.axes[axis_idx].attr('visible')
     has_ticklabel = len(subfigure.axes[axis_idx].get_style('tickpos')) > 0 and has_tick
 
     label_width = m_label.attr('frame')[size_idx] if has_label else 0

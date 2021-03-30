@@ -90,7 +90,7 @@ Additional options can be shown by `line -e 'show option'`'''
     if ret_code == 0 and cmd_handler.m_state.options['display-when-quit']:
         f = cmd_handler.m_state.options['display-when-quit']
         if isinstance(f, str):
-            process_save(cmd_handler.m_state, f)
+            process_save(cmd_handler.m_state, f, remote_save=cmd_handler.m_state.options['remote'])
         else:
             process_display(cmd_handler.m_state)
 

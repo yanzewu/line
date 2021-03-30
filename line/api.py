@@ -49,6 +49,7 @@ def subfigure(*arg):
         raise ValueError(arg)
     return _m_state.cur_subfigure()
 
+subplot = subfigure
 
 def plot(*args, **kwargs):
     """ Plot a new set of data.
@@ -104,6 +105,13 @@ def text(txt, pos, **kwargs):
     _get_state().cur_subfigure(True).add_text(
         txt, style.str2pos(pos) if isinstance(pos, str) else pos, **kwargs)
 
+def legend(labels=None, **kwargs):
+    if labels is None:
+        _m_state.gca().legend.update_style(visible=not _m_state.gca().legend.get_style('visible'))
+    else:
+        _m_state.gca().update_style(legend=labels)
+    _m_state.gca().legend.update_style(**kwargs)
+    return _m_state.gca().legend
 
 def show():
     if not _m_state:

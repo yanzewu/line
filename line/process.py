@@ -242,7 +242,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
                 filename = get_token(m_tokens)
 
         remote_save = False
-        if lookup(m_tokens) == '--remote' and m_state.options['remote']:
+        if lookup(m_tokens) == 'remote' and m_state.options['remote']:
             get_token(m_tokens)
             remote_save = True
         assert_no_token(m_tokens)
@@ -289,6 +289,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         return True
 
     elif command == 'input':
+        if m_state.is_interactive:
+            return 0
         m_state.is_interactive = True
         if lookup(m_tokens) == 'norender':    # no render exisiting fiture
             return 0
@@ -352,7 +354,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # update figure
     if m_state.cur_figure().is_changed or m_state.cur_subfigure().is_changed:
-        render_cur_figure(m_state)
+        if m_state.options['remote']:
+            process_display(m_state)
+        else:
+            render_cur_figure(m_state)
 
     if do_focus_up:
         backend.update_focus_figure(m_state)
@@ -508,6 +513,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         while len(m_tokens) > 0:
             opt = get_token(m_tokens)
             arg = get_token(m_tokens)
+            # TODO readonly options
             if arg == '=':
                 arg = get_token(m_tokens)
             try:
@@ -576,6 +582,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, ('option',  'options')):
         if len(m_tokens) == 0:
+            # TODO help message
             print('OPTION                          VALUE')
             print('------                          -----')
             for opt, val in m_state.options.items():
