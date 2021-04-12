@@ -23,8 +23,12 @@ def parse_default_options(option_list, option_range=None, raise_error=False):
             'data-delimiter': lambda x: x,
             'data-title': lambda x: x if x == 'auto' else option_util.to_bool(x),
             'display-when-quit': lambda x: option_util.to_bool(x) if x.lower() in ('true', 'false') else x,
-            'safety': lambda x: int(x),
+            'font-family-math': lambda x: x,
+            'mpl-backend': lambda x: x.split(','),
+            'mpl-silent-backend': lambda x: x,
+            'physical-figure-size': lambda x: [float(x.split(',')[0]), float(x.split(',')[1])],
             'port': lambda x:int(x),
+            'safety': lambda x: int(x),
         })
 
 

@@ -140,3 +140,12 @@ class FigObject:
 
     def get_children(self):
         return []
+
+    def get_all_children(self, pred=None):
+        """ Returns all child and self, if pred is None
+        or pred(self) == True
+        """
+        if pred is None or pred(self):
+            yield self
+        for c in self.get_children():
+            yield from c.get_all_children(pred)

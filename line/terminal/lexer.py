@@ -18,7 +18,7 @@ class Lexer:
     def run(self, fetch_nextline):
         """ 
         When line is not enough, will call fetch_nextline(forced:bool) -> str.
-        When a line break is found, will call execute(tokens, linedebuginfo)
+        Returns a generator of tokens.
         """
         self.buffer = fetch_nextline(False)
         self.tokens = deque()
@@ -159,9 +159,9 @@ class Lexer:
         self.head += 1
         self.tail = self.head
 
-    def update_buffer(self, fetch_nextline, force=False):
-        self.buffer = fetch_nextline(force)
-        if self.buffer is None and force:
+    def update_buffer(self, fetch_nextline, forced=False):
+        self.buffer = fetch_nextline(forced)
+        if self.buffer is None and forced:
             raise LineParseError('Incomplete command')
 
         self.lineid += 1
@@ -172,3 +172,14 @@ class Lexer:
         self.tokens.clear()
         self.token_poses.clear()
      
+
+def split(text:str):
+    has_fetched = [False]
+    def fetch_nextline(forced):
+        if not has_fetched[0]:
+            has_fetched[0] = True
+            return text
+        else:
+            return
+
+    return next(Lexer().run(fetch_nextline))

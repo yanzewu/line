@@ -113,6 +113,7 @@ class CMDHandler:
         """ Asynchronic version for input. Main thread is loading modules.
         """
         self.init_input()
+        self._input_cache = None
         try:
             self._input_cache = CMDHandler._input_session.prompt(self.PS1, completer=completion.Completer())
         except KeyboardInterrupt:
@@ -144,7 +145,7 @@ class CMDHandler:
             else:
                 self.ps = CMDHandler.PS1 if not forced else CMDHandler.PS2
                 try:
-                    return CMDHandler._input_session.prompt(self.ps, completer=completion.Completer())
+                    return CMDHandler._input_session.prompt(self.ps, completer=completion.Completer(self.m_state))
                 except KeyboardInterrupt:
                     return None
 

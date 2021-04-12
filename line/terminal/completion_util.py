@@ -10,7 +10,10 @@ def get_keywords():
     return list(keywords.all_style_keywords)
 
 
-def get_filelist(filename):
+def get_filelist(filename, dirmode=False):
+    """ dirmode = False: dir/ and file'
+        dirmode = True: dir/
+    """
 
     if filename.startswith('\'') or filename.startswith('"'):
         quote = filename[0]
@@ -29,7 +32,10 @@ def get_filelist(filename):
         files = os.listdir()
         slash = '/'
 
-    return ['%s%s%s' % (quote, f, quote if not os.path.isdir(f) else slash) for f in files]
+    if dirmode:
+        return ['%s%s%s' % (quote, f, slash) for f in files if os.path.isdir(f)]
+    else:
+        return ['%s%s%s' % (quote, f, quote if not os.path.isdir(f) else slash) for f in files]
 
 
 # def get_completions(m_state:state.GlobalState, tokens):
