@@ -87,16 +87,15 @@ class Completer(pt.completion.Completer):
                         yield from self.generate_completion_list(d, ('option', 'default', 'style', 'compact', 'palette'))
                     elif command == 'show':
                         yield from self.generate_completion_list(d, ('currentfile', 'option', 'palette'))
-                    if self.m_state and self.m_state.cur_figurename:
-                        yield from self.generate_completion_list(d, self.complete_elements(d), filter_=False)
+                    
+                    yield from self.generate_completion_list(d, self.complete_elements(d), filter_=False)
                     
                 elif not tokens[cur_idx-1].endswith('='):
                     yield from self.generate_completion_list(d, keywords.all_style_keywords, self.format_stylename)
 
             elif command == 'fit':
                 if cur_idx == 1 or tokens[cur_idx-1] == ',':
-                    if self.m_state and self.m_state.cur_figurename:
-                        yield from self.generate_completion_list(d, self.complete_elements(d), filter_=False)
+                    yield from self.generate_completion_list(d, self.complete_elements(d), filter_=False)
                 else:
                     yield from (x for x in ('linear', 'quad', 'exp', 'prop'))
 
@@ -124,10 +123,12 @@ class Completer(pt.completion.Completer):
 
     def complete_elements(self, d, subfigure_only=False):
         yield from (c for c in keywords.element_keywords if c.startswith(d))
-        if subfigure_only:
-            yield from self.m_state.gca().get_all_children(lambda x:x.name.startswith(d))
-        else:
-            yield from self.m_state.gcf().get_all_children(lambda x:x.name.startswith(d))
+
+        if self.m_state and self.m_state.cur_figurename:
+            if subfigure_only:
+                yield from map(lambda x:x.name, self.m_state.gca().get_all_children(lambda x:x.name.startswith(d)))
+            else:
+                yield from map(lambda x:x.name, self.m_state.gcf().get_all_children(lambda x:x.name.startswith(d)))
 
     def complete_colors(self, d):
         from .. import style

@@ -147,7 +147,7 @@ class Subfigure(FigObject):
         """
         
         try:
-            elem_queue = {DataLine:self.datalines, Bar:self.bars, DrawLine:self.drawlines, 
+            elem_queue = {DataLine:self.datalines, SmartDataLine:self.datalines, Bar:self.bars, DrawLine:self.drawlines, 
                 Polygon: self.polygons, Text:self.texts}[type(element)]
             idx = elem_queue.index(element)
         except (KeyError, ValueError) as e:

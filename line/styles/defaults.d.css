@@ -167,3 +167,21 @@ text {
     pointsize: 8;
     edgewidth: 1.5;
 }
+
+.matlab {
+    fontsize: 10;
+    fontfamily: Arial;
+}
+
+.matlab line {
+    linewidth: 0.5;
+}
+
+.matlab axis {
+    linewidth: 0.5;
+}
+
+.matlab tick {
+    linewidth: 0.5;
+    length-minor: 0;
+}

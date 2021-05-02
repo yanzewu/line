@@ -129,8 +129,11 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if not elements:
             warn('No line is fitted')
         else:
+            fitnames = []
             for e in elements:
-                dataview.api.fit(m_state, e, function=function, labelfmt=style_dict.pop('label', 'Fit %T'), **style_dict)
+                l = dataview.api.fit(m_state, e, function=function, labelfmt=style_dict.pop('label', 'Fit %T'), **style_dict)
+                fitnames.append(l.data.myfunc.name)
+            m_state._vmhost.set_variable('fit', fitnames)
 
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)

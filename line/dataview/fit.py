@@ -21,7 +21,7 @@ def _buildpolyfunc(coeffs):
 
     return NamedCallable(
         lambda x: np.polyval(coeffs, x), 
-        ''.join(('%s%s' % (coeff2str(j), pow2str(len(coeffs)-j)) for j in range(len(coeffs)))))
+        ''.join(('%s%s' % (coeff2str(j), pow2str(len(coeffs)-j-1)) for j in range(len(coeffs)))))
         
 
 def polyfit(dp:datapack.DataPack, deg, residual=False):
@@ -77,8 +77,8 @@ def add_fitline(subfigure, fittedfunc, range_=None, xlabel='', ylabel='', **kwar
     
     if range_ is None:
         xr = subfigure.axes[0].attr('range')
-        step_ = xr[2] if xr[2] else (xr[1] - xr[0])/100
-        range_ = (xr[0], xr[1], xr[2])
+        step_ = (xr[1] - xr[0])/100
+        range_ = (xr[0], xr[1], step_)
 
     kwargs['range'] = range_
 

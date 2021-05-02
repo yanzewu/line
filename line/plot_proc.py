@@ -85,14 +85,14 @@ class PlotParser:
             pg.hint1 = self.cur_hint
             pg.expr1 = self.token_stack.pop()
             get_token(self.m_tokens)
-            self._parse_y(pg)
+            self._parse_y(pg, must_begin_with_expr=True)
         elif self.next() not in ' ,;=' and (self._must_be_expr(self.next(), self.next(1)) or self.next(1) == ':'):  # hint expr ?
             pg.hint1 = self.token_stack.pop()
             pg.expr1 = parse_expr(self.m_tokens)    
 
             if self.next() == ':':  # hint expr :
                 get_token(self.m_tokens)
-                self._parse_y(pg)
+                self._parse_y(pg, must_begin_with_expr=True)
             else:   # hint expr
                 pg.hint2 = pg.hint1
                 pg.expr2 = pg.expr1
@@ -163,13 +163,14 @@ class PlotParser:
             m_pg.source = pg.source[idx // (ycols // len(pg.source)) ]
             self.plot_groups.append(m_pg)
 
-    def _parse_y(self, pg:PlottingPackage):
-        
+    def _parse_y(self, pg:PlottingPackage, must_begin_with_expr=False):
+        # must_be_expr => expr (style...) 
+        # otherwise => expr? (style...)
         self.shift_expr()
-        if not self.next() or self.next() == ',':
+        if must_begin_with_expr or not self.next() or self.next() == ',':
             pg.hint2 = pg.hint1
             pg.expr2 = self.token_stack.pop()
-            pg.style = {}
+            pg.style = self._parse_style()
         elif self.next() not in ' ,;=' and self._must_be_expr(self.next(), self.next(1)):
             pg.hint2 = self.token_stack.pop()
             pg.expr2 = parse_expr(self.m_tokens)
@@ -182,6 +183,7 @@ class PlotParser:
             self._parse_group2(pg)
 
     def _parse_group2(self, pg:PlottingPackage):
+        # expr? style...
         m_tokens2 = self.m_tokens.copy()
         try:
             pg.style = parse_style(m_tokens2, ',', recog_comma=False, recog_class=False, raise_error=True)

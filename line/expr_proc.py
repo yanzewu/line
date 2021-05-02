@@ -19,25 +19,24 @@ _SPECIAL_BRACKET_MAPPER = {'$(': '(', '$!(': 'python('}
 
 logger = logging.getLogger('line')
 
+def _get_ufunc_list(name_list):
+    
+    return dict([(l, getattr(np, l)) if isinstance(l, str) else (l[0], getattr(np, l[1])) for l in name_list])
+
+
 class ExprEvaler:
 
     FUNCTIONS = {
-            'sin':np.sin,
-            'cos':np.cos,
-            'tan':np.tan,
-            'cumsum':np.cumsum,
-            'exp':np.exp,
-            'log':np.log,
-            'sinh':np.sinh,
-            'cosh':np.cosh,
-            'tanh':np.tanh,
-            'sqrt':np.sqrt,
-            'abs':np.abs,
-            'min':np.minimum,
-            'max':np.maximum,
-            'tp': np.transpose,
-            'range':np.arange,
-            'linspace':np.linspace,
+            **_get_ufunc_list([
+                'mod', 'fmod', 'abs', 'rint', 'sign', 'heaviside', ('rem', 'remainder'), 
+                'conj', 'exp', 'exp2', 'log', 'log2', 'log10', 'sqrt', 'square',
+                'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh',
+                ('asin', 'arcsin'), ('acos', 'arccos'), ('atan', 'arctan'), ('atan2', 'arctan2'),
+                ('asinh', 'arcsinh'), ('acosh', 'arccosh'), ('atanh', 'arctanh'),
+                ('and', 'logical_and'), ('or', 'logical_or'), ('not', 'logical_not'),
+                ('max', 'maximum'), ('min', 'minimum'), 'floor', 'ceil',
+                'sum', 'cumsum', ('tp', 'transpose'), 'linspace', 'array', ('range', 'arange'),
+            ]),
             'hist': stat_util.histogram,
             'load': model.load_file,
             'save': model.save_file,

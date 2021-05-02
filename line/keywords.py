@@ -51,7 +51,6 @@ inheritable_styles = {
 style_alias = {
     'w':'linewidth',
     'c':'color',
-    's':'pointsize',
     't':'label',
     'lw':'linewidth',
     'ps':'pointsize',
