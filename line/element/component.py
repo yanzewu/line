@@ -183,8 +183,8 @@ class DataLine(FigObject):
             m_style['label'] = label
 
     def _update_ext(self):
-        self._ext_cache = (np.min(self.data.get_x()), np.max(self.data.get_x()), 
-            np.min(self.data.get_y()), np.max(self.data.get_y()))
+        self._ext_cache = (np.nanmin(self.data.get_x()), np.nanmax(self.data.get_x()), 
+            np.nanmin(self.data.get_y()), np.nanmax(self.data.get_y()))
 
 
 class SmartDataLine(FigObject):
@@ -211,7 +211,7 @@ class SmartDataLine(FigObject):
         step_ = value[2] if value[2] else (value[1] - value[0])/100
         self.data.update(np.arange(value[0], value[1] + step_, step_))
         self._ext_cache = (value[0], value[1] + step_, 
-            np.min(self.data.get_y()), np.max(self.data.get_y()))
+            np.nanmin(self.data.get_y()), np.nanmax(self.data.get_y()))
 
     def _update_data(self, data):
         self.data = data
@@ -250,13 +250,13 @@ class Bar(FigObject):
 
     def _set_bin(self, m_style, value):
         if not self.dynamic_bin:
-            raise LineProcessError("Cannot set bin width since it is static")
+            raise errors.LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['bin'] = value
 
     def _set_norm(self, m_style, value):
         if not self.dynamic_bin:
-            raise LineProcessError("Cannot set bin width since it is static")
+            raise errors.LineProcessError("Cannot set bin width since it is static")
         else:
             m_style['norm'] = value
 
@@ -280,9 +280,9 @@ class Bar(FigObject):
 
     def _update_ext(self):
         x, y = self.data.get_x(), self.data.get_y()
-        self._ext_cache = (np.min(x) - self.computed_style['barwidth']/2,
-            np.max(x) + self.computed_style['barwidth']/2,
-            np.min(y), np.max(y))
+        self._ext_cache = (np.nanmin(x) - self.computed_style['barwidth']/2,
+            np.nanmax(x) + self.computed_style['barwidth']/2,
+            np.nanmin(y), np.nanmax(y))
 
 
 class DrawLine(FigObject):

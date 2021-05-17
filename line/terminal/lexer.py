@@ -37,6 +37,9 @@ class Lexer:
             return
 
         while True:
+            if self.buffer is None:
+                break
+            
             if self.head >= len(self.buffer):
                 if self.state == Lexer.STATE_BRACKET:
                     raise LineParseError("Bracket does not match")

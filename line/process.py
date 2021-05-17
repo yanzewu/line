@@ -167,6 +167,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         
     elif command == 'text':
         text = get_token(m_tokens)
+        if text.startswith('$('):
+            text = process_expr(m_state, text)
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
@@ -198,7 +200,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             assert_no_token(m_tokens)
         m_state.figure(fig_name)
 
-        if m_state.is_interactive:
+        if m_state.is_interactive and not m_state.options['remote']:
             do_focus_up = True
 
     # select subfigure
@@ -265,15 +267,30 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'print':
         outstr = ''
+        terminal = 'remote' if m_state.options['remote'] else 'stdout'
         while len(m_tokens) > 0:
             if m_tokens[0].startswith('$'):
                 outstr += str(process_expr(m_state, parse_expr(m_tokens)))
+            elif m_tokens[0] == '>' and len(m_tokens) > 1:
+                m_tokens.popleft()
+                terminal = m_tokens[0]
+                break
             else:
                 outstr += m_tokens[0]
                 m_tokens.popleft()
             if len(m_tokens) > 0:
                 outstr += ' '
-        print(outstr)
+        if terminal == 'stdout':
+            print(outstr)
+        elif terminal == 'stderr':
+            import sys
+            print(outstr, file=sys.stderr)
+        elif terminal == 'remote' and m_state.options['remote']:
+            from . import remote
+            remote.place_block(code=outstr)
+        else:
+            warn("Terminal %s not recognized. Using stdout instead" % terminal)
+            print(outstr)
 
     elif command == 'quit':
         if m_state.options['prompt-save-when-quit']:
@@ -357,7 +374,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # update figure
     if m_state.cur_figure().is_changed or m_state.cur_subfigure().is_changed:
-        if m_state.options['remote']:
+        if m_state.options['remote'] and m_state.options['auto-trigger-remote']:
             process_display(m_state)
         else:
             render_cur_figure(m_state)
@@ -732,6 +749,8 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
     display_info = '%s @ [%s:%d]' % (display_cmd, escape(m_state._vmhost.pc[0].filename), m_state._vmhost.pc[0].lineid) if m_state._vmhost else display_cmd
     remote.place_block(display_info, img_id=img_id, is_svg=fmt=='svg', img_name=filename)
     if wait_client:
+        if not m_state.is_interactive:  # assuming we would stay a while in interactive; I'm not sure why this works.
+            time.sleep(0.5)
         remote.wait_client()
 
 def process_expr(m_state:state.GlobalState, expr):

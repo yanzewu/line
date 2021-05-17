@@ -8,6 +8,7 @@ from . import lexer
 from ..errors import LineParseError
 from ..parse_util import is_quoted, strip_quote
 from .. import io_util
+from .. import defaults
 
 class Completer(pt.completion.Completer):
     
@@ -84,11 +85,14 @@ class Completer(pt.completion.Completer):
             elif command in ('set', 'show', 'remove', 'style'):
                 if cur_idx == 1 or tokens[cur_idx-1] == ',':
                     if command == 'set':
-                        yield from self.generate_completion_list(d, ('option', 'default', 'style', 'compact', 'palette'))
+                        yield from self.generate_completion_list(d, ('option ', 'default ', 'style ', 'compact ', 'palette '))
                     elif command == 'show':
-                        yield from self.generate_completion_list(d, ('currentfile', 'option', 'palette'))
+                        yield from self.generate_completion_list(d, ('currentfile ', 'option ', 'palette '))
                     
                     yield from self.generate_completion_list(d, self.complete_elements(d), filter_=False)
+
+                elif cur_idx == 2 and tokens[cur_idx-1] == 'option':
+                    yield from self.generate_completion_list(d, (x+'=' for x in defaults.default_options))
                     
                 elif not tokens[cur_idx-1].endswith('='):
                     yield from self.generate_completion_list(d, keywords.all_style_keywords, self.format_stylename)

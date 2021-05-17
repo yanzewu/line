@@ -43,6 +43,7 @@ class VMHost:
             'argc': lambda: len(self.arg_stack[-1]),
             'cond': lambda x,a,b: a if x else b,
             'set':self.set_variable,
+            'exist': self.exist_variable,
             }
         
 
@@ -211,6 +212,9 @@ class VMHost:
 
     def set_variable(self, name, value):
         self.variables[process.expr_proc.ExprEvaler.convert_varname(name)] = value
+
+    def exist_variable(self, name):
+        return process.expr_proc.ExprEvaler.convert_varname(name) in self.variables
 
     def push_args(self, args):
         self.arg_stack.append(args)

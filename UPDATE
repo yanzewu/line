@@ -1,0 +1,116 @@
+
+08-19-20:
+---
+- Figure (including gcf) is now removable via 'remove' command, just as other elements.
+
+08-22-20:
+---
+Features:
+- Added 'enabled' style to right/top axis. If enabled, they will be rendered with tick/label shown. Otherwise they will only be shown as borders.
+- Modified MPL backend so that a plot can attach to the right and the top axis.
+- Added 'side' option to plot styles. If side = right, will enable the right axis and attach plot to it.
+- Added 'plotr' command, equivalent to 'plot side=right'.
+
+Changes:
+- Changed the automatic range system, utilizing the style callback. Should eliminate a few bugs.
+- Removing label now sets the label text to default instead of empty.
+- FigObject.get_style() now can have a default option.
+
+10-15-20:
+---
+- Added 'if' command, paired with 'end'.
+- Added system() and cond() function in expressions.
+- 'subfigure' command now accepts expressions.
+
+10-19-20:
+---
+- Control commands (if, for, do) now can be nested.
+- Added 'update' command, which updates the data and style to data objects (lines, bars) without removing current styles.
+- Added 'pause' command, supports pausing a specific time or until user hit a key.
+- Added len() to expressions.
+- FigObject.update_style() now accepts keyword args, equivalent to style_dict.
+- DataLine.update_style() has a new entry 'data', which changes the current DataPack object.
+
+10-31-20:
+---
+Features:
+- A figure now can have a legend, named 'suplegend'. The legend must be linked to a specific subfigure, by setting 'source=name_of_subfigure'.
+- A figure now can have a title, named 'suptitle'. Figure title can also be set by 'set figure title=XXX'.
+- Added 'display-when-quit' option, enabling displaying gcf while quitting.
+- 'save' accepts expressions as filenames.
+
+Changes:
+- The default fontfamily and math fontfamily can be set as options.
+- The default physical figure size can be set as options.
+
+11-01-20:
+---
+Features:
+- Added 'fontprops' as a style entry for more kinds of font styles (style, variant, stretch, weight, size).
+- 'font' style is now an alias of 'fontfamily'.
+
+Changes:
+- serif is used as default fontfamily.
+- Improved auto position arrangement when figure legend is present.
+- 'show' prints results of invalid key as '<None>', instead of raising an error.
+- Moved factory style generators to element/_aux.py.
+
+12-06-20:
+---
+Features:
+- Added prompt_toolkit based shell, which is enabled by default when prompt_toolkit>3.0 and ipython>7.0 is installed, but can be turned off by fancy-prompt option.
+- Added new warning and logging system based on prompt_toolkit. Replaced errors.warn() by warnings.warn() from python standard lib.
+- Input from stdin is supported.
+
+Changes:
+- VM now has attributes pc, error and backtrace for error/stack query.
+
+02-04-21:
+---
+Features:
+- Added 'ls' and 'pwd' commands.
+
+Changes:
+- Added a new lexer, which handles expressions, brackets, strings, comments and linebreaks more fluently.
+- Fixed a bug in 'let do ...' if there is no line break.
+- Fixed a bug in show warnings.
+
+03-03-21:
+---
+- The explicit 'call' is not required when calling a function.
+- Add nature style and contrast1 palette.
+
+03-15-21:
+---
+Features:
+- Added remote plotting by specifying --remote. The plot is viewable via browser, at port 8100 (default). Requires flask.
+- display-when-quit supports remote.
+
+03-30-21:
+---
+- display-when-quit now can save figures to remote.
+- 'save remote' saves figure to remote.
+- Fixed a bug of lexer when a separator appears in bracekts.
+- Fixed a bug of grid rendering when using MPL >= 3.2.
+- Fixed a bug of auto position arrangement.
+
+04-11-21:
+---
+- Improved completion of various commands.
+- Fixed a bug of cannot parsing command line options.
+
+05-01-21:
+---
+- Added more numpy functions in expressions.
+- Fixed a bug of removing smartlines.
+- Fixed a bug of fitting line labels.
+- Fixed a bug when using 's' as style description.
+
+05-17-21:
+---
+- Added more python built-in functions in expressions.
+- Added exist() function to check if a variable exists.
+- 'text' command now accepts expressions.
+- 'print' can specify output terminal (stdout, stderr, remote).
+- Fixed a bug in lexer that raise error if last line of file is empty.
+- Fixed a bug that auto scaling not working when there is nan.

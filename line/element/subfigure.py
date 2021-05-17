@@ -232,7 +232,13 @@ class Subfigure(FigObject):
         bi = bound_identifiers[axis_id]
 
         if dl:
-            return min((d._ext_cache[bi[0]] for d in dl)), max((d._ext_cache[bi[1]] for d in dl))
+            lb = np.nanmin([d._ext_cache[bi[0]] for d in dl])
+            rb = np.nanmax([d._ext_cache[bi[1]] for d in dl])
+            if np.isnan(lb):
+                lb = rb - 1
+            if np.isnan(rb):
+                rb = lb + 1
+            return 0, 1 if np.isnan(lb) else lb, rb
         else:
             return 0.0, 1.0
 

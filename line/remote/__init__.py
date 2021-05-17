@@ -19,6 +19,7 @@ except ImportError:
 
 
 app = Flask('line', template_folder='remote/templates', static_folder='remote/static')
+logger = logging.getLogger('line')
 
 history = []
 client_queue = {}   # {id: queue of int}
@@ -100,6 +101,7 @@ def encode_dataurl(data:bytes):
 def place_block(code, img_id=None, is_svg=False, img_name='image'):
     """ place a code block.
     """
+    logger.debug('Sending remote data: code=%s, img_id=%s, img_name=%s, is_svg=%s' % (code, img_id, img_name, is_svg))
     history.append({
         'code': code,
         'has_img': img_id and not is_svg,
@@ -116,6 +118,7 @@ def place_image_data(data, filename):
     """ Add a new image to buffer, return the auto-generated id.
     filename must have 3 char suffix (*.???)
     """
+    logger.debug('Image data placed: %s, %d bytes' % (filename, len(data)))
     random.shuffle(_img_ids)
     newid = ''.join(_img_ids[:10])
     img_storage[newid] = (filename, data)
