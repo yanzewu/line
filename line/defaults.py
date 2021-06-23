@@ -68,5 +68,6 @@ def init_global_state(m_state):
     with open(os.path.join(style_dir, 'palettes.json')) as f:
         palette.load_palette(f)
         m_state.custom_stylesheet.update(palette.palette2stylesheet(palette.PALETTES['default']))
+        m_state.custom_stylesheet.update(palette.palette2stylesheet(palette.PALETTES['lighter+'], target='line', target_style='fillcolor'))
 
 read_default_options()

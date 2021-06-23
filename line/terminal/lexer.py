@@ -33,7 +33,7 @@ class Lexer:
         self.bracket_stack = []
 
         if self.buffer is None:
-            yield self.tokens, self.token_poses
+            yield self.tokens.copy(), self.token_poses.copy()
             return
 
         while True:
@@ -44,7 +44,7 @@ class Lexer:
                 if self.state == Lexer.STATE_BRACKET:
                     raise LineParseError("Bracket does not match")
                 self.reduce()
-                yield self.tokens, self.token_poses
+                yield self.tokens.copy(), self.token_poses.copy()
 
                 self.clear_tokens()
                 self.update_buffer(fetch_nextline)
@@ -93,7 +93,7 @@ class Lexer:
                 self.inc()
             elif c == '#':
                 self.reduce()
-                yield self.tokens, self.token_poses
+                yield self.tokens.copy(), self.token_poses.copy()
 
                 self.clear_tokens()
                 self.update_buffer(fetch_nextline)
@@ -102,7 +102,7 @@ class Lexer:
                 self.update_buffer(fetch_nextline, True)
             elif c in ';\n':
                 self.reduce()
-                yield self.tokens, self.token_poses
+                yield self.tokens.copy(), self.token_poses.copy()
 
                 self.clear_tokens()
                 self.inc()

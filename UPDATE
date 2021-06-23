@@ -114,3 +114,11 @@ Features:
 - 'print' can specify output terminal (stdout, stderr, remote).
 - Fixed a bug in lexer that raise error if last line of file is empty.
 - Fixed a bug that auto scaling not working when there is nan.
+
+06-23-21:
+---
+- Added more palettes and improved the parser for palettes.json.
+- Added 'pi' as a variable.
+- Slightly improved completion.
+- Fixed a bug in lexer than raises error when displaying warning.
+- Fixed a bug for legacy command prompt.

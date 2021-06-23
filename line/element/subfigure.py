@@ -238,7 +238,7 @@ class Subfigure(FigObject):
                 lb = rb - 1
             if np.isnan(rb):
                 rb = lb + 1
-            return 0, 1 if np.isnan(lb) else lb, rb
+            return (0, 1) if np.isnan(lb) else (lb, rb)
         else:
             return 0.0, 1.0
 

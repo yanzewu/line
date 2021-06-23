@@ -55,7 +55,7 @@ class Color(tuple):
         return self
 
     def __str__(self):
-        rawstr = hex(int(self[0]*256)*65536+int(self[1]*256)*256+int(self[2]*256))[2:]
+        rawstr = hex(int(self[0]*255)*65536+int(self[1]*255)*256+int(self[2]*255))[2:]
         return '#' + '0'*(6-len(rawstr)) + rawstr
 
 
@@ -115,6 +115,13 @@ def str2color(s):
         return Color.__dict__[s.upper()]
     else:
         return Color( (v//0x10000)/256, ((v % 0x10000)//0x100)/256, (v % 0x100)/256)
+
+def list2color(s):
+    if s[0] > 1 or s[1] > 1 or s[2] > 1:
+        return Color(s[0]/255, s[1]/255, s[2]/255)
+    else:
+        return Color(s[0], s[1], s[2])
+
 
 class FloatingPos(enum.Enum):
 

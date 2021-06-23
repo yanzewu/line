@@ -39,6 +39,7 @@ class VMHost:
         
         self.variables = {
             '__varx': np.arange(-5, 5, 1), 
+            '__varpi': np.pi,
             'arg':lambda x:self.arg_stack[-1][int(x)] if int(x) < len(self.arg_stack[-1]) else '', 
             'argc': lambda: len(self.arg_stack[-1]),
             'cond': lambda x,a,b: a if x else b,

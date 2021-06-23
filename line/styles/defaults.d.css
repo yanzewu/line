@@ -168,6 +168,22 @@ text {
     edgewidth: 1.5;
 }
 
+.largethindot line {
+    linewidth: 0.5;
+    edgewidth: 0.5;
+    pointtype: 'o';
+    pointsize: 7;
+    fillstyle: full;
+}
+
+.largedot line {
+    linewidth: 1;
+    edgewidth: 1;
+    pointtype: 'o';
+    pointsize: 9;
+    fillstyle: full;
+}
+
 .matlab {
     fontsize: 10;
     fontfamily: Arial;

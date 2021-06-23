@@ -89,12 +89,13 @@ Contents:
 - [let](#let)
 - [load](#load)
 - [line,hline,vline](#line%44-hline%44-vline)
-- [ls](#pwd%44-ls))
+- [ls](#pwd%44-ls)
 - [palette](#special-set-commands)
 - [pause](#pause)
 - [plot,p](#plot)
+- [plotr,plotyy](#plotr)
 - [print](#print)
-- [pwd](#pwd%44-ls))
+- [pwd](#pwd%44-ls)
 - [quit,exit,q](#quit)
 - [remove](#remove)
 - [replot](#replot)
@@ -115,7 +116,7 @@ Contents:
 
 Alias: p
 
-Plotting data from file to current subfigure. Any exisiting lines will be removed.
+Plot data from file to current subfigure. Any exisiting lines will be removed.
 
 Usage:
 
@@ -129,7 +130,7 @@ Example:
 Args:
 
 - source: Variable name, filename or [expression](#expressions). If source is not given, the previous source in current command is used.
-    - If no xexpr, yexpr are given, filename with "/" must be quoted (otherwise it will be treated as expression);
+    - If no xexpr, yexpr are given, filename with "/" must be quoted (otherwise it will be treated as a division expression);
     - Expression must be quoted by `$()`;
 - xexpr, yexpr: Column index, column title, or [expression](#expressions).
     - If the expr is a single token, it will be automatically mapped to column title or index. See [Automatic Variable Mapping](#automatic-variable-mapping).
@@ -145,6 +146,16 @@ Related options:
 - --data-delimiter=(delimiter)/white/auto: Set the data delimiter. 'white' means both tab and space. 'auto' means automatically identifing. (Default: auto).
 
 - --data-title=true/false/auto. Do/don't Treat the first row of data as title. (Default: auto).
+
+### plotr
+---
+Plot with data line attached to the right axis.
+
+Usage:
+
+    plotr (source1) (xexpr:)(yexpr) (style=val) (linespec) ..., (source2) (xexpr2:)(yexpr2) (style=val), ...
+
+The args are same as [plot](#plot). Note plotr will set `y2axis.enabled`, `y2axis.visible`, `y2tick.visible` and `y2label.visible` to true.
 
 ### hist
 ---
@@ -201,6 +212,8 @@ Args:
 
 ### remove
 ---
+
+Alias: rm
 
 Remove objects in current subfigure. Can only remove datas, lines and texts.
 
@@ -472,7 +485,7 @@ The terminal can be stdout, stderr and remote. By default, remote is used in rem
 ### input
 ---
 
-Switch to interactive mode. This is useful in line input and script input. All exisiting figures will be displayed.
+Switch to interactive mode if current mode is not interactive. This is useful in line input and script input. All exisiting figures will be displayed.
 
 Usage:
 
@@ -482,13 +495,17 @@ To function properly, `input` must be the last command of one line.
 
 ### display
 ---
-Display the current figure. Only works in non-interactive mode.
+Display the current figure. Only works in non-interactive mode or remote mode (either interactive or non-interactive).
 
 Usage:
 
     display
 
 In remote mode, `display` will always display on the remote backend.
+
+Related options:
+
+- --auto-trigger-remote: If set, remote side is automatically updated (without display command) in interactive mode.
 
 ### load
 ---
@@ -878,6 +895,8 @@ and open http://127.0.0.1:8100 on the browser, you should see a figure.
 Commands that behave differently in display:
 
 - save: `save [filename] remote` will save file (as a link) on remote backend;
-- display: Display the image on remote backend. This also works for --display-when-quit.
+- display: Display the image on remote backend. In interactive mode, if option auto-trigger-remote is disabled, the figure will only be updated by display command.
+
+In remote mode, the option display-when-quit will save figure to the remote side.
 
 The remote server is not intended to be used for multiple users or in an insecure environment. The server will shutdown only when a client connects and all clients have retrived the latest data. You can also shutdown the server manually by Ctrl+C.

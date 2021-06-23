@@ -26,7 +26,7 @@ def load_palette(fp):
     for name in j:
         new_list = []
         for d in j[name]:
-            new_list.append(style.str2color(d) if isinstance(d, str) else d)
+            new_list.append(style.str2color(d) if isinstance(d, str) else style.list2color(d))
         j[name] = new_list
         
     PALETTES.update(j)

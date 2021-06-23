@@ -5,7 +5,6 @@ import logging
 import warnings
 import os.path
 from collections import deque
-import rlcompleter
 import readline
 import threading
 
@@ -15,7 +14,7 @@ from .. import process
 from .. import vm
 from ..errors import LineParseError, format_error
 from .. import backend
-
+from .. import session
 from . import completion_util
 
 logger = logging.getLogger('line')
@@ -60,7 +59,7 @@ class CMDHandler:
             th = None
 
         if m_state is None:
-            self.m_state = state.GlobalState()
+            self.m_state = session.get_instance().state
             self.m_state._vmhost = vm.VMHost(CMDHandler._debug)
             defaults.init_global_state(self.m_state)
             process.initialize()

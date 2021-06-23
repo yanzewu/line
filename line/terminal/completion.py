@@ -3,6 +3,7 @@ import prompt_toolkit as pt
 import re
 
 from .. import keywords
+from ..style import palette
 from .completion_util import get_filelist
 from . import lexer
 from ..errors import LineParseError
@@ -94,6 +95,20 @@ class Completer(pt.completion.Completer):
                 elif cur_idx == 2 and tokens[cur_idx-1] == 'option':
                     yield from self.generate_completion_list(d, (x+'=' for x in defaults.default_options))
                     
+                elif cur_idx == 2 and tokens[cur_idx-1] == 'palette':
+                    yield from self.generate_completion_list(d, ('line ', 'point ', 'bar ', 'polygon '))
+                    yield from self.generate_completion_list(d, palette.PALETTES)
+
+                elif cur_idx == 3 and tokens[cur_idx-2] == 'palette':
+                    yield from self.generate_completion_list(d, palette.PALETTES)
+
+                elif d.startswith('+'):
+                    if self.m_state:
+                        try:
+                            yield from self.generate_completion_list(d, map(lambda x: '+' +x.classname, self.m_state.class_stylesheet.data))
+                        except AttributeError:
+                            pass
+
                 elif not tokens[cur_idx-1].endswith('='):
                     yield from self.generate_completion_list(d, keywords.all_style_keywords, self.format_stylename)
 
@@ -105,6 +120,9 @@ class Completer(pt.completion.Completer):
 
             elif command == 'cd':
                 yield from self.generate_completion_list(d, get_filelist(d, True))
+
+            elif command in ('load', 'save'):
+                yield from self.generate_completion_list(d, get_filelist(d, False))
 
                 
     def generate_completion_list(self, d, candidates, formatter=None, filter_=True):
