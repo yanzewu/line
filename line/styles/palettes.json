@@ -1,12 +1,15 @@
 {
     "default": [
-        "#000000", "#e21919", "#1e77e5", "#33a02b", "#ff7f00", "#6b3d9b", "#ff3399", "#aa7238", "#d8d80a", "#ff7f7f", "#efbaa3", "#99ccff", "#7fe2a3", "#ffcc00", "#cc99ff"
+        "#000000", "#e21919", "#1e77e5", "#33a02b", "#f57a00", "#6b3d9b", "#ff3399", "#aa7238", "#d8d80a", "#ff7f7f", "#efbaa3", "#99ccff", "#7fe2a3", "#ffcc00", "#cc99ff"
     ],
     "lighter": [
         "#b3b3b3", "#ff6666", "#99ccff", "#7fe2a3", "#ffcc00", "#cc99ff", "#ff99cc", "#f7b56e", "#ffff4d", "#ffb3b3", "#f3e6be"
     ],
     "lighter+": [
-        "#b3b3b3", "#fad1d1", "#d1e3fa", "#c6efc3", "#fce6cf", "#e5daf1", "#fccfe6"
+        "#bfbfbf", "#fad1d1", "#d1e3fa", "#c6efc3", "#fce6cf", "#e5daf1", "#fccfe6"
+    ],
+    "lighter++": [
+        "#f2f2f2", "#fce8e8", "#e8f1fc", "#ecfaeb", "#fdf3e7", "#f2edf8", "#fde7f3"
     ],
     "darker": [
         "#000000", "#983a1b", "#1b5398", "#267920", "#aa5909", "#583281", "#8a0f4d"

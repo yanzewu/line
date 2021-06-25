@@ -12,6 +12,7 @@ ls
 
 cd example
 load plot.line a
+source plot.line a
 cd ..
 
 # save

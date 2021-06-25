@@ -83,7 +83,10 @@ Additional options can be shown by `line -e 'show option'`'''
         ret_code = cmd_handler.proc_lines([' '.join(args)])
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
-        line0 = ('plot ' + args[0]).replace('\\', '/')
+        if not args[0].startswith('$'):
+            line0 = ' '.join(['plot', '"'+args[0].replace('\\','/') + '"'] + args[1:])
+        else:
+            line0 = ' '.join(['plot'] + args)
         ret_code = cmd_handler.proc_lines([line0])
 
 
@@ -94,7 +97,9 @@ Additional options can be shown by `line -e 'show option'`'''
         else:
             process_display(cmd_handler.m_state)
 
+    return ret_code
+
 
 if __name__ == '__main__':
     
-    main()
+    exit(main())

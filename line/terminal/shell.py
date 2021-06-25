@@ -125,7 +125,7 @@ class CMDHandler:
         """ Read the ~/.linerc file.
         """
         try:
-            return self.proc_file(self.SOURCE_NAME)
+            return self.proc_source(self.SOURCE_NAME)
         except IOError:
             pass
 
@@ -152,23 +152,29 @@ class CMDHandler:
         def fetch_previous_line(offset):
             return CMDHandler._input_session.history.get_strings()[offset-1] if offset < 0 else None
 
-        self.proc_(fetch_next_line, fetch_previous_line, False, True)
+        self.proc_(fetch_next_line, fetch_previous_line, exit_on_error=False, disable_input=True)
         self.finalize_input()
         return 0
 
     input_loop = proc_input
 
-    def proc_file(self, filename, do_interactive=False):
+    def proc_file(self, filename):
         with open(filename, 'r') as f:
-            self.m_state.is_interactive = do_interactive
             self._filename = filename
             return self.proc_lines(f.readlines())
+
+    def proc_source(self, filename):
+        """ Similar to proc_file(), but without intervening current running mode.
+        """
+        with open(filename, 'r') as f:
+            self._filename = filename
+            return self.proc_lines(f.readlines(), disable_input=True, interactive_error_display=False, refresh_backend=False)
 
     def proc_stdin(self):
         self._filename = '<stdin>'
         return self.proc_lines(sys.stdin.readlines())
 
-    def proc_lines(self, lines):
+    def proc_lines(self, lines, **kwargs):
         j = [-1]
         def fetch_next_line(forced):
             j[0] += 1
@@ -177,22 +183,26 @@ class CMDHandler:
         def fetch_previous_line(offset):
             return lines[j[0]+offset].strip('\n')
 
-        return self.proc_(fetch_next_line, fetch_previous_line, True, False)
+        return self.proc_(fetch_next_line, fetch_previous_line, **kwargs)
 
-    def proc_(self, fetch_next_line, fetch_previous_line, exit_on_error=True, is_interactive=False):
+    def proc_(self, fetch_next_line, fetch_previous_line, exit_on_error=True, disable_input=False, interactive_error_display=None, refresh_backend=True):
         """ The REPL loop.
         fetch_next_line(forced:bool)->str: Should return the next line without break ('\n'); 
             If continuing last line, `forced` will be true.
         fetch_previous_line(offset:int)->str: Should return current lineid + offset (if 0 then current line).
         exit_on_error: Break when an error occurs (even if it is handled);
             Otherwise only returns when ret == RET_EXIT or RET_SYSERROR.
-        is_interactive: Being able to respond command `input`.
+        disable_input: Being not able to respond command `input` (happens when state.is_interactive is switched to True).
+        interactive_error_display: Display error in interactive format (None -> depending on state.is_interactive).
         """
 
         l = lexer.Lexer()
-        backend.initialize(session.get_state(), silent=session.get_state().options['remote'] or not is_interactive)
+        if refresh_backend:
+            backend.initialize(session.get_state(), silent=session.get_state().options['remote'] or not session.get_state().is_interactive)
         ret = 0
         emittor = l.run(fetch_next_line)
+        if interactive_error_display is None:
+            interactive_error_display = session.get_state().is_interactive
 
         while True:
             try:
@@ -203,9 +213,9 @@ class CMDHandler:
                 else:
                     logging_util.print_error_formatted(e, 
                         LineDebugInfo(self._filename, 0, (l.lineid, l.head)), 
-                        session.get_state().is_interactive,
+                        interactive_error_display,
                         fetch_previous_line(0),
-                        len(self.ps) if is_interactive else 0)
+                        len(self.ps) if interactive_error_display else 0)
 
                     emittor = l.run(fetch_next_line)
                     ret = self.RET_USERERROR
@@ -219,18 +229,18 @@ class CMDHandler:
                 logger.debug("Tokens are: %s" % list(tokens))
                 ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(self._filename, l.lineid, tp))
                 if ret == 0:
-                    if not is_interactive and self.m_state.is_interactive:     # initiate an input_loop, when switch to input mode
+                    if not disable_input and session.get_state().is_interactive:     # initiate an input_loop, when switch to input mode
                         self.proc_input()
-                        self.m_state.is_interactive = False
+                        session.get_state().is_interactive = False
                 elif ret == self.RET_EXIT:
                     pass
                 elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
                     m_vm = session.get_vm()
                     logging_util.print_error_formatted(m_vm.error, 
                         m_vm.backtrace, 
-                        session.get_state().is_interactive,
+                        interactive_error_display,
                         fetch_previous_line(m_vm.backtrace.token_pos[0] - l.lineid),
-                        len(self.ps) if is_interactive else 0)
+                        len(self.ps) if interactive_error_display else 0)
                     ret = ret[0]
                 else:
                     logging_util.print_error_string('Undefined return: %r' % ret)
@@ -239,7 +249,8 @@ class CMDHandler:
             if not (ret == self.RET_USERERROR and not exit_on_error or ret == 0):
                 break
                 
-        backend.finalize(session.get_state())
+        if refresh_backend:
+            backend.finalize(session.get_state())
         return 0 if ret == self.RET_EXIT else ret
 
         

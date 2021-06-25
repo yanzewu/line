@@ -267,29 +267,29 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'print':
         outstr = ''
-        terminal = 'remote' if m_state.options['remote'] else 'stdout'
+        term = 'remote' if m_state.options['remote'] else 'stdout'
         while len(m_tokens) > 0:
             if m_tokens[0].startswith('$'):
                 outstr += str(process_expr(m_state, parse_expr(m_tokens)))
             elif m_tokens[0] == '>' and len(m_tokens) > 1:
                 m_tokens.popleft()
-                terminal = m_tokens[0]
+                term = m_tokens[0]
                 break
             else:
                 outstr += m_tokens[0]
                 m_tokens.popleft()
             if len(m_tokens) > 0:
                 outstr += ' '
-        if terminal == 'stdout':
+        if term == 'stdout':
             print(outstr)
-        elif terminal == 'stderr':
+        elif term == 'stderr':
             import sys
             print(outstr, file=sys.stderr)
-        elif terminal == 'remote' and m_state.options['remote']:
+        elif term == 'remote' and m_state.options['remote']:
             from . import remote
             remote.place_block(code=outstr)
         else:
-            warn("Terminal %s not recognized. Using stdout instead" % terminal)
+            warn("Terminal %s not recognized. Using stdout instead" % term)
             print(outstr)
 
     elif command == 'quit':
@@ -310,6 +310,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'input':
         if m_state.is_interactive:
+            warn('"input" does not work in interactive mode')
             return 0
         m_state.is_interactive = True
         if lookup(m_tokens) == 'norender':    # no render exisiting fiture
@@ -323,7 +324,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_figurename = _cur_figurename
 
     elif command == 'display':
-        process_display(m_state)
+        if not m_state.is_interactive or m_state.options['remote']:
+            process_display(m_state)
+        else:
+            warn('"display" does not work in interactive mode')
 
     elif command == 'cd':
         dest = get_token(m_tokens)
@@ -343,9 +347,10 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'pwd':
         print(os.getcwd())
 
-    elif command == 'load':
+    elif command == 'load' or command == 'source':
         filename = get_token(m_tokens)
-        process_load(m_state, filename, [process_expr(m_state, t) if t.startswith('$') else strip_quote(t) for t in (m_tokens)])
+        process_load(m_state, filename, [process_expr(m_state, t) if t.startswith('$') else strip_quote(t) for t in (m_tokens)], 
+            preserve_mode=(command == 'source'))
 
     elif command == 'pause':
         interval = stof(get_token(m_tokens))
@@ -715,20 +720,19 @@ def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
 
 def process_display(m_state:state.GlobalState):
 
-    if not m_state.is_interactive or m_state.options['remote']:
-        backend.finalize(m_state)
-        backend.initialize(m_state, silent=m_state.options['remote'])   # not remote --> must be displayable
-        if m_state.cur_figurename:
-            cf = m_state.cur_figurename
-            for f in m_state.figures:
-                m_state.cur_figurename = f
-                render_cur_figure(m_state)
-            m_state.cur_figurename = cf
-            if not m_state.options['remote']:
-                backend.show(m_state)
-            else:
-                # TODO display every figure?
-                process_save_remote(m_state)
+    backend.finalize(m_state)
+    backend.initialize(m_state, silent=m_state.options['remote'])   # not remote --> must be displayable
+    if m_state.cur_figurename:
+        cf = m_state.cur_figurename
+        for f in m_state.figures:
+            m_state.cur_figurename = f
+            render_cur_figure(m_state)
+        m_state.cur_figurename = cf
+        if not m_state.options['remote']:
+            backend.show(m_state)
+        else:
+            # TODO display every figure?
+            process_save_remote(m_state)
                 
 
 def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', wait_client=True):
@@ -763,14 +767,18 @@ def process_expr(m_state:state.GlobalState, expr):
         logger.debug(evaler.expr)
         return evaler.evaluate()
 
-def process_load(m_state:state.GlobalState, filename, args):
+def process_load(m_state:state.GlobalState, filename, args, preserve_mode=False):
+    # preserve_mode => do not change to file mode
+
     handler = terminal.CMDHandler(m_state)
-    is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
-    backend.finalize(m_state)
+    preserve_mode = preserve_mode and hasattr(handler, 'proc_source')   # has not implemented in legacy shell
+    if not preserve_mode:
+        is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
+        backend.finalize(m_state)
     
     cwd = os.getcwd()
 
-    loadpaths = ['.', os.path.expanduser('~/.line/')]
+    loadpaths = [os.getcwd(), os.path.expanduser('~/.line/')]
 
     full_filename = None
     for path in loadpaths:
@@ -779,11 +787,16 @@ def process_load(m_state:state.GlobalState, filename, args):
             break
     
     if not full_filename:
-        raise LineProcessError('Cannot open file "%s"' % filename)
+        raise LineProcessError('File "%s" does not exist' % filename)
 
     m_state._vmhost.push_args([filename] + args)
-    handler.proc_file(full_filename)
+    if not preserve_mode:
+        m_state.is_interactive = False
+        handler.proc_file(full_filename)
+    else:
+        handler.proc_source(full_filename)
     m_state._vmhost.pop_args()
     os.chdir(cwd)
-    m_state.is_interactive = is_interactive
-    backend.initialize(m_state, silent=m_state.options['remote'] or not is_interactive)
+    if not preserve_mode:
+        m_state.is_interactive = is_interactive
+        backend.initialize(m_state, silent=m_state.options['remote'] or not is_interactive)

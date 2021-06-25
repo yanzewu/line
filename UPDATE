@@ -122,3 +122,12 @@ Features:
 - Slightly improved completion.
 - Fixed a bug in lexer than raises error when displaying warning.
 - Fixed a bug for legacy command prompt.
+
+06-25-21:
+---
+- Added 'source' command, which loads file without switching processing mode.
+- Slightly modified palettes.
+- Fixed a bug that 'tick' treated as a style parameter.
+- Fixed a bug for ls command.
+- Fixed a bug for command line plotting not handling filenames with dash.
+- Fixed a bug for automatic ranging in log scale.

@@ -20,6 +20,9 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 echo. & echo "--------- testing stdin ----------" & echo.
 cat example/test-data.txt | python -m line -d test/test-stdin.line 
 if %errorlevel% neq 0 exit /b %errorlevel%
+echo. & echo "--------- testing command line ----------" & echo.
+call test/test-cl.cmd
+if %errorlevel% neq 0 exit /b %errorlevel%
 echo. & echo "--------- testing style ----------" & echo.
 python -m line -d test/test-style.line
 if %errorlevel% neq 0 exit /b %errorlevel%

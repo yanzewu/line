@@ -38,7 +38,7 @@ By passing optional arguments to line, you can control the program behavior. The
 
 This works in all three modes. The options can also be changed via `set option name=value` in the commands or (globally) by modifying [options.ini](../line/styles/options.ini).
 
-Available options are (options with * can only take effects by setting in options.ini or command arguments):
+Available options are:
 
 name | avaiable values | default | function
 --- | --- | --- | ---
@@ -66,6 +66,8 @@ prompt-save-when-quit | true/false | false | Prompt "save current figure" when q
 rescale-when-split | true/false | true | Change figure's size when splitting
 safety | 0/1/2 | 1 | When executing python code, 0=>continues; 1=>displays a warning; 2=>prompts for allowance
 
+\* Only take effects by setting in options.ini or command arguments.
+
 ## Command Reference
 
 Contents:
@@ -87,7 +89,7 @@ Contents:
 - [input](#input)
 - [legend](#special-set-commands)
 - [let](#let)
-- [load](#load)
+- [load](#load%44-source)
 - [line,hline,vline](#line%44-hline%44-vline)
 - [ls](#pwd%44-ls)
 - [palette](#special-set-commands)
@@ -101,6 +103,7 @@ Contents:
 - [replot](#replot)
 - [save](#save)
 - [set,s](#set)
+- [source](#load%44-source)
 - [split,hsplit,vsplit](#split%44-hsplit%44-vsplit)
 - [style](#set)
 - [show](#show)
@@ -293,7 +296,7 @@ Args:
 - class: The style classes to be added or removed.
 - `set default` modifies default value of styles, same as updating `default.css` (but not permanently). Only element type selector can be used in `set default`.
 - `set future` modifies the global stylesheet, same as updating `default.d.css` (but not permanently). The selectors for `set future` should only be classes.
-- `set palette (type)` changes palette for line (default), bar, polygon or drawline. The avaiable palette names can be viewed via `show palette` command. Custom palette can be created in [palettes.json](../line/styles/palettes.json).
+- `set palette (type)` changes palette for line (default), point, bar, polygon or drawline. The avaiable palette names can be viewed via `show palette` command. Custom palette can be created in [palettes.json](../line/styles/palettes.json).
 - `set option` changes default options, e.g. `set option ignore-data-comment=true`. See [Global Switches](#global-switches) for all avaiable options.
 
 #### Special Set Commands
@@ -507,15 +510,20 @@ Related options:
 
 - --auto-trigger-remote: If set, remote side is automatically updated (without display command) in interactive mode.
 
-### load
+### load, source
 ---
 Load an external script. Additional arguments may be passed.
 
 Usage:
 
     load filename [args...]
+    source filename [args...]
 
 The arguments will be available via `arg()` function. Number of arguments can be obtained via `argc()` function.
+
+When using `load`, the working directory will be changed and the displaying mode will always be set to file mode. `source` will preserve both the working directory and the displaying mode, which could be faster in some cases.
+
+`source` is not available for legacy prompts (--fancy-prompt=false).
 
 ### cd
 ---
@@ -821,7 +829,7 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
  Element Type | Style 
  --- | ---
  figure | size, width, height, margin, (h/v)spacing, dpi
- subfigure | rsize, rpos, padding, title, font, fontfamily, fontsize, color, linecolor, xlabel, ylabel, xrange, yrange, xtick, ytick
+ subfigure | rsize, rpos, padding, title, font, fontfamily, fontsize, color, linecolor, xlabel, ylabel, xrange, yrange
  axis | linewidth, linetype, font, fontfamily, fontsize, color, range, scale, visible, zindex
  label | font, fontfamily, fontsize, text, visible
  tick | orient, color, font, fontfamily, fontsize, format, linewidth, length, minor, length-minor, linewidth-minor, visible

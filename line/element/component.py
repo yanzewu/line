@@ -81,7 +81,7 @@ class Axis(FigObject):
             tickpos = scale.get_ticks_log(minpos, maxpos, numticks)
             bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
             self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (minpos, maxpos, 1.0/numticks if numticks else None)
+            self.computed_style['range'] = (bound[0], bound[-1], 1.0/numticks if numticks else None)
 
 
 class Tick(FigObject):

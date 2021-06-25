@@ -39,9 +39,11 @@ def get_ticks_log(vmin, vmax, numticks=None, extend='outer'):
     if not numticks:
         numticks = 5
 
-    if extend == 'outer':
+    if extend == 'inner':
         lvmin, lvmax = ceil(log10(vmin)), floor(log10(vmax))
-    elif extend == 'inner':
+        if lvmin == lvmax:
+            lvmax = lvmin + 1
+    elif extend == 'outer':
         lvmin, lvmax = floor(log10(vmin)), ceil(log10(vmax))
 
     n = lvmax - lvmin
@@ -51,7 +53,7 @@ def get_ticks_log(vmin, vmax, numticks=None, extend='outer'):
     else:
         step = stepm+1
 
-    ticks = 10.0**np.arange(lvmin, lvmax, step)   
+    ticks = 10.0**np.arange(lvmin, lvmax+0.1, step)   
     return ticks
 
     # The default scaling algorithm of MPL, not used

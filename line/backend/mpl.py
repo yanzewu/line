@@ -453,6 +453,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
 
         # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
         target_axis = b.xaxis if is_xside[i] else b.yaxis
+        target_axis.set_minor_formatter(ticker.NullFormatter())
         if m_subfig.axes[i].attr('scale') == 'linear':
             if m_subfig.axes[i].attr('range')[2] is None:
                 target_axis.set_major_locator(ticker.MaxNLocator(nbins=len(a_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))

@@ -166,9 +166,9 @@ class VMHost:
                 new_args.append(process.process_expr(state, parse_util.parse_expr(tokens)))
             else:
                 new_args.append(parse_util.get_token(tokens))
-        self.arg_stack.append(new_args)
+        self.push_args(new_args)
         r = self.exec_block(state, block)
-        self.arg_stack.pop()
+        self.pop_args()
         return r
 
     def exec_done(self, state):
@@ -218,6 +218,8 @@ class VMHost:
         return process.expr_proc.ExprEvaler.convert_varname(name) in self.variables
 
     def push_args(self, args):
+        if len(self.arg_stack) > 512:
+            raise errors.LineProcessError("Maximum recursion (512) reached.")
         self.arg_stack.append(args)
 
     def pop_args(self):

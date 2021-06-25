@@ -37,7 +37,6 @@ style_keywords = {
     'source',
     'hspacing', 'vspacing', 'spacing',
     'title',
-    'tick', 'xtick', 'ytick', 'x2tick', 'y2tick',
     'text',
     'width',
     'visible',
@@ -59,9 +58,6 @@ style_alias = {
     'lc':'linecolor',
     'pc':'pointcolor',
     'ec': 'edgecolor',
-    'tics':'tick',
-    'xtics':'xtick',
-    'ytics':'ytick',
     'xlim': 'xrange',
     'ylim': 'yrange',
     'font': 'fontfamily',
@@ -99,6 +95,7 @@ command_keywords = {
     'set',
     'split', 'hsplit', 'vsplit',
     'show',
+    'source',
     'subfigure',
     'text',
     'update',
@@ -116,12 +113,15 @@ command_alias = {
     'sp': 'subfigure',
     'fig': 'figure',
     'plotyy': 'plotr',
+    'import': 'load',
 }
 
 extended_set_keywords = {
     'grid', 'hold', 'legend', 'palette', 'title',
     'xlabel', 'ylabel',
     'xrange', 'yrange',
+    'xlim', 'ylim',
+    'xtics', 'ytics',
     'xscale', 'yscale',
     'style'
 }

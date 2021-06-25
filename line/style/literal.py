@@ -122,7 +122,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     # require str only
     elif style_name in ('text', 'title', 'label', 'xlabel', 'ylabel', 'format', 
-        'tick', 'xtick', 'ytick', 'fontfamily', 'palette', 'coord'):
+        'fontfamily', 'palette', 'coord'):
         return style_val
 
     # general    
