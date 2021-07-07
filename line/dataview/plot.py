@@ -68,6 +68,8 @@ def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
             datapack.DistributionDataPack(m_ydata, pg.style.get('bin', 10), pg.style.get('norm', 'Distribution')),
             m_ylabel, pg.ylabel, True, pg.style)
         # m_ylabel is not used for axis label.
+    else:
+        raise ValueError("Unrecognized chart type: %s" % chart_type)
 
 
 def do_update(m_state, targets, plot_groups, chart_type='line', auto_range=None):
@@ -89,6 +91,8 @@ def do_update(m_state, targets, plot_groups, chart_type='line', auto_range=None)
         elif chart_type == 'hist':
             assert t.typename == 'bar'
             t.update_style(data=datapack.DistributionDataPack(m_ydata, t.get_style('bin'), t.get_style('norm')))
+        else:
+            raise ValueError("Unrecognized chart type: %s" % chart_type)
             
     if auto_range or (auto_range is None and m_state.options['auto-adjust-range']):
         m_state.cur_subfigure().update_style({'xrange':(None,None,None), 'yrange':(None,None,None)})

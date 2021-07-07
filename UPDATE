@@ -121,13 +121,18 @@ Features:
 - Added 'pi' as a variable.
 - Slightly improved completion.
 - Fixed a bug in lexer than raises error when displaying warning.
-- Fixed a bug for legacy command prompt.
+- Fixed a bug of legacy command prompt.
 
 06-25-21:
 ---
 - Added 'source' command, which loads file without switching processing mode.
 - Slightly modified palettes.
 - Fixed a bug that 'tick' treated as a style parameter.
-- Fixed a bug for ls command.
-- Fixed a bug for command line plotting not handling filenames with dash.
-- Fixed a bug for automatic ranging in log scale.
+- Fixed a bug of ls command.
+- Fixed a bug of command line plotting not handling filenames with dash.
+- Fixed a bug of automatic ranging in log scale.
+
+07-07-21:
+---
+- Added 'undo' and 'redo' commands, used in manipulating figure states.
+- Fixed a bug of auto range in log scale.

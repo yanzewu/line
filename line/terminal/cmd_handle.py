@@ -59,7 +59,7 @@ class CMDHandler:
             th = None
 
         if m_state is None:
-            self.m_state = session.get_instance().state
+            self.m_state = session.get_instance(debug=self._debug, enable_history=True).state
             self.m_state._vmhost = vm.VMHost(CMDHandler._debug)
             defaults.init_global_state(self.m_state)
             process.initialize()

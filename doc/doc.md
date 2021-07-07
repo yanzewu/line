@@ -99,6 +99,7 @@ Contents:
 - [print](#print)
 - [pwd](#pwd%44-ls)
 - [quit,exit,q](#quit)
+- [redo](#undo%44-redo)
 - [remove](#remove)
 - [replot](#replot)
 - [save](#save)
@@ -110,6 +111,7 @@ Contents:
 - [title](#special-set-commands)
 - [text](#text)
 - [update](#update)
+- [undo](#undo%44-redo)
 - [xlabel,ylabel](#special-set-commands)
 - [xrange,yrange](#special-set-commands)
 - [xscale,yscale](#special-set-commands)
@@ -466,6 +468,31 @@ Usage:
     replot
     replot all
 
+### undo, redo
+---
+ 
+Undo and redo in interactive mode.
+
+Usage:
+
+    undo
+    redo
+
+The following commands can be reverted:
+- Plotting commands: plot, append, plotr, hist, line, text;
+- Styling commands: set, style (except "set option", "set default" and "set compact"), group;
+- Element commands: remove (except figures and subfigures), clear;
+
+The following operations cannot be reverted:
+- Creation of new figures;
+- Split of subfigures using "split" or "subfigure";
+- Removal of figures and subfigures;
+- Loading/sourcing external files;
+- Switch between input mode amd file mode.
+
+The history will be cleared if any of above operations are performed. All other commands, variables, functions and global switches are transparent to the editing history.
+
+The default maximum history size is 20.
 
 ### print
 ---

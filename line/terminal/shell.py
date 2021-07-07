@@ -85,7 +85,7 @@ class CMDHandler:
         """ Initialize states and backends.
         Including all performance affecting steps (import of mpl and ipython).
         """
-        sess = session.get_instance(debug=CMDHandler._debug)
+        sess = session.get_instance(debug=CMDHandler._debug, enable_history=True)
         self.m_state = sess.state
         process.initialize()
 

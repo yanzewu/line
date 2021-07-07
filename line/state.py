@@ -1,6 +1,5 @@
 
 
-import numpy as np
 
 from .style import css
 from .element import Figure, Subfigure
@@ -27,8 +26,9 @@ class GlobalState:
         
         self.options = {}   # Additional program options
         self._vmhost = None
+        self._history = None
 
-    def cur_figure(self, create_if_empty=False):
+    def cur_figure(self, create_if_empty=False) -> Figure:
         """ Get current figure state
         """
         
@@ -78,6 +78,9 @@ class GlobalState:
                 self.cur_figurename = None
             else:
                 self.cur_figurename = list(self.figures.keys())[0]
+
+    def has_figure(self):
+        return len(self.figures) > 0
 
     def update_default_stylesheet(self, ss:css.StyleSheet):
         for s in ss.data.keys():

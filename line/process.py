@@ -105,35 +105,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_plot(m_state, m_tokens, keep_existed=True)
 
     elif command == 'hist':
-        parse_and_process_hist(m_state, m_tokens)
+        parse_and_process_plot(m_state, m_tokens, keep_existed=None, chart_type='hist')
 
     elif command == 'update':
-        selection = parse_style_selector(m_tokens)
-        elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
-        parser = plot_proc.PlotParser()
-        parser.parse(m_state, m_tokens)
-        if parser.plot_groups:
-            dataview.plot.do_update(m_state, elements, parser.plot_groups)
-        else:
-            warn('No data to plot')
+        parse_and_process_update(m_state, m_tokens)
 
     elif command == 'fit':
-        selection = parse_style_selector(m_tokens)
-        elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
-        if lookup(m_tokens) in ('linear', 'quad', 'exp', 'prop'):
-            function = get_token(m_tokens)
-        else:
-            function = 'linear'
-        style_dict = parse_style(m_tokens)
-
-        if not elements:
-            warn('No line is fitted')
-        else:
-            fitnames = []
-            for e in elements:
-                l = dataview.api.fit(m_state, e, function=function, labelfmt=style_dict.pop('label', 'Fit %T'), **style_dict)
-                fitnames.append(l.data.myfunc.name)
-            m_state._vmhost.set_variable('fit', fitnames)
+        parse_and_process_fit(m_state, m_tokens)
 
     elif command == 'remove':
         parse_and_process_remove(m_state, m_tokens)
@@ -149,18 +127,29 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'show':
         parse_and_process_show(m_state, m_tokens)
 
+    elif command == 'undo':
+        if m_state.is_interactive:
+            m_state._history.undo(m_state)
+        else:
+            warn('"undo" only works in interactive mode')
+
+    elif command == 'redo':
+        if m_state.is_interactive:
+            m_state._history.redo(m_state)
+        else:
+            warn('"redo" only works in interactive mode')
+
     elif command == 'line':
         x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
-        
-        m_state.cur_subfigure().add_drawline((x1,y1), (x2,y2), parse_style(m_tokens))
+        process_line(m_state, (x1, y1), (x2, y2), parse_style(m_tokens))
 
     elif command == 'hline':
         y = stof(get_token(m_tokens))
-        m_state.cur_subfigure().add_drawline((None,y), (None,y), parse_style(m_tokens))
+        process_line(m_state, (None,y), (None,y), parse_style(m_tokens))
 
     elif command == 'vline':
         x = stof(get_token(m_tokens))
-        m_state.cur_subfigure().add_drawline((x,None), (x,None), parse_style(m_tokens))
+        process_line(m_state, (x,None), (x,None), parse_style(m_tokens))
 
     elif command == 'fill':
         parse_and_process_fill(m_state, m_tokens)
@@ -172,9 +161,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
-            m_state.cur_subfigure().add_text(text, style.str2pos(token1 + ',' + get_token(m_tokens)), parse_style(m_tokens))
+            process_text(m_state, text, style.str2pos(token1 + ',' + get_token(m_tokens)), parse_style(m_tokens))
         else:
-            m_state.cur_subfigure().add_text(text, style.str2pos(token1), {**parse_style(m_tokens), **{'coord':'axis'}})
+            process_text(m_state, text, style.str2pos(token1), {**parse_style(m_tokens), **{'coord':'axis'}})
 
     elif command == 'split':
         hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
@@ -255,6 +244,8 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         process_save(m_state, filename, remote_save)
 
     elif command == 'clear':
+        process_snapshot(m_state, 
+            'element/datalines', 'element/bars', 'element/drawlines', 'element/polygons', 'element/texts')
         m_state.cur_subfigure().clear()
 
     elif command == 'replot':
@@ -322,6 +313,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             m_state.cur_figure().is_changed = True
             render_cur_figure(m_state)
         m_state.cur_figurename = _cur_figurename
+        m_state._history.clear()
 
     elif command == 'display':
         if not m_state.is_interactive or m_state.options['remote']:
@@ -423,52 +415,94 @@ def render_cur_figure(m_state:state.GlobalState):
         m_state.cur_subfigure().is_changed = False 
 
 
-def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed, side=style.FloatingPos.LEFT):
-    """ Parsing and processing `plot` and `append` commands.
+def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed, side=style.FloatingPos.LEFT, chart_type='line'):
+    """ Parsing and processing `plot`/`hist`/`append`/`plotr` commands.
 
     Args:
         keep_existed: Keep existed datalines.
         side: Side of yaxis. (LEFT/RIGHT)
+        chart_type: line/hist.
     """
     if keep_existed is None:
-        if len(m_state.figures) > 0:
-            keep_existed = m_state.cur_subfigure().get_style('hold')
-        else:
-            keep_existed = False
+        keep_existed = m_state.cur_subfigure().get_style('hold') if m_state.has_figure() else False
+    if chart_type not in ('line', 'hist'):
+        raise LineProcessError("Unrecognized chart type")
 
-    parser = plot_proc.PlotParser()
+    parser = plot_proc.PlotParser() if chart_type == 'line' else plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
     parser.parse(m_state, m_tokens)
-    if parser.plot_groups:
-        if side == style.FloatingPos.RIGHT:
-            for pg in parser.plot_groups:
-                pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
-        for pg in parser.plot_groups:   # expressions
-            for s in pg.style:
-                if isinstance(pg.style[s], str) and pg.style[s].startswith('$('):
-                    pg.style[s] = process_expr(m_state, pg.style[s])
-
-        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
-            labelfmt=r'%F:%T' if m_state.options['full-label'] else None)
-        m_state.cur_subfigure().set_automatic_labels()
-        if side == style.FloatingPos.RIGHT:
-            m_state.cur_subfigure().axes[2].update_style({'enabled':True})
-            m_state.cur_subfigure().axes[2].tick.update_style({'visible':True})
-            m_state.cur_subfigure().axes[2].label.update_style({'visible':True})
-    else:
+    if not parser.plot_groups:
         warn('No data to plot')
+        return
 
-def parse_and_process_hist(m_state:state.GlobalState, m_tokens:deque):
-    if len(m_state.figures) > 0:
-        keep_existed = m_state.cur_subfigure().get_style('hold')
+    if side == style.FloatingPos.RIGHT:
+        for pg in parser.plot_groups:
+            pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
+    for pg in parser.plot_groups:   # expressions
+        for s in pg.style:
+            if isinstance(pg.style[s], str) and pg.style[s].startswith('$('):
+                pg.style[s] = process_expr(m_state, pg.style[s])
+
+    m_state.cur_subfigure(True)
+    if not keep_existed:
+        element_type=('element/datalines', 'element/bars', 'element/drawlines', 'element/texts', 'element/polygons')
     else:
-        keep_existed = False
+        element_type = ('element/datalines',) if chart_type == 'line' else ('element/bars',)
+    process_snapshot(m_state, 'style', *element_type, cache=False)
 
-    parser = plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
+    dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed=keep_existed, 
+        labelfmt=r'%F:%T' if m_state.options['full-label'] else None, chart_type=chart_type)
+    m_state.cur_subfigure().set_automatic_labels()
+    if side == style.FloatingPos.RIGHT:
+        m_state.cur_subfigure().axes[2].update_style({'enabled':True})
+        m_state.cur_subfigure().axes[2].tick.update_style({'visible':True})
+        m_state.cur_subfigure().axes[2].label.update_style({'visible':True})
+
+
+def parse_and_process_update(m_state:state.GlobalState, m_tokens:deque):
+    selection = parse_style_selector(m_tokens)
+    elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
+    if not elements:
+        warn('No elements selected')
+        return
+    m_state.cur_figure()    # update needs an existing figure.
+
+    if all((e.typename == 'line' for e in elements)):
+        chart_type = 'line'
+        element_type = 'element/datalines'
+    elif all((e.typename == 'bar' for e in elements)):
+        chart_type = 'bar'
+        element_type = 'element/bars'
+    else:
+        raise LineProcessError("Multiple element types detected. Please only include lines or histograms")
+
+    parser = plot_proc.PlotParser() if chart_type == 'line' else plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
     parser.parse(m_state, m_tokens)
-    if parser.plot_groups:
-        dataview.plot.do_plot(m_state, parser.plot_groups, keep_existed, chart_type='hist')
-    else:
+    if not parser.plot_groups:
         warn('No data to plot')
+        return
+    process_snapshot(m_state, 'style', element_type, cache=False)
+    dataview.plot.do_update(m_state, elements, parser.plot_groups)
+
+
+def parse_and_process_fit(m_state:state.GlobalState, m_tokens:deque):
+    selection = parse_style_selector(m_tokens)
+    elements = css.StyleSheet(selection).select(m_state.cur_subfigure())
+    if lookup(m_tokens) in ('linear', 'quad', 'exp', 'prop'):
+        function = get_token(m_tokens)
+    else:
+        function = 'linear'
+    style_dict = parse_style(m_tokens)
+
+    if not elements:
+        warn('No line is fitted')
+        return
+    process_snapshot(m_state, 'element/datalines')
+    fitnames = []
+    for e in elements:
+        l = dataview.api.fit(m_state, e, function=function, labelfmt=style_dict.pop('label', 'Fit %T'), **style_dict)
+        fitnames.append(l.data.myfunc.name)
+    m_state._vmhost.set_variable('fit', fitnames)
+
 
 def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `remove` command.
@@ -504,6 +538,15 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
         else:
             return
 
+    if figures_to_remove:
+        m_state._history.clear()
+    else:
+        process_snapshot(m_state, 
+            'element/datalines', 'element/bars', 'element/drawlines', 'element/polygons', 'element/texts')
+
+    logger.debug('Remove elements: %s', elements)
+    logger.debug('Remove figures: %s', figures_to_remove)
+
     cur_figurename = m_state.cur_figurename
     for f in figures_to_remove:
         m_state.cur_figurename = f[7:]
@@ -522,11 +565,9 @@ def parse_and_process_remove(m_state:state.GlobalState, m_tokens:deque):
 
 
 def process_group(m_state:state.GlobalState, group_desc):
-    if group_desc == 'clear':
-        m_state.cur_subfigure().update_style({'group':None})
-    else:
-        m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_desc)})
-        logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
+    process_snapshot(m_state, 'style')
+    m_state.cur_subfigure().update_style({'group': group_proc.parse_group(group_desc) if group_desc != 'clear' else None})
+    logger.debug('Group is: %s' % str(m_state.cur_subfigure().get_style('group')))
     m_state.refresh_style() # need to refresh twice -- for colorid and for actual color
     m_state.cur_subfigure().is_changed = True
 
@@ -560,6 +601,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
             m_tokens, css.NameSelector('gca')
         )
+        process_snapshot(m_state, 'state')
         m_state.update_local_stylesheet(css.StyleSheet(selection, style_list))
 
     elif test_token_inc(m_tokens, 'compact'):
@@ -581,6 +623,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         except KeyError:
             raise LineProcessError('Palette "%s" does not exist' % palette_name)
         else:
+            process_snapshot(m_state, 'style')
             palette.palette2stylesheet(m_palette, target, target_style).apply_to(m_state.cur_subfigure())
             m_state.cur_subfigure().is_changed = True
     else:
@@ -592,11 +635,15 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
             if isinstance(style_list[s], str) and style_list[s].startswith('$('):
                 style_list[s] = process_expr(m_state, style_list[s])
 
+        snapshot_cc = process_snapshot(m_state, 'style', cache=True)
         if m_state.apply_styles(
             css.StyleSheet(selection, style_list), add_class, remove_class):
             m_state.cur_figure().is_changed = True
+            snapshot_cc(True)
         else:
             warn('No style is set')
+            snapshot_cc(False)
+
 
 def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `show` command.
@@ -679,12 +726,23 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
     style_dict = parse_style(m_tokens)
     if not fill_between:
         warn('No line to fill')
-    else:
-        for line1, line2 in fill_between:
-            dataview.api.fill_h(m_state, line1, line2, **style_dict)
+        return
+    
+    process_snapshot(m_state, 'element/polygons')
+    for line1, line2 in fill_between:
+        dataview.api.fill_h(m_state, line1, line2, **style_dict)
 
 
-def process_split(m_state:state.GlobalState, hsplitnum, vsplitnum):
+def process_text(m_state:state.GlobalState, text:str, pos, style_dict:dict):
+    process_snapshot(m_state, 'element/texts')
+    return m_state.cur_subfigure().add_text(text, pos, style_dict)
+
+def process_line(m_state:state.GlobalState, pos1, pos2, style_dict:dict):
+    process_snapshot(m_state, 'element/drawlines')
+    return m_state.cur_subfigure().add_drawline(pos1, pos2, style_dict)
+
+def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
+    m_state._history.clear()
     split.split_figure(m_state.cur_figure(), hsplitnum, vsplitnum, m_state.options['resize-when-split'])
     m_state.refresh_style(True)
     split.align_subfigures(m_state.cur_figure(), 'axis')
@@ -767,6 +825,18 @@ def process_expr(m_state:state.GlobalState, expr):
         logger.debug(evaler.expr)
         return evaler.evaluate()
 
+def process_snapshot(m_state:state.GlobalState, *snapshot_type, cache=False):
+    if m_state.is_interactive:
+        if snapshot_type != 'state':
+            m_state.cur_figure()
+        if cache:
+            return m_state._history.cache_snapshot(m_state, snapshot_type)
+        else:
+            return m_state._history.take_snapshot(m_state, snapshot_type)
+    else:
+        return lambda x: None if cache else None
+
+
 def process_load(m_state:state.GlobalState, filename, args, preserve_mode=False):
     # preserve_mode => do not change to file mode
 
@@ -774,8 +844,7 @@ def process_load(m_state:state.GlobalState, filename, args, preserve_mode=False)
     preserve_mode = preserve_mode and hasattr(handler, 'proc_source')   # has not implemented in legacy shell
     if not preserve_mode:
         is_interactive = m_state.is_interactive # proc_file() requires state to be non-interactive
-        backend.finalize(m_state)
-    
+        
     cwd = os.getcwd()
 
     loadpaths = [os.getcwd(), os.path.expanduser('~/.line/')]
@@ -790,7 +859,9 @@ def process_load(m_state:state.GlobalState, filename, args, preserve_mode=False)
         raise LineProcessError('File "%s" does not exist' % filename)
 
     m_state._vmhost.push_args([filename] + args)
+    m_state._history.clear()
     if not preserve_mode:
+        backend.finalize(m_state)
         m_state.is_interactive = False
         handler.proc_file(full_filename)
     else:

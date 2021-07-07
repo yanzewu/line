@@ -38,7 +38,7 @@ class PointType(enum.Enum):
 
 PointTypeStr = ('o','+','*', '.', 'x', 's', 'd', '^', 'v', '>', '<', 'p', 'h', '')
 
-class Color(tuple):
+class Color:
 
     RED = (1, 0, 0)
     YELLOW = (1, 1, 0)
@@ -50,12 +50,20 @@ class Color(tuple):
     BLACK = (0, 0, 0)
     GREY = (0.5, 0.5, 0.5)
 
-    def __new__(cls, r, g, b):
-        self = super(Color, cls).__new__(cls, (r, g, b))
-        return self
+    def __init__(self, r, g, b):
+        self.data = (r, g, b)
+
+    def __index__(self, i):
+        return self.data[i]
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __len__(self):
+        return 3
 
     def __str__(self):
-        rawstr = hex(int(self[0]*255)*65536+int(self[1]*255)*256+int(self[2]*255))[2:]
+        rawstr = hex(int(self.data[0]*255)*65536+int(self.data[1]*255)*256+int(self.data[2]*255))[2:]
         return '#' + '0'*(6-len(rawstr)) + rawstr
 
 

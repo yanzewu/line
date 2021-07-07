@@ -30,11 +30,11 @@ def get_ticks_log(vmin, vmax, numticks=None, extend='outer'):
     from math import log10, ceil, floor
     from matplotlib.ticker import LogLocator
 
-    if vmax > 0:
-        vmin = max(vmin, min(10**int(log10(vmax/10)-1), 1e-3))
-    else:
+    if vmax <= 0:
         vmax = 1.0
         vmin = 0.1
+    elif vmax > 0 and vmin <= 0:
+        vmin = max(vmin, min(10**int(log10(vmax/10)-1), 1e-3))
 
     if not numticks:
         numticks = 5

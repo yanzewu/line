@@ -26,7 +26,7 @@ def get_filelist(filename, dirmode=False):
         slash = filename[len(path)]
         try:
             files = [path + slash + f for f in os.listdir(path)]
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             return [filename]
     else:
         files = os.listdir()
