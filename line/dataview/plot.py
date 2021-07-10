@@ -49,24 +49,26 @@ def do_plot(m_state, plot_groups, keep_existed=False, labelfmt=None, auto_range=
     return r
     
 
-def plot_single_group(subfigure, pg, labelfmt, chart_type='line'):
+def plot_single_group(subfigure, pg, labelfmt:str, chart_type='line'):
 
     m_ylabel = labelfmt.replace('%T', pg.ylabel).replace(r'%F', str(pg.source))
     m_xdata = np.array(pg.xdata).flatten()
     m_ydata = np.array(pg.ydata).flatten()
 
+    pg.style.setdefault('label', m_ylabel)
     if chart_type == 'line':
-        return subfigure.add_dataline(
-            datapack.StaticPairedDataPack(m_xdata, m_ydata), m_ylabel, pg.xlabel, pg.style)
+        pg.style.setdefault('xlabel', pg.xlabel)
+        return subfigure.add_dataline(datapack.StaticPairedDataPack(m_xdata, m_ydata), **pg.style)
     elif chart_type == 'bar':
-        return subfigure.add_bar(
-            datapack.StaticPairedDataPack(m_xdata, m_ydata), m_ylabel, pg.xlabel, False, pg.style)
+        pg.style.setdefault('xlabel', pg.xlabel)
+        return subfigure.add_bar(datapack.StaticPairedDataPack(m_xdata, m_ydata), dynamic_bin=False, **pg.style)
     elif chart_type == 'hist':
         pg.style.setdefault('norm', 'Distribution')
         pg.style.setdefault('width', 1.0)
+        pg.style.setdefault('xlabel', pg.ylabel)    # This is intended
         return subfigure.add_bar(
             datapack.DistributionDataPack(m_ydata, pg.style.get('bin', 10), pg.style.get('norm', 'Distribution')),
-            m_ylabel, pg.ylabel, True, pg.style)
+            dynamic_bin=True, **pg.style)
         # m_ylabel is not used for axis label.
     else:
         raise ValueError("Unrecognized chart type: %s" % chart_type)

@@ -60,16 +60,16 @@ class ExprEvaler:
         self.m_globals['python'] = self.evaluate_system # the single special command requires call to self
         self.m_globals['system'] = self.evaluate_shell
 
-    def load(self, expr, omit_dollar=False, variable_prefix='__var'):
+    def load(self, expr:str, omit_dollar=False, variable_prefix='__var'):
         self.expr = canonicalize(expr, omit_dollar, variable_prefix=variable_prefix)
         logger.debug(self.expr)
 
-    def load_singlevar(self, expr):
+    def load_singlevar(self, expr:str):
         self.expr = ExprEvaler.convert_varname(expr)
         logger.debug(self.expr)
     
     @staticmethod
-    def convert_varname(expr):
+    def convert_varname(expr:str):
         if expr.startswith('\'') or expr.endswith('"'):
             return '__var' + expr[1:-1]
         elif expr.startswith('$'):
@@ -77,7 +77,7 @@ class ExprEvaler:
         else:
             return '__var' + expr
 
-    def evaluate_system(self, expr):
+    def evaluate_system(self, expr:str):
         if not isinstance(expr, str):
             raise LineProcessError('string required')
         
@@ -89,7 +89,7 @@ class ExprEvaler:
         evaler.load(expr, omit_dollar=True, variable_prefix='')
         return evaler._eval(False)
 
-    def evaluate_shell(self, expr):
+    def evaluate_shell(self, expr:str):
         if not isinstance(expr, str):
             raise LineProcessError('string required')
         
@@ -156,11 +156,11 @@ class ExprEvaler:
             _m_globals.update({'__builtins__': None})
         return eval(self.expr, _m_globals, self.m_locals)
 
-    def strip_var(self, varname):
+    def strip_var(self, varname:str):
         return varname[5:]
         
         
-def canonicalize(expr:str, omit_dollar=False, variable_prefix='__var'):
+def canonicalize(expr:str, omit_dollar:bool=False, variable_prefix:str='__var') -> str:
     """ Check expression quote, bracket and doing the following variable replacement:
     $foo => __varfoo
     if `omit_dollar' is set, also try to replace foo => __varfoo

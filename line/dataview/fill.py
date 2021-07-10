@@ -12,7 +12,7 @@ def fill_h(m_state, dp1:datapack.DataPack, dp2=0, **kwargs):
 
     subfig = m_state.cur_subfigure()
 
-    return subfig.add_polygon(_fill_polygon(dp1, dp2), kwargs)
+    return subfig.add_polygon(_fill_polygon(dp1, dp2), **kwargs)
 
 
 def _fill_polygon(dp1, dp2):

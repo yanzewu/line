@@ -144,7 +144,7 @@ text {
     visible: true;
     coord: 'axis';
     zindex: 0;
-    text: 'Text';
+    text: '';
     pos: top,left;
     margin: 0.02,0.02,0.02,0.02;
 }

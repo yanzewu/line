@@ -88,22 +88,21 @@ def fill(*args, **kwargs):
     
 
 def line(target1, target2, **kwargs):
-    _get_state().cur_subfigure(True).add_drawline(target1, target2, kwargs)
+    return _get_state().cur_subfigure(True).add_drawline(startpos=target1, endpos=target2, **kwargs)
 
 
 def xline(x, **kwargs):
-    _get_state().cur_subfigure(True).add_drawline((x, None), (x, None), kwargs)
+    return _get_state().cur_subfigure(True).add_drawline(startpos=(x, None), endpos=(x, None), **kwargs)
 
 
 def yline(y, **kwargs):
-    _get_state().cur_subfigure(True).add_drawline((None, y), (None, y), kwargs)
+    return _get_state().cur_subfigure(True).add_drawline(startpos=(None, y), endpos=(None, y), **kwargs)
 
 
 def text(txt, pos, **kwargs):
     from . import style
 
-    _get_state().cur_subfigure(True).add_text(
-        txt, style.str2pos(pos) if isinstance(pos, str) else pos, **kwargs)
+    return _get_state().cur_subfigure(True).add_text(text=txt, pos=style.str2pos(pos) if isinstance(pos, str) else pos, **kwargs)
 
 def legend(labels=None, **kwargs):
     if labels is None:
@@ -132,10 +131,7 @@ def gca():
 
 def clear():
     _m_state.gca().clear()
-
-
-def cla():
-    clear()
+cla = clear
 
 
 def save(filename):

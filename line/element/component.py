@@ -13,16 +13,16 @@ from ._aux import _set_color, _set_data, _gen_fontprops_setter, _gen_fontprops_g
 
 class Axis(FigObject):
 
-    def __init__(self, axis_name, extent_callback=None):
+    def __init__(self, name, extent_callback=None, **kwargs):
 
-        self.label = Label(axis_name[:-4] + 'label')
-        self.tick = Tick(axis_name[:-4] + 'tick')
-        self.grid = Grid(axis_name[:-4] + 'grid')
+        self.label = Label(name[:-4] + 'label')
+        self.tick = Tick(name[:-4] + 'tick')
+        self.grid = Grid(name[:-4] + 'grid')
 
         self.extent_callback = extent_callback  # called to get data extent
         self.backend = None
 
-        super().__init__('axis', axis_name, {
+        super().__init__('axis', name, {
             'scale':self._set_scale,
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('axis')),
         }, {
@@ -30,7 +30,7 @@ class Axis(FigObject):
         }, {
             'range': lambda o,n: self._update_ticks(),
             'scale': self._update_scale,
-        })
+        }, **kwargs)
 
     def get_children(self):
         return [self.label, self.tick, self.grid]
@@ -85,7 +85,7 @@ class Axis(FigObject):
 
 
 class Tick(FigObject):
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         super().__init__('tick', name, {
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('tick')),}, {
             **_gen_fontprops_getter(self)}, {
@@ -93,7 +93,9 @@ class Tick(FigObject):
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
-            })
+            }, 
+            **kwargs
+            )
 
     def _update_formatter(self, oldval, value):
 
@@ -112,11 +114,11 @@ class Tick(FigObject):
             self.render_callback(1)
 
 class Grid(FigObject):
-    def __init__(self, name):
-        super().__init__('grid', name)
+    def __init__(self, name, **kwargs):
+        super().__init__('grid', name, **kwargs)
 
 class Legend(FigObject):
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         super().__init__('legend', name, {
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
             **_gen_fontprops_getter(self)}, {
@@ -125,7 +127,9 @@ class Legend(FigObject):
             'visible': lambda a, b: self._check_render(),
             'pos': lambda a, b: self._check_render(),
             'column': lambda a, b: self._check_render(),
-        })
+            }, 
+            **kwargs
+        )
         # TODO it is known that add dataline will change legend without auto positioning
     def _check_render(self):
         pos = self.attr('pos')
@@ -140,7 +144,7 @@ class Legend(FigObject):
                 break
             
 class SupLegend(FigObject):
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         super().__init__('legend', name, {
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
             **_gen_fontprops_getter(self)}, {
@@ -150,13 +154,13 @@ class SupLegend(FigObject):
             'pos': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'column': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'source': lambda a, b: self.render_callback(2) if self.render_callback else None,
-        })
+            }, 
+            **kwargs)
     
 
 class DataLine(FigObject):
 
-    def __init__(self, data, label, xlabel, name):
-        self.data = data
+    def __init__(self, name, data, **kwargs):
 
         super().__init__('line', name, {
             'color':_set_color,
@@ -164,10 +168,10 @@ class DataLine(FigObject):
             'data': lambda s,v: _set_data(self, v),
         }, {}, {
             'side': lambda o,n: self._update_ext()
-        })
-        self.update_style({
-            'label':label, 'xlabel':xlabel, 'skippoint':1
-        })
+        },
+        **kwargs
+        )
+        _set_data(self, data)
 
     def _set_label(self, m_style, label):
         if label.startswith('!'):
@@ -189,8 +193,7 @@ class DataLine(FigObject):
 
 class SmartDataLine(FigObject):
 
-    def __init__(self, data, label, xlabel, name):
-        self.data = data
+    def __init__(self, name, data, **kwargs):
 
         super().__init__('line', name, {
             'color':_set_color,
@@ -199,10 +202,10 @@ class SmartDataLine(FigObject):
         }, {}, {
             'range': self._update_ext,
             'side': lambda o,n: self._update_ext(None, self.computed_style['range']),
-        })
-        self.update_style({
-            'label':label, 'xlabel':xlabel
-        })
+        }, 
+        **kwargs
+        )
+        self.data = data
 
     def _set_range(self, m_style, value):
         m_style['range'] = value
@@ -213,20 +216,15 @@ class SmartDataLine(FigObject):
         self._ext_cache = (value[0], value[1] + step_, 
             np.nanmin(self.data.get_y()), np.nanmax(self.data.get_y()))
 
-    def _update_data(self, data):
-        self.data = data
-        self._update_ext()
 
 class Bar(FigObject):
 
-    def __init__(self, data, label, xlabel, dynamic_bin, name):
+    def __init__(self, name, data, dynamic_bin:bool=False, **kwargs):
 
         self.dynamic_bin = dynamic_bin
         if dynamic_bin:
             from ..dataview import datapack
-            assert isinstance(data, datapack.DistributionDataPack)
-
-        self.data = data
+            assert isinstance(data, datapack.DistributionDataPack), "Distribution datapack required"
 
         super().__init__('bar', name, {
             'edgecolor': lambda s,v: s.update({'linecolor':v}),
@@ -239,10 +237,11 @@ class Bar(FigObject):
             'norm': self._update_norm,
             'width': self._update_width,
             'side': lambda o,n: self._update_ext,
-        })
-        self.update_style({
-            'label':label, 'xlabel':xlabel,
-        })
+        },
+        **kwargs,
+        )
+
+        self.data = data    # cannot _update_ext since computed_values are not available.
 
     def _set_color(self, m_style, value):
         m_style['fillcolor'] = value
@@ -287,22 +286,28 @@ class Bar(FigObject):
 
 class DrawLine(FigObject):
 
-    def __init__(self, start_pos, end_pos, name):
+    def __init__(self, name, startpos=(0,0), endpos=(1,1), **kwargs):
 
         super().__init__('drawline', name, {
             'color':_set_color
-        })
-        self.update_style({'startpos':start_pos, 'endpos':end_pos})
+            }, 
+            startpos=startpos,
+            endpos=endpos,
+            **kwargs
+        )
     
 
 class Polygon(FigObject):
 
-    def __init__(self, data, name):
-        self.data = data
+    def __init__(self, name, data, **kwargs):
         super().__init__('polygon', name, {
             'edgecolor': lambda s,v: s.update({'linecolor':v}),
-            'color':self._set_color
-        })
+            'color':self._set_color,
+            'data': lambda s,v: setattr(self, 'data', v),
+        },
+        **kwargs
+        )
+        self.data = data
 
     def _set_color(self, m_style, value):
         # Note this is different from _set_color.
@@ -312,7 +317,7 @@ class Polygon(FigObject):
 
 class Text(FigObject):
 
-    def __init__(self, text, pos, name):
+    def __init__(self, name, **kwargs):
 
         super().__init__('text', name, {
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('text')),}, {
@@ -322,12 +327,13 @@ class Text(FigObject):
             'pos': lambda a, b: self.render_callback() if self.render_callback else None, 
             'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
-        })
-        self.update_style({'text':text, 'pos':pos})
+            },
+            **kwargs
+        )
 
 
 class Label(FigObject):
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
 
         super().__init__('label', name, {
             **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('label')),}, {
@@ -337,4 +343,6 @@ class Label(FigObject):
             'pos': lambda a, b: self.render_callback() if self.render_callback else None, 
             'text': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'visible': lambda a, b: self.render_callback() if self.render_callback else None,
-        })
+            },
+            **kwargs
+            )

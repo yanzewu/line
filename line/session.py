@@ -7,7 +7,7 @@ from . import history
 
 _instance = None
 
-def has_instance():
+def has_instance() -> bool:
     return _instance is not None
 
 
@@ -21,11 +21,11 @@ def instance():
     return _instance
 
 
-def get_vm():
+def get_vm() -> vm.VMHost:
     return instance().vm
 
 
-def get_state():
+def get_state() -> state.GlobalState:
     return instance().state
 
 
@@ -33,7 +33,7 @@ def get_history():
     return instance().history
 
 
-def is_interactive():
+def is_interactive() -> bool:
     return instance().state.is_interactive
 
 

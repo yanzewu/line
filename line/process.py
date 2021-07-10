@@ -703,7 +703,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
                 print('\n'.join(output))
 
 
-def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
+def parse_and_process_fill(m_state:state.GlobalState, m_tokens:deque):
     fill_between = []
     find_dataline = lambda x: [d for d in m_state.cur_subfigure().datalines if d.name == x][0]
 
@@ -735,11 +735,11 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens):
 
 def process_text(m_state:state.GlobalState, text:str, pos, style_dict:dict):
     process_snapshot(m_state, 'element/texts')
-    return m_state.cur_subfigure().add_text(text, pos, style_dict)
+    return m_state.cur_subfigure().add_text(text=text, pos=pos, **style_dict)
 
 def process_line(m_state:state.GlobalState, pos1, pos2, style_dict:dict):
     process_snapshot(m_state, 'element/drawlines')
-    return m_state.cur_subfigure().add_drawline(pos1, pos2, style_dict)
+    return m_state.cur_subfigure().add_drawline(startpos=pos1, endpos=pos2, **style_dict)
 
 def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
     m_state._history.clear()
@@ -815,7 +815,7 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
             time.sleep(0.5)
         remote.wait_client()
 
-def process_expr(m_state:state.GlobalState, expr):
+def process_expr(m_state:state.GlobalState, expr:str):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)
     if expr.startswith('$!('):
         logger.debug(expr)
@@ -837,7 +837,7 @@ def process_snapshot(m_state:state.GlobalState, *snapshot_type, cache=False):
         return lambda x: None if cache else None
 
 
-def process_load(m_state:state.GlobalState, filename, args, preserve_mode=False):
+def process_load(m_state:state.GlobalState, filename:str, args:list, preserve_mode=False):
     # preserve_mode => do not change to file mode
 
     handler = terminal.CMDHandler(m_state)

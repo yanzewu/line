@@ -7,7 +7,7 @@ from .errors import LineProcessError
 
 
 class GlobalState:
-    """ State of program.
+    """ The program state.
     """
     
     def __init__(self):
@@ -28,8 +28,9 @@ class GlobalState:
         self._vmhost = None
         self._history = None
 
-    def cur_figure(self, create_if_empty=False) -> Figure:
-        """ Get current figure state
+    def cur_figure(self, create_if_empty:bool=False) -> Figure:
+        """ Get current figure object. 
+        create_if_empty: create one if no figure exists.
         """
         
         if self.cur_figurename is None:
@@ -42,8 +43,9 @@ class GlobalState:
 
     gcf = cur_figure
 
-    def cur_subfigure(self, create_if_empty=False):
-        """ Get current subfigure state
+    def cur_subfigure(self, create_if_empty:bool=False) -> Subfigure:
+        """ Get current subfigure object.
+        create_if_empty: create one if no figure exists.
         """
         m_fig = self.cur_figure(create_if_empty=create_if_empty)
 
@@ -51,17 +53,17 @@ class GlobalState:
 
     gca = cur_subfigure
 
-    def create_figure(self):
+    def create_figure(self, name='1') -> Figure:
         """ Create a new figure with subfigure initialized.
         """
 
         if self.cur_figurename is None:
-            self.cur_figurename = '1'
+            self.cur_figurename = name
         self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
         self.custom_stylesheet.apply_to(self.cur_figure(), 0)
         return self.cur_figure()
 
-    def create_subfigure(self, name):
+    def create_subfigure(self, name:str) -> Subfigure:
         """ Return a new Subfigure instance with basic setup and default style applied.
         Will NOT attach the subfigure to current figure.
         """
@@ -80,9 +82,13 @@ class GlobalState:
                 self.cur_figurename = list(self.figures.keys())[0]
 
     def has_figure(self):
+        """ Check if any figure exists.
+        """
         return len(self.figures) > 0
 
     def update_default_stylesheet(self, ss:css.StyleSheet):
+        """ Update the default stylesheet. Only element selectors are allowed.
+        """
         for s in ss.data.keys():
             if not isinstance(s, css.TypeSelector):
                 raise LineProcessError('Only element selectors are allowed')
@@ -112,19 +118,19 @@ class GlobalState:
             css.compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True
 
-    def figure(self, fig_name=None):
+    def figure(self, name=None):
         """ Set current figure. Create one if necessary.
         """
 
-        if not fig_name:
+        if not name:
             i = 1
             while str(i) in self.figures:
                 i += 1
             fig_name = str(i)
         else:
-            fig_name = str(fig_name)
+            fig_name = str(name)
 
-        self.cur_figurename = fig_name
+        self.cur_figurename = name
         if fig_name not in self.figures:
             self.create_figure()
             self.cur_figure().is_changed = True
@@ -170,8 +176,9 @@ class GlobalState:
         return has_updated
 
 
-    def get_element_by_name(self, name, multiple=False):
-        """ Get element(s) by name. If `multiple` is set, then return a list.
+    def get_element_by_name(self, name, multiple:bool=False):
+        """ Get element(s) by name.
+        multiple: return all element that matches. Otherwise only return the first one.
         """
         if not self.cur_figurename:
             return None if not multiple else []

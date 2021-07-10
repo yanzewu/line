@@ -1,5 +1,4 @@
 
-import copy
 import warnings
 
 from . import css
@@ -11,7 +10,7 @@ class FigObject:
     """ Style-modifiable object in the figure.
     """
 
-    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}, style_change_handler={}):
+    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}, style_change_handler={}, **init_styles):
         """ typename -> object idenfier;
             name -> object name;
             custom_style_setter: lambda accepts style, value, priority;
@@ -28,6 +27,10 @@ class FigObject:
         self.custom_style_getter = custom_style_getter
         self.style_change_handler = style_change_handler
         self.render_callback = None
+        self.update_style(init_styles)
+
+    def __str__(self):
+        return '%s[%s]' % (self.typename, self.name)
 
     def update_style(self, style_dict={}, priority=1, **ex_styles):
         """ Update style from style_dict (and ex_styles).

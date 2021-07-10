@@ -71,7 +71,7 @@ def customfit(dp:datapack.DataPack, function, p0=None, residual=False):
         return fun
 
 
-def add_fitline(subfigure, fittedfunc, range_=None, xlabel='', ylabel='', **kwargs):
+def add_fitline(subfigure, fittedfunc, range_=None, **kwargs):
     """ Add a new line to the subfigure which is considered as 'fit'.
     """
     
@@ -83,11 +83,11 @@ def add_fitline(subfigure, fittedfunc, range_=None, xlabel='', ylabel='', **kwar
     kwargs['range'] = range_
 
     return subfigure.add_smartdataline(
-        datapack.EvaluatableDataPack(fittedfunc), ylabel, xlabel, kwargs
+        datapack.EvaluatableDataPack(fittedfunc), **kwargs
     )
 
 
-def fit_dataline(subfigure, dataline, function='linear', range_=None, labelfmt='Fit %T', **kwargs):
+def fit_dataline(subfigure, dataline, function:str='linear', range_=None, labelfmt:str='Fit %T', **kwargs):
     """ Generate a fitted dataline instance in subfigure.
     Args:
         subfigure: `Subfigure' instance;
@@ -97,6 +97,7 @@ def fit_dataline(subfigure, dataline, function='linear', range_=None, labelfmt='
         labelfmt: Format for auto-generated label. Special formats are:
             '%T' to represent original data title;
             '%N' to represent the name;
+            '%E' to represent the math expression (without latex style);
     Kwargs:
         Passed to the style of fitted line.
     """
@@ -119,5 +120,5 @@ def fit_dataline(subfigure, dataline, function='linear', range_=None, labelfmt='
     xlabel = dataline.get_style('xlabel')
     ylabel = labelfmt.replace('%T', dataline.get_style('label')).replace('%N', dataline.name).replace(r'%E', fitresult.name)
 
-    return add_fitline(subfigure, fitresult, range_, xlabel, ylabel, **kwargs)
+    return add_fitline(subfigure, fitresult, range_, xlabel=xlabel, label=ylabel, **kwargs)
 

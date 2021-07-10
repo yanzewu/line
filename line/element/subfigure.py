@@ -8,9 +8,9 @@ from ._aux import _gen_fontprops_getter, _gen_fontprops_setter, _gen_padding_get
 
 class Subfigure(FigObject):
 
-    def __init__(self, subfigure_name):
+    def __init__(self, name, **kwargs):
 
-        super().__init__('subfigure', subfigure_name, {
+        super().__init__('subfigure', name, {
             'xlabel': lambda s,v:self.axes[0].label.update_style({'text': v}, priority=self._style_priority(s)),
             'ylabel': lambda s,v:self.axes[1].label.update_style({'text': v}, priority=self._style_priority(s)),
             'y2label': lambda s,v:self.axes[2].label.update_style({'text': v}, priority=self._style_priority(s)),
@@ -40,14 +40,14 @@ class Subfigure(FigObject):
             **_gen_fontprops_getter(self),
         }, {
             'group': lambda oldst, newst: self.update_colorid() if newst else None,
-        })
+        }, **kwargs)
 
         self.axes = [Axis('xaxis', extent_callback = lambda: self.update_extents(0)), 
             Axis('yaxis', extent_callback = lambda: self.update_extents(1)), 
             Axis('y2axis', extent_callback = lambda: self.update_extents(2)), 
             Axis('x2axis', extent_callback = lambda: self.update_extents(3))]
         self.legend = Legend('legend')
-        self.title = Text('', (style.FloatingPos.CENTER, style.FloatingPos.OUTTOP), 'title')
+        self.title = Text(name='title', pos=(style.FloatingPos.CENTER, style.FloatingPos.OUTTOP))
 
         self.datalines = [] # datalines
         self.bars = []
@@ -79,18 +79,17 @@ class Subfigure(FigObject):
         self.legend.render_callback = self.render_callback
         # NOTE: adjusting subfigure itself (size/pos) won't trigger render. I'll see if it is necessary in the future.
 
-    def _add_element(self, class_, typename, element_queue, auto_colorid, styles, *args):
+    def _add_element(self, class_, typename, element_queue, auto_colorid, **kwargs):
         
         newidx = 1 if not element_queue else int(element_queue[-1].name[len(typename):])+1
         element_queue.append(
             class_(
-                *args, name=typename + str(newidx)
+                name=typename + str(newidx),
+                **kwargs
             )
         )
         if auto_colorid:
             element_queue[-1].update_style({'colorid': newidx})
-        if styles:
-            element_queue[-1].update_style(styles)
         self.is_changed = True
         return element_queue[-1]
 
@@ -100,45 +99,53 @@ class Subfigure(FigObject):
         else:
             self.update_colorid()
 
-    def add_dataline(self, data, label, xlabel, style_dict):
-        r = self._add_element(DataLine, 'line', self.datalines, False, {},
-            data, label, xlabel)
+    def add_dataline(self, data, **kwargs) -> DataLine:
+        r = self._add_element(DataLine, 'line', self.datalines, 
+            auto_colorid=False,
+            data=data)
         self._refresh_colorid()
-        r.update_style(style_dict)
+        r.update_style(kwargs)
         self._activate_axis(r)
         return r
 
-    def add_smartdataline(self, data, label, xlabel, style_dict):
-        r = self._add_element(SmartDataLine, 'line', self.datalines, False, {},
-            data, label, xlabel)
+    def add_smartdataline(self, data, **kwargs) -> SmartDataLine:
+        r = self._add_element(SmartDataLine, 'line', self.datalines, 
+            auto_colorid=False, 
+            data=data)
         self._refresh_colorid()
-        r.update_style(style_dict)
-        self._activate_axis(r)
-        return r            
-
-    def add_bar(self, data, label, xlabel, dynamic_bin, style_dict):
-
-        r = self._add_element(Bar, 'bar', self.bars, True, style_dict,
-            data, label, xlabel, dynamic_bin)
+        r.update_style(kwargs)
         self._activate_axis(r)
         return r
 
-    def add_drawline(self, start_pos, end_pos, style_dict):
+    def add_bar(self, data, **kwargs) -> Bar:
+
+        r = self._add_element(Bar, 'bar', self.bars, 
+            auto_colorid=True, 
+            data=data,
+            **kwargs)
+        self._activate_axis(r)
+        return r
+
+    def add_drawline(self, **kwargs) -> DrawLine:
         
-        return self._add_element(DrawLine, 'drawline', self.drawlines, False, style_dict,
-            start_pos, end_pos)
+        return self._add_element(DrawLine, 'drawline', self.drawlines, 
+            auto_colorid=False, 
+            **kwargs)
 
-    def add_polygon(self, data, style_dict):
+    def add_polygon(self, data, **kwargs) -> Polygon:
 
-        return self._add_element(Polygon, 'polygon', self.polygons, True, style_dict,
-            data)
+        return self._add_element(Polygon, 'polygon', self.polygons, 
+            auto_colorid=True, 
+            data=data,
+            **kwargs)
 
-    def add_text(self, text, pos, style_dict):
+    def add_text(self, **kwargs) -> Text:
         
-        return self._add_element(Text, 'text', self.texts, False, style_dict, 
-            text, pos)
+        return self._add_element(Text, 'text', self.texts, 
+            auto_colorid=False, 
+            **kwargs)
     
-    def remove_element(self, element):
+    def remove_element(self, element:FigObject):
         """ Remove an dynamical element (i.e. datalines, texts, polygons, ...)
         For data elements (dataline, bar), the rest indices will be recalculated.
 
@@ -160,7 +167,7 @@ class Subfigure(FigObject):
                     elem_queue[i].name = '%s%d' % (prefix, i+1)
             self.is_changed = True
 
-    def clear(self, remove_label=False):
+    def clear(self, remove_label:bool=False):
         """ Clear lines and texts but keep style.
         If `remove_label`, will remove the axis labels.
         """
@@ -268,11 +275,11 @@ def _update_axis_label(datalines, bars, axis, horizontal):
         return
 
     if horizontal:
-        return _set_label([d.get_style('xlabel') for d in datalines + bars])
+        return _set_label([d.get_style('xlabel', raise_error=False, default='') for d in datalines + bars])
     
     histogram_counts = len([b for b in bars if b.dynamic_bin])
     if histogram_counts == 0 and datalines:     # all datalines
-        return _set_label([d.get_style('label') for d in datalines])
+        return _set_label([d.get_style('label', raise_error=False, default='') for d in datalines])
     elif histogram_counts == len(bars) and not datalines:   # all bars
         return axis.label.update_style({'text':'Distribution'})
     else:
