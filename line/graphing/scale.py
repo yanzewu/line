@@ -41,10 +41,10 @@ def get_ticks_log(vmin, vmax, numticks=None, extend='outer'):
 
     if extend == 'inner':
         lvmin, lvmax = ceil(log10(vmin)), floor(log10(vmax))
-        if lvmin == lvmax:
-            lvmax = lvmin + 1
     elif extend == 'outer':
         lvmin, lvmax = floor(log10(vmin)), ceil(log10(vmax))
+    if lvmin == lvmax:
+        lvmax = lvmin + 1
 
     n = lvmax - lvmin
     stepm = max(1, floor(n/numticks))

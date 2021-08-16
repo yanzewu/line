@@ -187,7 +187,7 @@ class CMDHandler:
 
     def proc_(self, fetch_next_line, fetch_previous_line, exit_on_error=True, disable_input=False, interactive_error_display=None, refresh_backend=True):
         """ The REPL loop.
-        fetch_next_line(forced:bool)->str: Should return the next line without break ('\n'); 
+        fetch_next_line(forced:bool)->str: Should return the next line without break ('\\n'); 
             If continuing last line, `forced` will be true.
         fetch_previous_line(offset:int)->str: Should return current lineid + offset (if 0 then current line).
         exit_on_error: Break when an error occurs (even if it is handled);

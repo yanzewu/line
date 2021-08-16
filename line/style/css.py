@@ -14,6 +14,8 @@ class SpecialStyleValue(enum.Enum):
 
 
 class Style(dict):
+    """ A dict-like class supporting inherit and selective copy.
+    """
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -273,9 +275,10 @@ class StyleSheet:
         else:
             self.data = {selectors:style}
 
-    def apply_to(self, stylable, *args, **kwargs):
+    def apply_to(self, stylable, *args, **kwargs) -> bool:
         """ Calculate used value of stylable (and its children)
         Additional args and kwargs are passed to stylable.update_style().
+        Return True/False depending if anything is updated.
         """
         apply_queue = {}
         has_updated = False
@@ -314,7 +317,7 @@ class StyleSheet:
                         element.computed_style.update(style)
 
     def select(self, stylable):
-        """ Selecting element
+        """ Selecting element. Return a collection of selected elements.
         """
 
         selected = set()
@@ -324,7 +327,7 @@ class StyleSheet:
                 selected.add(element)
         return selected
 
-    def update(self, other, overwrite_exist=False):
+    def update(self, other, overwrite_exist:bool=False):
         """ Update style from other stylesheet.
         If `overwrite_exist', replaces the exisiting selector.
         """
@@ -338,10 +341,14 @@ class StyleSheet:
                 else:
                     self.data[selector].update(style)
 
-    def find(self, key):
+    def find(self, key:Selector) -> Style:
+        """ Find in the stylesheet. Key is a selector.
+        """
         return self.data[key]
 
-    def find_type(self, key):
+    def find_type(self, key:str) -> Style:
+        """ Equivalent to find(TypeSelector(key))
+        """
         return self.data[TypeSelector(key)]
 
 

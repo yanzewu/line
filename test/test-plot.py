@@ -4,23 +4,75 @@ import numpy as np
 
 import line
 
+
 line.plot([1,2,3], [4,5,6], xlabel='t', ylabel='xy_nodesc')
 line.plot([1,2,3], [4.1,5.1,6.1], 'mx', xlabel='t', ylabel='xy_desc')
 l1 = line.plot([1,2,3], 'gs', xlabel='123', ylabel='xy_single_nodesc')
 l2 = line.plot([1.2,2.2,3.2], xlabel='t', ylabel='xy_single_desc')
 
-line.fill(l1, l2, color='green')
-line.fill(l1, 0.5, color='violet')
-line.fill(l2, color='grey', alpha=0.1)
-
+line.fill([2,3,3,2],[4,4,5,5], color='yellow')
+line.fill_between([1,2,3], [1,2,3], [1.2,2.2,3.2], color='green')
+line.fill_between([1,2,3], [1,2,3], 0.5, color='violet')
+line.fill_between([1,2,3], [1.2,2.2,3.2], color='grey', alpha=0.1)
+line.title("Normal plot and fill")
 line.show()
 
 line.clear()
 line.bar([1,2,3], [2,3,4], ylabel='bar', width=0.8)
 line.bar([1,2,3], ylabel='bar2', width=0.8)
 line.show()
+line.title("Bar plot")
+
 line.clear()
-
 line.hist(np.random.rand(100), label='hist', norm='count')
-
+line.title("Histogram plot")
 line.show()
+
+line.clear()
+line.line([0,0], [1,1], color='r')
+line.hlines([0.1, 0.2], 0.1, 0.5, color='y')
+line.vlines([0.1, 0.2], 0.1, 0.5, color='g')
+line.xline(0.3, color='b')
+line.yline(0.3, color='m')
+line.text("Text test", pos="top,right")
+line.title("Painting elements")
+line.show()
+
+line.clear()
+line.xlabel("This is xlabel")
+line.ylabel("This is xlabel")
+line.xlim(2, 5)
+line.xlim([2, 5])
+line.ylim([1, 4])
+line.xscale('log')
+line.xlim(left=2)
+line.yscale('log')
+line.yscale('linear')
+line.tick_params(length=5)
+line.grid()
+line.show()
+
+line.clear()
+line.plot([1,2,3],[1,2,3])
+line.plot([1,2,3],[2,3,4])
+line.plot([1,2,3],[3,4,5])
+line.palette('lighter')
+line.group('abb')
+line.legend(['L1', 'L2', 'L3'])
+line.show()
+
+line.clear()
+line.figure(2)
+line.subfigure(1, 2, 2)
+line.plot([1,2,3],[1,2,3])
+print(line.gcf())
+print(line.gca())
+print(line.get_element('xaxis'))
+print(line.get(line.gca(), 'linecolor'))
+line.setp(line.get_element('line1'), color='red')
+line.suptitle('This is suptitle')
+line.remove_figure('1')
+line.show()
+
+line.draw()
+line.save('test-plot-sv.png')

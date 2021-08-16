@@ -7,7 +7,7 @@ from .. import defaults
 
 from . import style
 from . import errors
-from . import FigObject
+from .figobject import FigObject
 from ._aux import _set_color, _set_data, _gen_fontprops_setter, _gen_fontprops_getter
 
 
@@ -55,23 +55,28 @@ class Axis(FigObject):
 
     def _update_ticks(self):
         r = self.computed_style['range']
-        automatic = False
-        if (r[0] is None or r[1] is None) and self.extent_callback:
-            automatic = True
+        
+        if (r[0] is None or r[1] is None) and self.extent_callback: # none -> seek data for value.
             extent = self.extent_callback()
         else:
             extent = (0.0, 1.0)
 
         minpos = extent[0] if r[0] is None else r[0]
         maxpos = extent[1] if r[1] is None else r[1]
+
+        if maxpos < minpos:
+            maxpos = minpos
         step = r[2]
         # TODO minpos, maxpos are not always vmin, vmax; they may have some padding around data.
+        bound = [None, None]
 
         if self.computed_style['scale'] == 'linear':
             tickpos = scale.get_ticks(minpos, maxpos, step)
-            bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
+            bound[0] = tickpos[0] if r[0] is None else minpos
+            bound[1] = tickpos[-1] if r[1] is None else maxpos
+            
             self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (bound[0], bound[-1],
+            self.computed_style['range'] = (bound[0], bound[1],
                 self.computed_style['tickpos'][1] - self.computed_style['tickpos'][0])
             # This is a trick: If range is None instead of actual value, the updater will be called
             # every time.
@@ -79,9 +84,11 @@ class Axis(FigObject):
         elif self.computed_style['scale'] == 'log':
             numticks = int(1.0/step) if step else None
             tickpos = scale.get_ticks_log(minpos, maxpos, numticks)
-            bound = (tickpos[0], tickpos[-1]) if automatic else (minpos, maxpos)
+            bound[0] = tickpos[0] if r[0] is None else minpos
+            bound[1] = tickpos[-1] if r[1] is None else maxpos
+
             self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (bound[0], bound[-1], 1.0/numticks if numticks else None)
+            self.computed_style['range'] = (bound[0], bound[1], 1.0/numticks if numticks else None)
 
 
 class Tick(FigObject):

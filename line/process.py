@@ -16,6 +16,7 @@ from . import state
 from . import backend
 from . import terminal
 from . import group_proc
+from . import proc_api
 
 from .positioning import subfigure_arr
 from .positioning import split
@@ -141,44 +142,47 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'line':
         x1, _, y1, x2, _, y2 = zipeval([stof, make_assert_token(','), stof, stof, make_assert_token(','), stof], m_tokens)
-        process_line(m_state, (x1, y1), (x2, y2), parse_style(m_tokens))
+        proc_api.line(m_state, (x1, y1), (x2, y2), parse_style(m_tokens), 
+            snapshot_callback=lambda x:process_snapshot(x, 'element/drawlines'))
 
     elif command == 'hline':
         y = stof(get_token(m_tokens))
-        process_line(m_state, (None,y), (None,y), parse_style(m_tokens))
+        proc_api.line(m_state, (None,y), (None,y), parse_style(m_tokens), 
+            snapshot_callback=lambda x:process_snapshot(x, 'element/drawlines'))
 
     elif command == 'vline':
         x = stof(get_token(m_tokens))
-        process_line(m_state, (x,None), (x,None), parse_style(m_tokens))
+        proc_api.line(m_state, (x,None), (x,None), parse_style(m_tokens), 
+            snapshot_callback=lambda x:process_snapshot(x, 'element/drawlines'))
 
     elif command == 'fill':
         parse_and_process_fill(m_state, m_tokens)
         
     elif command == 'text':
-        text = get_token(m_tokens)
-        if text.startswith('$('):
-            text = process_expr(m_state, text)
+        text = try_process_expr(m_state, get_token(m_tokens))
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
-            process_text(m_state, text, style.str2pos(token1 + ',' + get_token(m_tokens)), parse_style(m_tokens))
+            token1 += ',' + get_token(tokens)
+            m_style = parse_style(m_tokens)
         else:
-            process_text(m_state, text, style.str2pos(token1), {**parse_style(m_tokens), **{'coord':'axis'}})
+            m_style = {**parse_style(m_tokens), **{'coord':'axis'}}
+        proc_api.text(m_state, text, token1, m_style, snapshot_callback=lambda x:process_snapshot(x, 'element/texts'))
 
     elif command == 'split':
         hsplitnum, _, vsplitnum = zipeval([stod, make_assert_token(','), stod], m_tokens)
         assert_no_token(m_tokens)
-        process_split(m_state, hsplitnum, vsplitnum)
+        proc_api.split_figure(m_state, hsplitnum, vsplitnum)
 
     elif command == 'hsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, splitnum, m_state.cur_figure().attr('split')[1])
+        proc_api.split_figure(m_state, splitnum, m_state.cur_figure().attr('split')[1])
 
     elif command == 'vsplit':
         splitnum = stod(get_token(m_tokens))
         assert_no_token(m_tokens)
-        process_split(m_state, m_state.cur_figure().attr('split')[0], splitnum)
+        proc_api.split_figure(m_state, m_state.cur_figure().attr('split')[0], splitnum)
 
     # select or create figure
     elif command == 'figure':
@@ -194,35 +198,20 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     # select subfigure
     elif command == 'subfigure':
-        arg = get_token(m_tokens)
-        
-        if m_state.cur_figurename is None:
-            m_state.create_figure()
-            if m_state.is_interactive:
-                render_cur_figure(m_state)
-
-        m_fig = m_state.cur_figure()
-
+        arg = try_process_expr(m_state, get_token(m_tokens))
+        if isinstance(arg, str):
+            arg = stod(arg)
         if lookup(m_tokens) == ',':
-            vs = stod(arg)
-            _, hs, _, subfig_idx = zipeval([make_assert_token(','), stod, make_assert_token(','), stod], m_tokens)
-            if (hs, vs) != tuple(m_fig.attr('split')):
-                process_split(m_state, hs, vs)
+            _, vs, _, subfig_idx = zipeval([make_assert_token(','), stod, make_assert_token(','), stod], m_tokens)
+            args = (arg, vs, subfig_idx)
         else:
-            if arg.startswith('$'):
-                subfig_idx = process_expr(m_state, arg)
-                if isinstance(subfig_idx, str):
-                    subfig_idx = stod(arg)
-            else:
-                subfig_idx = stod(arg)
+            args = (arg,)
 
         assert_no_token(m_tokens)
-
-        subfig_idx -= 1
-        if subfig_idx < len(m_fig.subfigures):
-            m_fig.cur_subfigure = subfig_idx
-        else:
-            raise LineProcessError('subfigure %d does not exist' % (subfig_idx + 1))
+        m_state.cur_figure(True)
+        if m_state.is_interactive:
+            render_cur_figure(m_state)
+        proc_api.subfigure(m_state, *args)
 
     # save figure
     elif command == 'save':
@@ -230,10 +219,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             warn('Using current filename: %s' % m_state.cur_save_filename)
             filename = m_state.cur_save_filename
         else:
-            if lookup_raw(m_tokens, ret_string=True).startswith('$'):
-                filename = str(process_expr(m_state, parse_expr(m_tokens)))
-            else:
-                filename = get_token(m_tokens)
+            filename = str(try_process_expr(m_state, get_token_raw(m_tokens)))
 
         remote_save = False
         if lookup(m_tokens) == 'remote' and m_state.options['remote']:
@@ -249,12 +235,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         m_state.cur_subfigure().clear()
 
     elif command == 'replot':
-        if lookup(m_tokens, 0) == 'all':
-            m_state.cur_figure().is_changed = True
-            if m_state.options['auto-compact']:
-                m_state.cur_figure().needs_rerender = 2
-        else:
-            m_state.cur_subfigure().is_changed = True
+        proc_api.set_redraw(m_state, 
+            redraw_all_subfigures=lookup(m_tokens, 0)=='all',
+            compact=m_state.options['auto-compact'])
 
     elif command == 'print':
         outstr = ''
@@ -341,7 +324,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'load' or command == 'source':
         filename = get_token(m_tokens)
-        process_load(m_state, filename, [process_expr(m_state, t) if t.startswith('$') else strip_quote(t) for t in (m_tokens)], 
+        process_load(m_state, filename, [try_process_expr(m_state, t) for t in m_tokens], 
             preserve_mode=(command == 'source'))
 
     elif command == 'pause':
@@ -349,7 +332,11 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if interval > 0:
             time.sleep(interval)
         else:
-            input('Press Enter to continue...')
+            if not m_state.is_interactive:
+                input('Press Enter to continue...')
+            else:
+                raise LineProcessError("Indefinite pause only works in non-interactive mode")
+            
     elif m_state.options['direct-function-call'] and m_state._vmhost and command in m_state._vmhost.records:
         m_tokens.appendleft(command)
         return m_state._vmhost.exec_invoke(m_state, m_tokens)
@@ -439,8 +426,8 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
             pg.style.update({'side': (style.FloatingPos.RIGHT, style.FloatingPos.BOTTOM)})
     for pg in parser.plot_groups:   # expressions
         for s in pg.style:
-            if isinstance(pg.style[s], str) and pg.style[s].startswith('$('):
-                pg.style[s] = process_expr(m_state, pg.style[s])
+            if isinstance(pg.style[s], str):
+                pg.style[s] = try_process_expr(m_state, pg.style[s])
 
     m_state.cur_subfigure(True)
     if not keep_existed:
@@ -579,18 +566,18 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         while len(m_tokens) > 0:
             opt = get_token(m_tokens)
             arg = get_token(m_tokens)
-            # TODO readonly options
             if arg == '=':
                 arg = get_token(m_tokens)
             try:
-                m_state.options.update(
-                    defaults.parse_default_options({opt:arg}, 
+                vopt, varg = defaults.parse_default_options({opt:arg}, 
                     option_range=defaults.default_options.keys(), raise_error=True
-                ))
+                ).popitem()
             except KeyError:
                 raise LineParseError('Invalid option: "%s"' % opt)
             except ValueError:
                 raise LineParseError('Invalid value for %s: "%s"' % (opt, arg))
+            else:
+                m_state.set_option(name=vopt, value=varg)
 
     elif test_token_inc(m_tokens, 'default'):
         selection = parse_style_selector(m_tokens)
@@ -612,28 +599,18 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
-        target_style = 'color'
-        if target == 'point':
-            target = 'line'
-            target_style = 'fillcolor'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
-        try:
-            m_palette = palette.get_palette(palette_name)
-        except KeyError:
-            raise LineProcessError('Palette "%s" does not exist' % palette_name)
-        else:
-            process_snapshot(m_state, 'style')
-            palette.palette2stylesheet(m_palette, target, target_style).apply_to(m_state.cur_subfigure())
-            m_state.cur_subfigure().is_changed = True
+        proc_api.palette(m_state, palette_name=palette_name, target=target, snapshot_callback=lambda x:process_snapshot(x, 'style'))
+
     else:
         selection, style_list, add_class, remove_class = parse_selection_and_style_with_default(
             m_tokens, css.NameSelector('gca'), recog_expression=True
         )
         # handle expressions appeared in style values
         for s in style_list:
-            if isinstance(style_list[s], str) and style_list[s].startswith('$('):
-                style_list[s] = process_expr(m_state, style_list[s])
+            if isinstance(style_list[s], str):
+                style_list[s] = try_process_expr(m_state, style_list[s])
 
         snapshot_cc = process_snapshot(m_state, 'style', cache=True)
         if m_state.apply_styles(
@@ -660,7 +637,7 @@ def parse_and_process_show(m_state:state.GlobalState, m_tokens:deque):
             for opt, val in m_state.options.items():
                 print('%s%s%s' % (opt, ' '*(32-len(opt)), val))
         else:
-            print(m_state.options[get_token(m_tokens)])
+            print(m_state.get_option(get_token(m_tokens)))
             assert_no_token(m_tokens)
 
     elif test_token_inc(m_tokens, ('palette', 'palettes')):
@@ -730,22 +707,7 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens:deque):
     
     process_snapshot(m_state, 'element/polygons')
     for line1, line2 in fill_between:
-        dataview.api.fill_h(m_state, line1, line2, **style_dict)
-
-
-def process_text(m_state:state.GlobalState, text:str, pos, style_dict:dict):
-    process_snapshot(m_state, 'element/texts')
-    return m_state.cur_subfigure().add_text(text=text, pos=pos, **style_dict)
-
-def process_line(m_state:state.GlobalState, pos1, pos2, style_dict:dict):
-    process_snapshot(m_state, 'element/drawlines')
-    return m_state.cur_subfigure().add_drawline(startpos=pos1, endpos=pos2, **style_dict)
-
-def process_split(m_state:state.GlobalState, hsplitnum:int, vsplitnum:int):
-    m_state._history.clear()
-    split.split_figure(m_state.cur_figure(), hsplitnum, vsplitnum, m_state.options['resize-when-split'])
-    m_state.refresh_style(True)
-    split.align_subfigures(m_state.cur_figure(), 'axis')
+        dataview.api.fill_betweenobj(m_state, line1, line2, **style_dict)
 
 
 def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
@@ -814,6 +776,15 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
         if not m_state.is_interactive:  # assuming we would stay a while in interactive; I'm not sure why this works.
             time.sleep(0.5)
         remote.wait_client()
+
+def try_process_expr(m_state:state.GlobalState, s:str, execute_vars=True, strip_quote_otherwise=True):
+    """ call process_expr(s) if s.startswith('$(').
+    execute_vars: call process_expr(s) if s.startswith('$')
+    """
+    if execute_vars:
+        return process_expr(m_state, s) if s.startswith('$') else (strip_quote(s) if strip_quote_otherwise and is_quoted(s) else s)
+    else:
+        return process_expr(m_state, s) if s.startswith('$(') else (strip_quote(s) if strip_quote_otherwise and is_quoted(s) else s)
 
 def process_expr(m_state:state.GlobalState, expr:str):
     evaler = expr_proc.ExprEvaler(m_state._vmhost.variables, m_state.file_caches)

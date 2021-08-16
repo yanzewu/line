@@ -3,7 +3,7 @@
 import numpy as np
 
 from . import plot
-from . import fill
+from . import fill as fill_
 from . import fit as fit_
 from ..style_proc import parse_style_descriptor, build_line_style
 
@@ -20,16 +20,43 @@ def plot_bar(m_state, *args, **kwargs):
     return _plot(m_state, 'bar', _assemble_xy, *args, **kwargs)
 
 
-def fill_h(m_state, obj1, obj2=None, **kwargs):
-    """ Fill the space between two lines, or line + horizontol axis
-    """
+def fill(m_state, x, y, **kwargs):
+    from .datapack import StaticPairedDataPack
 
-    if obj2 is None:
-        return fill.fill_h(m_state, obj1.data, **kwargs)
-    elif isinstance(obj2, (int, float)):
-        return fill.fill_h(m_state, obj1.data, obj2, **kwargs)
-    else:
-        return fill.fill_h(m_state, obj1.data, obj2.data, **kwargs)  
+    return m_state.cur_subfigure(True).add_polygon(StaticPairedDataPack(np.array(x), np.array(y)), **kwargs)
+
+
+def fill_between(m_state, x, y1, y2=0, **kwargs):
+    if isinstance(x, (list, tuple)):
+        x = np.array(x)
+    if isinstance(y1, (int, float)):
+        y1 = np.ones(x.shape) * y1
+    elif isinstance(y1, (list, tuple)):
+        y1 = np.array(y1)
+    if isinstance(y2, (int, float)):
+        y2 = np.ones(x.shape) * y2
+    elif isinstance(y2, (list, tuple)):
+        y2 = np.array(y2)
+
+    return fill(m_state, np.concatenate((x, np.flip(x))), np.concatenate((y1, np.flip(y2))), **kwargs)
+
+
+def fill_betweenx(m_state, y, x1, x2=0, **kwargs):
+    if isinstance(y, (list, tuple)):
+        y = np.array(y)
+    if isinstance(x1, (int, float)):
+        x1 = np.ones(y.shape) * x1
+    elif isinstance(x1, (list, tuple)):
+        x1 = np.array(x1)
+    if isinstance(x2, (int, float)):
+        x2 = np.ones(y.shape) * x2
+    elif isinstance(x2, (list, tuple)):
+        x2 = np.array(x2)
+
+    return fill(m_state, np.concatenate((x1, x2)), np.concatenate((y, np.flip(y))), **kwargs)
+
+
+fill_betweenobj = fill_.fill_betweenobj
 
 def fit(m_state, target, **kwargs):
     return fit_.fit_dataline(m_state.cur_subfigure(), target, **kwargs)
@@ -37,7 +64,7 @@ def fit(m_state, target, **kwargs):
 
 def _plot(m_state, chart_type, assembler, *args, labelfmt='%T', auto_range=None, xlabel='', ylabel='', source='', **kwargs):
     """ Backend for plotting a line.
-    Necesary arguments will be passed to `do_plot()` directly;
+    Necessary arguments will be passed to `do_plot()` directly;
     Additional arguments will be passed to style
     """
 

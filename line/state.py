@@ -53,21 +53,21 @@ class GlobalState:
 
     gca = cur_subfigure
 
-    def create_figure(self, name='1') -> Figure:
+    def create_figure(self, name='1', **kwargs) -> Figure:
         """ Create a new figure with subfigure initialized.
         """
 
         if self.cur_figurename is None:
             self.cur_figurename = name
-        self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename)
+        self.figures[self.cur_figurename] = Figure('figure%s' % self.cur_figurename, **kwargs)
         self.custom_stylesheet.apply_to(self.cur_figure(), 0)
         return self.cur_figure()
 
-    def create_subfigure(self, name:str) -> Subfigure:
+    def create_subfigure(self, name:str, **kwargs) -> Subfigure:
         """ Return a new Subfigure instance with basic setup and default style applied.
         Will NOT attach the subfigure to current figure.
         """
-        subfig = Subfigure(name)
+        subfig = Subfigure(name, **kwargs)
         self.custom_stylesheet.apply_to(subfig, 0)
         return subfig
 
@@ -118,7 +118,7 @@ class GlobalState:
             css.compute_style(self.cur_figure(), self.default_stylesheet)
             self.cur_figure().set_dynamical = True
 
-    def figure(self, name=None):
+    def figure(self, name=None, **kwargs):
         """ Set current figure. Create one if necessary.
         """
 
@@ -132,7 +132,7 @@ class GlobalState:
 
         self.cur_figurename = name
         if fig_name not in self.figures:
-            self.create_figure()
+            self.create_figure(name=fig_name, **kwargs)
             self.cur_figure().is_changed = True
         return self.cur_figure()
 
@@ -187,3 +187,10 @@ class GlobalState:
 
     getelem = get_element_by_name
     get_elements_by_name = lambda x: get_element_by_name(True)
+
+    def set_option(self, name:str, value):
+        # TODO readonly options
+        self.options.update({name: value})
+
+    def get_option(self, name:str):
+        return self.options[name]

@@ -27,3 +27,14 @@ def _fill_polygon(dp1, dp2):
             np.concatenate((dp1.get_x(), np.flip(dp1.get_x()))), 
             np.concatenate((dp1.get_y(), np.ones_like(dp1.get_x()) * dp2))
             )
+
+def fill_betweenobj(m_state, obj1, obj2=None, **kwargs):
+    """ Fill the space between two lines, or line + horizontol axis
+    """
+
+    if obj2 is None:
+        return fill_h(m_state, obj1.data, **kwargs)
+    elif isinstance(obj2, (int, float)):
+        return fill_h(m_state, obj1.data, obj2, **kwargs)
+    else:
+        return fill_h(m_state, obj1.data, obj2.data, **kwargs)  

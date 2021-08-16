@@ -119,7 +119,7 @@ class HistoryManager:
         self.snapshot_cache = None
 
     def clear_cache(self):
-        self.cache_snapshot = None
+        self.snapshot_cache = None
 
     def clear(self):
         self.stack.clear()

@@ -4,10 +4,10 @@ import numpy as np
 import itertools
 
 from . import errors
-from ..element import subfigure
+from ..element import subfigure, Figure
+from .. import defaults
 
-
-def split_figure(figure, hsplitnum:int, vsplitnum:int, resize_figure=True):
+def split_figure(figure:Figure, hsplitnum:int, vsplitnum:int, resize_figure:bool=True):
     """ Split current figure by certain grids.
     Will remove additional subfigures if necessary.
     """
@@ -15,8 +15,9 @@ def split_figure(figure, hsplitnum:int, vsplitnum:int, resize_figure=True):
     if hsplitnum < 1 or vsplitnum < 1:
         raise errors.LineProcessError('Split number should be greater than 1, got %d' % max(hsplitnum, vsplitnum))
 
-    hsplit, vsplit = figure.attr('split')
-    hspacing, vspacing = figure.attr('spacing')
+    default_style = defaults.default_style_sheet.find_type('figure') 
+    hsplit, vsplit = figure.get_style('split', raise_error=False, default=default_style['split'])
+    hsize , vsize = figure.get_style('size', raise_error=False, default=default_style['size'])
 
     subfig_state_2d = []
     for i in range(vsplitnum):
@@ -34,11 +35,9 @@ def split_figure(figure, hsplitnum:int, vsplitnum:int, resize_figure=True):
     figure.update_render_callback()
     
     if resize_figure:
-        split_old = figure.get_style('split')
-        size_old = figure.get_style('size')
         figure.update_style({'size': [
-            round(size_old[0]*math.sqrt(hsplitnum/split_old[0] * split_old[1]/vsplitnum)), 
-            round(size_old[1]*math.sqrt(vsplitnum/split_old[1] * split_old[0]/hsplitnum))]
+            round(hsize*math.sqrt(hsplitnum/hsplit * vsplit/vsplitnum)), 
+            round(vsize*math.sqrt(vsplitnum/vsplit * hsplit/hsplitnum))]
             })
 
     figure.update_style({'split': [hsplitnum, vsplitnum]})
