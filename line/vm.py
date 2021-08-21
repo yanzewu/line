@@ -224,6 +224,9 @@ class VMHost:
 
     def pop_args(self):
         self.arg_stack.pop()
+        if self.mode != VMHost.MODE_EXEC:
+            self.mode = VMHost.MODE_EXEC
+            raise errors.LineParseError("Missing 'end'")
 
     def _cur_record(self):
         return self.records.get(self.cur_record_name, None)

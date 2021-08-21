@@ -2,6 +2,8 @@
 """ Common functions used by process and api
 """
 
+import warnings
+
 from . import state
 from . import style
 from .positioning import split, subfigure_arr
@@ -94,3 +96,25 @@ def line(m_state:state.GlobalState, startpos, endpos, style_dict:dict, snapshot_
     if snapshot_callback:
         snapshot_callback(m_state)
     return m_state.cur_subfigure().add_drawline(startpos=startpos, endpos=endpos, **style_dict)
+
+def legend(m_state:state.GlobalState, labels:list, elements=None, style_dict:dict={}):
+    if not labels and elements is None:
+        if not style_dict:
+            m_state.gca().legend.update_style({'visible': m_state.gca().legend.get_style('visible', False)})  # 
+        else:
+            m_state.gca().legend.update_style(style_dict)
+        return True
+
+    if elements is None:
+        elements = m_state.gca().get_data_children()
+
+    if len(labels) > len(elements): # the other case is normal
+        warnings.warn("Too many labels for %d elements" % len(elements))
+
+    for l, d in zip(labels, elements):
+        d.update_style(label=l)
+
+    if style_dict:
+        m_state.gca().legend.update_style(style_dict)
+
+    return len(elements) > 0

@@ -219,7 +219,7 @@ class CMDHandler:
 
                     emittor = l.run(fetch_next_line)
                     ret = self.RET_USERERROR
-            except StopIteration:
+            except (StopIteration, EOFError):
                 ret = self.RET_EXIT
             except KeyboardInterrupt:
                 ret = self.RET_EXIT

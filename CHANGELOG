@@ -136,3 +136,21 @@ Features:
 ---
 - Added 'undo' and 'redo' commands, used in manipulating figure states.
 - Fixed a bug of auto range in log scale.
+
+07-10-21:
+---
+- Updated API for FigObject and unified element class constructors.
+
+08-16-21:
+---
+- Provided much more matplotlib-style python APIs.
+- Fixed a bug in set range and a bug in log scaling.
+- Fixed a bug in history.
+
+08-21-21:
+---
+- Added 'scatter' command as a simple alias for plotting with points only.
+- Added 'legend' command to set element-wise legend more easily.
+- Missing 'end' in control block until EOF is now identified as an error.
+- Fixed a bug in group detection. Now group name with "abcde..." are identified as monotonic repetetion instead of simple repetition.
+- Fixed a bug that twice withdraw may not be recovered correctly by 'redo'.

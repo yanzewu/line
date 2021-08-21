@@ -316,15 +316,18 @@ class StyleSheet:
                         element.computed_style = dict(((d, v) for d, v in element.computed_style.items() if not is_copyable_style(d)))
                         element.computed_style.update(style)
 
-    def select(self, stylable):
+    def select(self, stylable) -> list:
         """ Selecting element. Return a collection of selected elements.
         """
 
-        selected = set()
+        selected = []
+        cache = set()
 
         for selector, style in self.data.items():
             for element, priority in selector.select(stylable):
-                selected.add(element)
+                if element not in cache:
+                    cache.add(element)
+                    selected.append(element)
         return selected
 
     def update(self, other, overwrite_exist:bool=False):

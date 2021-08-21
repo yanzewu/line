@@ -56,3 +56,6 @@ display
 
 update line1,line2 a t:y2,y1
 display
+
+scatter example/test-data.txt 1:2
+display

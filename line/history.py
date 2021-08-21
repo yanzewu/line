@@ -81,6 +81,10 @@ class HistoryManager:
             if len(self.stack) > self.stack_size:
                 self.stack.pop(0)
                 self.index -= 1
+        elif not self._is_covered(self.stack[self.index].typename, self.stack[self.index+1].typename):    # the current snapshot does not cover everything.
+                # e.g. last snapshot changes element, but current is a style snapshot.
+            current_snapshot = self._take_snapshot(m_state, snapshot_type=self.stack[self.index].typename)
+            self.stack[self.index+1] = current_snapshot
 
         self._apply_snapshot(m_state, self.stack[self.index])
         self.index -= 1
@@ -158,6 +162,15 @@ class HistoryManager:
         elif snapshot_type.startswith('element/'):
             return ElementSnapshot(m_state.cur_figurename, m_state.gca(), snapshot_type[8:])
         
+
+    def _is_covered(self, typename_early, typename_late):
+        # check if typename_late COVERS typename_early
+        if isinstance(typename_late, str):
+            return isinstance(typename_early, str) and typename_early == typename_late
+        elif isinstance(typename_early, str):
+            return typename_early in typename_late
+        else:
+            return set(typename_early) == set(typename_late)
 
 class DummyHistoryManager:
     """ Used when we don't want history.

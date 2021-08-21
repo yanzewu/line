@@ -80,6 +80,7 @@ command_keywords = {
     'group',
     "hist",
     'input',
+    'legend',
     'load',
     'line', 'hline', 'vline',
     'ls',
@@ -92,6 +93,7 @@ command_keywords = {
     'remove',
     'replot',
     'save',
+    'scatter',
     'set',
     'split', 'hsplit', 'vsplit',
     'show',
@@ -117,7 +119,7 @@ command_alias = {
 }
 
 extended_set_keywords = {
-    'grid', 'hold', 'legend', 'palette', 'title',
+    'grid', 'hold', 'palette', 'title',
     'xlabel', 'ylabel',
     'xrange', 'yrange',
     'xlim', 'ylim',

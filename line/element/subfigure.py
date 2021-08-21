@@ -150,7 +150,7 @@ class Subfigure(FigObject):
         For data elements (dataline, bar), the rest indices will be recalculated.
 
         element: The element instance.
-        Raises exception if element is not dynamical.
+        Raises exception if element is not dynamical or element is not found.
         """
         
         try:
@@ -181,7 +181,7 @@ class Subfigure(FigObject):
                 self.axes[i].label.update_style({'text': style.css.SpecialStyleValue.DEFAULT})
         self.is_changed = True
 
-    def get_axes_coord(self, pos, axis_id):
+    def get_axes_coord(self, pos, axis_id) -> float:
         """ Transform axis coord to data coord.
         pos: Either a number, or 'left'/'right'.
         """
@@ -193,14 +193,28 @@ class Subfigure(FigObject):
             lo, hi = self.axes[axis_id].attr['range']
             return (pos-lo)/(hi-lo)
 
-    def update_colorid(self):
-        """ refresh colorid and groupid for each line.
+    def update_colorid(self) -> bool:
+        """ refresh colorid and groupid for each line. Return if any style is set.
         """
         colorids, groupids = self.attr('group').generate_ids(len(self.datalines))
 
+        changed = False
+
         for l, cidx, gidx in zip(self.datalines, colorids, groupids):
             l.update_style({'colorid':cidx, 'groupid':gidx})
-        self.is_changed = True
+            changed = True
+        self.is_changed = self.is_changed and changed
+        return changed
+
+    def get_data_children(self) -> list:
+        """ Return a list of data elements (lines, bars)
+        """
+        return self.datalines + self.bars
+
+    def get_variable_children(self) -> list:
+        """ Return a list of changeable elements (lines, bars, drawlines, polygons, texts)
+        """
+        return self.datalines + self.bars + self.drawlines + self.polygons + self.texts
 
     def _style_priority(self, m_style):
         return 0 if m_style is self.style[0] else 1

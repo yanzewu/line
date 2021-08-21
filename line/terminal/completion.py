@@ -56,7 +56,7 @@ class Completer(pt.completion.Completer):
 
             command = keywords.command_alias.get(tokens[0], tokens[0])
 
-            if command in ('plot', 'plotr', 'hist', 'append'):
+            if command in ('plot', 'plotr', 'hist', 'append', 'scatter'):
                 if cur_idx == 1:
                     if self.m_state:
                         yield from self.generate_completion_list(d, self.m_state._vmhost.variables.keys(), self.format_varname)
@@ -83,7 +83,7 @@ class Completer(pt.completion.Completer):
                 elif not tokens[cur_idx-1].endswith('='):
                     yield from self.generate_completion_list(d, keywords.all_style_keywords, self.format_stylename)
 
-            elif command in ('set', 'show', 'remove', 'style'):
+            elif command in ('set', 'show', 'remove', 'style', 'legend'):
                 if cur_idx == 1 or tokens[cur_idx-1] == ',':
                     if command == 'set':
                         yield from self.generate_completion_list(d, ('option ', 'default ', 'style ', 'compact ', 'palette '))
@@ -121,7 +121,7 @@ class Completer(pt.completion.Completer):
             elif command == 'cd':
                 yield from self.generate_completion_list(d, get_filelist(d, True))
 
-            elif command in ('load', 'save'):
+            elif command in ('load', 'save', 'source'):
                 yield from self.generate_completion_list(d, get_filelist(d, False))
 
                 

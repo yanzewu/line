@@ -16,7 +16,7 @@ python -m line -d test/test-expr.line a
 printf "\n--------- testing stdin ----------\n"
 cat example/test-data.txt | python -m line -d test/test-stdin.line 
 printf "\n--------- testing command line ----------\n"
-sh test/test-cl.cmd
+sh test/test-cl.sh
 printf "\n--------- testing style ----------\n"
 python -m line -d test/test-style.line
 printf "\n--------- testing element ----------\n"

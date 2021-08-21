@@ -64,7 +64,7 @@ Additional options can be shown by `line -e 'show option'`'''
     cmd_handler = terminal.CMDHandler(preload_input=(mode == 'interactive') and
         defaults.default_options['delayed-init'])
     if len(args) == 0:
-        cmd_handler.m_state._vmhost.push_args(['[stdin]'])
+        cmd_handler.m_state._vmhost.push_args([''])
     else:
         cmd_handler.m_state._vmhost.push_args(args)
 

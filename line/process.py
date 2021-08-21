@@ -105,6 +105,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
     elif command == 'append':
         parse_and_process_plot(m_state, m_tokens, keep_existed=True)
 
+    elif command == 'scatter':
+        parse_and_process_plot(m_state, m_tokens, keep_existed=None, scatter_plot=True)
+
     elif command == 'hist':
         parse_and_process_plot(m_state, m_tokens, keep_existed=None, chart_type='hist')
 
@@ -121,6 +124,9 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         group_desc = get_token(m_tokens)
         assert_no_token(m_tokens)
         process_group(m_state, group_desc)
+
+    elif command == 'legend':
+        parse_and_process_legend(m_state, m_tokens)
 
     elif command == 'set':
         parse_and_process_set(m_state, m_tokens)
@@ -402,8 +408,8 @@ def render_cur_figure(m_state:state.GlobalState):
         m_state.cur_subfigure().is_changed = False 
 
 
-def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed, side=style.FloatingPos.LEFT, chart_type='line'):
-    """ Parsing and processing `plot`/`hist`/`append`/`plotr` commands.
+def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_existed, side=style.FloatingPos.LEFT, chart_type='line', scatter_plot=False):
+    """ Parsing and processing `plot`/`hist`/`append`/`plotr`/`scatter` commands.
 
     Args:
         keep_existed: Keep existed datalines.
@@ -412,7 +418,7 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     """
     if keep_existed is None:
         keep_existed = m_state.cur_subfigure().get_style('hold') if m_state.has_figure() else False
-    if chart_type not in ('line', 'hist'):
+    if chart_type not in ('line', 'hist', 'bar', ):
         raise LineProcessError("Unrecognized chart type")
 
     parser = plot_proc.PlotParser() if chart_type == 'line' else plot_proc.PlotParser(plot_proc.PlotParser.M_HIST)
@@ -428,6 +434,10 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
         for s in pg.style:
             if isinstance(pg.style[s], str):
                 pg.style[s] = try_process_expr(m_state, pg.style[s])
+        if scatter_plot and chart_type == 'line':
+            pg.style.setdefault('linetype', style.LineType.NONE)
+            pg.style.setdefault('pointtype', style.PointType.CIRCLE)
+            pg.style.setdefault('pointsize', 8)
 
     m_state.cur_subfigure(True)
     if not keep_existed:
@@ -558,6 +568,46 @@ def process_group(m_state:state.GlobalState, group_desc):
     m_state.refresh_style() # need to refresh twice -- for colorid and for actual color
     m_state.cur_subfigure().is_changed = True
 
+
+def parse_and_process_legend(m_state:state.GlobalState, m_tokens:deque):
+    if len(m_tokens) == 1 and lookup_raw(m_tokens) in ('on', 'off'):    # shortcut
+        selection = []
+        labels = []
+    else:
+        selection_or_label = parse_token_with_comma(m_tokens)
+
+        if len(selection_or_label) == 1 and lookup_raw(m_tokens, ret_string=True) == '=':    # style only
+            selection = []
+            labels = []
+            m_tokens.appendleft(selection_or_label[0])
+        elif len(m_tokens) > 0:
+            t1 = get_token(m_tokens)
+            if lookup_raw(m_tokens, ret_string=True) == ',':       # sel t1,t2,... 
+                selection = selection_or_label
+                m_tokens.appendleft(t1)
+                labels = parse_token_with_comma(m_tokens)
+            elif lookup_raw(m_tokens, ret_string=True) == '=':      # t1,t2,... s1=v1
+                selection = []
+                labels = selection_or_label
+                m_tokens.appendleft(t1)
+            else:   # sel t s1=v1
+                selection = selection_or_label
+                labels = [t1]
+        else:   # t1,t2,...
+            selection = []
+            labels = selection_or_label
+
+        if len(labels) == 1:
+            if labels[0].startswith('$'):
+                labels = process_expr(m_state, labels[0])
+            else:
+                labels = labels[0].split()
+
+    ss = css.StyleSheet([parse_single_style_selector(s) for s in selection])
+    snapshot_cc = process_snapshot(m_state, 'style', cache=True)
+    is_changed = proc_api.legend(m_state, labels, ss.select(m_state.gca()) if selection else None, parse_style(m_tokens))
+    snapshot_cc(is_changed)
+    m_state.gca().is_changed = m_state.gca().is_changed or is_changed
 
 def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
     """ Parse and process `set` command.

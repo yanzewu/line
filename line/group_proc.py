@@ -86,8 +86,10 @@ def parse_group(group:str):
                 repeator = prefix[i:]
             i -= 1
 
+        # two kinds of repetition => REPEAT_COLOR: abcabcabc REPEAT_GROUP: aabbccdd
+
         repeat_style = GroupDesc.REPEAT_COLOR
-        if len(repeator) == 1:
+        if len(repeator) == 1:  # to check if it is ccdd, not cccdd
             i = len(prefix)-1
             r1 = 0
             r2 = 0
@@ -100,7 +102,7 @@ def parse_group(group:str):
                     r2 = len(prefix) - i - r1
                     break
                 i -= 1
-            if r1 == r2 and r1 > 1:
+            if r1 == r2 and (r1 > 1 or len(prefix) > 4):    # abcd... => abcdabcd abcde... => abcdefg
                 repeat_style = GroupDesc.REPEAT_GROUP
                 repeator = prefix[len(prefix)-r1:]
 

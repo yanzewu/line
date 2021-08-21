@@ -22,35 +22,35 @@ def get_token_raw(m_tokens):
     except IndexError:
         raise LineParseError("Incomplete command")
 
-def is_quoted(token):
+def is_quoted(token:str):
     return len(token) > 0 and token[0] in '\'\"'
 
-def strip_quote(token):
+def strip_quote(token:str) -> str:
     return token[1:-1] if token[0] in '\'\"' else token
 
 def assert_no_token(m_tokens):
     if len(m_tokens) != 0:
         raise LineParseError('Extra tokens: "%s"' % m_tokens[0])
 
-def assert_token(token, expected):
+def assert_token(token:str, expected:str):
     if token != expected:
         raise LineParseError('"%s" expected' % expected)
 
-def make_assert_token(expected):
+def make_assert_token(expected:str):
     return (lambda x: assert_token(x, expected))
 
-def lookup(m_tokens, idx=0, ret_string=False):
+def lookup(m_tokens, idx:int=0, ret_string:bool=False):
     """ Exception-free look up the next token in advance.
     idx: number of token ahead;
     ret_string: Return empty string if out of bound; By default returns None.
     """
     return strip_quote(m_tokens[idx]) if len(m_tokens) > idx else ('' if ret_string else None)
 
-def lookup_raw(m_tokens, idx=0, ret_string=False):
+def lookup_raw(m_tokens, idx:int=0, ret_string:bool=False):
 
     return m_tokens[idx] if len(m_tokens) > idx else ('' if ret_string else None)
 
-def test_token_inc(m_tokens, expr):
+def test_token_inc(m_tokens, expr) -> bool:
 
     do_inc = False
     if len(m_tokens) > 0:
@@ -65,7 +65,7 @@ def test_token_inc(m_tokens, expr):
     return do_inc
     
 
-def skip_tokens(m_tokens, termflag):
+def skip_tokens(m_tokens, termflag:str):
     """ Skip tokens until the end or termflag is meet (included)
     """
     while len(m_tokens) > 0:
@@ -83,27 +83,27 @@ def zipeval(functions, m_tokens):
     return r
 
 
-def stod(token):
+def stod(token:str) -> int:
 
     try:
         return int(token)
     except ValueError:
         raise LineParseError('Integer required')
 
-def stof(token):
+def stof(token:str) -> float:
 
     try:
         return float(token)
     except ValueError:
         raise LineParseError('Number required')
 
-def stob(token):
+def stob(token:str):
     try:
         return STOB[token]
     except KeyError:
         raise LineParseError("true/false required")
 
-def parse_token_with_comma(m_tokens):
+def parse_token_with_comma(m_tokens) -> list:
     """ Parse consecutive tokens separated by ",", return the list.
     """
     tokenlist = []
@@ -116,9 +116,11 @@ def parse_token_with_comma(m_tokens):
     return tokenlist
 
 
-def parse_expr(m_tokens):
+def parse_expr(m_tokens) -> str:
     """ Return a continuous expression string.
     """
+    if not m_tokens:
+        raise LineParseError("Expression required")
     if is_quoted(m_tokens[0]):
         return get_token_raw(m_tokens)
     elif '(' in m_tokens[0]:
