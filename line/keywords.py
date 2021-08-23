@@ -145,4 +145,4 @@ def is_style_desc(token):
 
 
 all_style_keywords = style_keywords.union(list(style_alias.keys()))
-all_command_keywords = command_keywords.union(list(command_alias.keys()))
+all_command_keywords = command_keywords.union(list(command_alias.keys())).union(extended_set_keywords)

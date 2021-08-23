@@ -87,7 +87,7 @@ Contents:
 - [hold](#special-set-commands)
 - [if](#if)
 - [input](#input)
-- [legend](#special-set-commands)
+- [legend](#legend)
 - [let](#let)
 - [load](#load%44-source)
 - [line,hline,vline](#line%44-hline%44-vline)
@@ -103,6 +103,7 @@ Contents:
 - [remove](#remove)
 - [replot](#replot)
 - [save](#save)
+- [scatter](#scatter)
 - [set,s](#set)
 - [source](#load%44-source)
 - [split,hsplit,vsplit](#split%44-hsplit%44-vsplit)
@@ -161,6 +162,16 @@ Usage:
     plotr (source1) (xexpr:)(yexpr) (style=val) (linespec) ..., (source2) (xexpr2:)(yexpr2) (style=val), ...
 
 The args are same as [plot](#plot). Note plotr will set `y2axis.enabled`, `y2axis.visible`, `y2tick.visible` and `y2label.visible` to true.
+
+### scatter
+---
+Plot with default line type none.
+
+Usage:
+
+    scatter (source1) (xexpr:)(yexpr) (style=val) (linespec) ..., (source2) (xexpr2:)(yexpr2) (style=val), ...
+
+The args are same as [plot](#plot).
 
 ### hist
 ---
@@ -294,7 +305,7 @@ Example:
 
 Args:
 - selection1,selection2: [Element Selector](#element-selector). If not given, the style is applied to current subfigure. Note in `set default` and `set future`, the selection cannot be omitted and has certain constraint.
-- style, val: Style should be a valid style for certain elements. Value may be a plain value (parsed automatically) or expression enclosed in `$( ... )`.
+- style, val: Style should be a valid style for certain elements, see [Style name and value](#list-of-valid-style-values). Value may be a plain value (parsed automatically) or expression enclosed in `$( ... )`.
 - class: The style classes to be added or removed.
 - `set default` modifies default value of styles, same as updating `default.css` (but not permanently). Only element type selector can be used in `set default`.
 - `set future` modifies the global stylesheet, same as updating `default.d.css` (but not permanently). The selectors for `set future` should only be classes.
@@ -307,7 +318,6 @@ If the first parameter of set is in the following list, then the "set" word can 
 
 - grid
 - hold
-- legend
 - palette
 - title
 - xlabel, ylabel, x2label, y2label
@@ -341,6 +351,23 @@ Args:
 - `show palettes` shows all palettes available;
 - `show option` shows current global option.
     
+
+### legend
+---
+Alternate data labels and legend properties.
+
+Usage:
+
+    legend on/off
+    legend style1=val1,style2=val2,...
+    legend (selection1,selection2,...) label1,label2,... (style1=val1,style2=val2,...)
+    legend (selection1,selection2,...) label_expr (style1=val1,style2=val2,...)
+
+Args:
+- selection1,selection2: Selection of elements, see [Element Selector](#element-selector) for details. Here selection results must be lines and bars. If selection is missing, defaults to first dataline, second dataline, ...., first bar, second bar, etc.
+- label1,label2: Strings for dataline labels.
+- label_expr: If it is a single string, will split it using python's `split()`. If it is an expression, will use its evaluation result.
+- style, val: Styles for legends, see [Style name and value](#list-of-valid-style-values).
 
 ### fill
 ---
@@ -548,6 +575,8 @@ Usage:
 
 The arguments will be available via `arg()` function. Number of arguments can be obtained via `argc()` function.
 
+Filename may be an expression.
+
 When using `load`, the working directory will be changed and the displaying mode will always be set to file mode. `source` will preserve both the working directory and the displaying mode, which could be faster in some cases.
 
 `source` is not available for legacy prompts (--fancy-prompt=false).
@@ -559,6 +588,8 @@ Change directory.
 Usage:
 
     cd path
+
+Path may be an expression.
 
 ### pwd, ls
 ---
@@ -614,10 +645,15 @@ Usage:
         (commands...)
     end
 
+    if (not) [expression] and/or (not) [expression] ... then (command)
+        (commands...)
+    end
+
 Args:
 
 - expression: An [expression](#expressions) string. Will parse `[Tt]rue` and `[Ff]alse` if yields a string. An empty string is treated as `false`.
 - command: Controls (if/for/let) must appear in a new line after "then" or "else". Indent is not required.
+- Operators (and/or/not) are allowed between expressions just as in shell. The precedence is not > and > or. Note the operators are not using short-circuit evaluation (which means all expression will be evaluated).
 
 ### for
 ---
@@ -697,7 +733,7 @@ Function list:
 
 (1) Python built-in functions:
 
-all, any, ascii, bool, chr, float, format, int, len, list, max, min, ord, pow, reversed, round, sorted, str, sum
+all, any, ascii, bool, chr,  dict, float, format, int, len, list, max, min, ord, pow, reversed, round, set, sorted, str, sum
 
 (2) Numpy mathematical functions: Functions adopt from numpy (may be aliased). Most of them are [numpy ufuncs](https://numpy.org/doc/stable/reference/ufuncs.html).
 
@@ -705,7 +741,7 @@ mod, fmod, abs, rint, sign, heaviside, conj, exp, exp2, log, log2, log10, sqrt, 
 
 rem = np.remainder, asin = np.arcsin, acos = np.arccos, atan = np.arctan, 
 asinh = np.arcsinh, acosh = np.arccosh, atanh = np.arctanh, 
-and = np.logical_and, or = np.logical_or, not = np.logical_not, 
+mand = np.logical_and, mor = np.logical_or, mnot = np.logical_not, 
 max = np.maximum, min = np.minimum, tp = np.transpose, range = np.arange
 
 (3) Other functions
@@ -724,6 +760,10 @@ expand('wildcard') | Expand the wildcard into list of files
 len(object) | Get the length of string/array
 arg(index) | Get args passed in shell, by [load](#load) command or by [call](#call) command
 argc() | Get number of args passed in shell, by [load](#load) command or by [call](#call) command
+option(val=None) | Get shell-style command options (e.g. "-opt val") or positional args (with val=None)
+split(s, sep=' \t') | Split string s by delimeter sep
+startswith(s, prefix) | Check whether string s startswith prefix
+ismember(a, b) | Check whether a is an element of b
 set('name', value) | Set the value of a variable
 exist('name') | Check if a variable exists
 cond(c, t, f) | If c then t else f. c will not be parsed if it is a string.

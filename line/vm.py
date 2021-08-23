@@ -40,6 +40,8 @@ class VMHost:
         self.variables = {
             '__varx': np.arange(-5, 5, 1), 
             '__varpi': np.pi,
+            '__vartrue': True,
+            '__varfalse': False,
             'arg':lambda x:self.arg_stack[-1][int(x)] if int(x) < len(self.arg_stack[-1]) else '', 
             'argc': lambda: len(self.arg_stack[-1]),
             'cond': lambda x,a,b: a if x else b,
@@ -113,10 +115,7 @@ class VMHost:
             self.mode = VMHost.MODE_RECORD_LOOP
 
         elif parse_util.test_token_inc(tokens, 'if'):
-            expr = parse_util.parse_expr(tokens)
-            cond = process.process_expr(state, expr)
-            if isinstance(cond, str):
-                cond = parse_util.stob(cond) if cond != "" else False
+            cond = process.parse_and_process_if(state, tokens)
 
             if parse_util.test_token_inc(tokens, "then"):
                 block = CodeBlock()
@@ -155,7 +154,7 @@ class VMHost:
 
     def exec_invoke(self, state, tokens):
         function = parse_util.get_token(tokens)
-        if function in keywords.control_keywords:
+        if keywords.command_alias.get(function, function) in keywords.control_keywords:
             raise errors.LineParseError("Cannot use %s as function name" % function)
         block = self.records.get(function, None)
         if not block:
@@ -204,17 +203,17 @@ class VMHost:
                     return r
         return 0
 
-    def record(self, tokens, line_debug_info):
+    def record(self, tokens, line_debug_info:LineDebugInfo):
         self._cur_record().stmts.append((tokens.copy(), line_debug_info))
         return 0
 
-    def get_variable(self, name):
+    def get_variable(self, name:str):
         return self.variables[process.expr_proc.ExprEvaler.convert_varname(name)]
 
-    def set_variable(self, name, value):
+    def set_variable(self, name:str, value):
         self.variables[process.expr_proc.ExprEvaler.convert_varname(name)] = value
 
-    def exist_variable(self, name):
+    def exist_variable(self, name:str):
         return process.expr_proc.ExprEvaler.convert_varname(name) in self.variables
 
     def push_args(self, args):

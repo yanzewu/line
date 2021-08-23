@@ -157,7 +157,7 @@ class PlotParser:
             ylabels = model.util.columns(pg.ydata, (pg.expr2 if pg.expr2 else '') + '[%d]')
 
         for idx in range(ycols):
-            m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+            m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style.copy())
             m_pg.ydata = pg.ydata if ycols == 1 else model.util.loc_col(pg.ydata, idx)
             m_pg.ylabel = ylabels[idx]
             m_pg.source = pg.source[idx // (ycols // len(pg.source)) ]
@@ -230,7 +230,7 @@ class PlotParser:
         # split columns
         if xcols == 1 or xcols == ycols:
             for idx in range(ycols):
-                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style)
+                m_pg = PlottingPackage(pg.hint1, pg.expr1, pg.hint2, pg.expr2, pg.style.copy())
                 m_pg.xdata = pg.xdata if xcols == 1 else model.util.loc_col(pg.xdata, idx)
                 m_pg.ydata = pg.ydata if ycols == 1 else model.util.loc_col(pg.ydata, idx)
                 m_pg.xlabel = xlabels[0] if xcols == 1 else xlabels[idx]

@@ -89,6 +89,15 @@ Additional options can be shown by `line -e 'show option'`'''
             line0 = ' '.join(['plot'] + args)
         ret_code = cmd_handler.proc_lines([line0])
 
+    if ret_code == 0:
+        try:
+            cmd_handler.m_state._vmhost.pop_args()
+        except Exception as e:
+            if cmd_handler._debug:
+                raise
+            else:
+                from . import errors
+                print(errors.format_error(e))
 
     if ret_code == 0 and cmd_handler.m_state.options['display-when-quit']:
         f = cmd_handler.m_state.options['display-when-quit']

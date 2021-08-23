@@ -21,15 +21,17 @@ for i = "1 2" do print $i; done
 for $i = "1 2" do print $i; done
 for "i" = "1 2" do print $i; done
 
+print "The results above should all be 1 2"
+
 # Variable
 
 let a = 1
 let $b = range(1,3)
 let $c = x
 
-print $a
-print $b 
-print $c
+print "Should be 1:" $a
+print "Should be 1 2:" $b 
+print "Should be [-5 ... 4]" $c
 
 # Function
 let fun = do
@@ -37,7 +39,7 @@ let fun = do
     print $j
     plot "test/dataload/batch1.txt" 1:2
 done
-call fun
+fun
 display
 
 # Function with args
@@ -47,11 +49,12 @@ let fun3 = do
 done
 let fun2 = do
     print "fun2:" $(arg(1))
-    call fun3 $(arg(2))
+    fun3 $(arg(2))
 done
 $u = 4
 print $u
-call fun2 5.0 $u
+fun2 5.0 $u
+print "Should be fun2:5.0, fun3:4"
 
 if $("true") then print "true-1"
     print "true-2"
@@ -80,6 +83,8 @@ done
 if "true" call fun3
 if "false" call fun3
 
+# Nested controls
+
 for i = $([1,2]) do
     for j = $([3,4]) do
         print $i $j
@@ -89,9 +94,16 @@ for i = $([1,2]) do
             for k = $([5,6]) do print $k
             end
         end
-        call fun4
+        fun4
     end
 
+end
+print "Should be: 1 3; 1 4; 2 3; 2 4; 5; 6"
+
+if $true and $false or "false" or not $(1+2 == 4) then
+    print "true-5"
+else
+    print "Should not happen"
 end
 
 let fun5 = do
@@ -106,10 +118,20 @@ let fun5 = do
     end
 end
 
-call fun5 0
-call fun5 1
-call fun5 2
-
 fun5 0
+fun5 1
+fun5 2
+print "Should be: 0! 1! 2!"
+
 let fun6 = do print "fun6"; done
 fun6
+
+let fun7 = do
+    print "Should be A:" $(option('a')) 
+    print "Should be 3:" $(option('b'))
+    print "Should be True:" $(option('c'))
+    print "Should be None:" $(option('d'))
+    print "Should be [X1, X2]:" $(option())
+end
+
+fun7 -c $false -a A -c -b $(1+2) X1 X2

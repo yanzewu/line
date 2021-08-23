@@ -26,6 +26,17 @@ class LineProcessError(Exception):
         return self.message
 
 
+class LineBacktrace(Exception):
+    # dummy class served as error holder in backtrace.
+    def __init__(self, context=''):
+        self.context = context
+
+    def __str__(self):
+        if self.context:
+            return 'In ' + str(self.context)
+        else:
+            return "In processing command"
+
 #def format_error(e):
 #    return sys.exc_info()[1]
 
@@ -46,10 +57,12 @@ def format_line_error(e):
         return 'Parsing Error: %s' % e
     elif isinstance(e, LineProcessError):
         return 'Runtime Error: %s' % e
+    elif isinstance(e, LineBacktrace):
+        return str(e)
 
 def format_error(e):
 
-    if isinstance(e, (LineParseError, LineProcessError)):
+    if isinstance(e, (LineParseError, LineProcessError, LineBacktrace)):
         return format_line_error(e)
     elif isinstance(e, Warning):
         return str(e)

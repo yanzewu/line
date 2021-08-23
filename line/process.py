@@ -225,7 +225,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             warn('Using current filename: %s' % m_state.cur_save_filename)
             filename = m_state.cur_save_filename
         else:
-            filename = str(try_process_expr(m_state, get_token_raw(m_tokens)))
+            filename = str(try_process_expr(m_state, parse_expr(m_tokens)))
 
         remote_save = False
         if lookup(m_tokens) == 'remote' and m_state.options['remote']:
@@ -256,7 +256,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
                 term = m_tokens[0]
                 break
             else:
-                outstr += m_tokens[0]
+                outstr += strip_quote(m_tokens[0])
                 m_tokens.popleft()
             if len(m_tokens) > 0:
                 outstr += ' '
@@ -311,7 +311,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
             warn('"display" does not work in interactive mode')
 
     elif command == 'cd':
-        dest = get_token(m_tokens)
+        dest = str(try_process_expr(m_state, parse_expr(m_tokens)))
         assert_no_token(m_tokens)
         
         if io_util.dir_exist(dest):
@@ -759,6 +759,46 @@ def parse_and_process_fill(m_state:state.GlobalState, m_tokens:deque):
     for line1, line2 in fill_between:
         dataview.api.fill_betweenobj(m_state, line1, line2, **style_dict)
 
+
+def parse_and_process_if(m_state:state.GlobalState, m_tokens:deque):
+    valstack = []
+    opstack = []
+
+    def process_cond_expr(expr):
+        cond = process_expr(m_state, expr)
+        if isinstance(cond, str):
+            return stob(cond) if cond != "" else False
+        else:
+            return cond
+
+    while True:
+        if lookup_raw(m_tokens) == 'not':
+            get_token_raw(m_tokens)
+            valstack.append(not process_cond_expr(parse_expr(m_tokens)))
+        else:
+            valstack.append(process_cond_expr(parse_expr(m_tokens)))
+        op = lookup_raw(m_tokens) 
+        if op in ('and', 'or'):
+            get_token(m_tokens)
+            if len(opstack) == 0 or (op == 'and' and opstack[-1] == 'or'):
+                opstack.append(op)
+            else:
+                while len(opstack) > 0: # everyone in opstack is >= op.
+                    op1 = opstack.pop()
+                    rhs = valstack.pop()
+                    lhs = valstack.pop()
+                    valstack.append((lhs and rhs) if op1 == 'and' else (lhs or rhs))
+                opstack.append(op)
+        else:
+            break
+
+    while len(opstack) > 0:
+        op1 = opstack.pop()
+        rhs = valstack.pop()
+        lhs = valstack.pop()
+        valstack.append((lhs and rhs) if op1 == 'and' else (lhs or rhs))
+
+    return valstack[0]
 
 def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
     """ Saving current figure.
