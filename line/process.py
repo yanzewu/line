@@ -286,23 +286,13 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
                 if m_state.is_interactive:
                     backend.close_figure(m_state)
 
-        return True
+        return 1
 
     elif command == 'input':
         if m_state.is_interactive:
             warn('"input" does not work in interactive mode')
             return 0
-        m_state.is_interactive = True
-        if lookup(m_tokens) == 'norender':    # no render exisiting fiture
-            return 0
-
-        _cur_figurename = m_state.cur_figurename
-        for fig in m_state.figures:
-            m_state.cur_figurename = fig
-            m_state.cur_figure().is_changed = True
-            render_cur_figure(m_state)
-        m_state.cur_figurename = _cur_figurename
-        m_state._history.clear()
+        return process_input(m_state, not (lookup(m_tokens) == 'norender'))
 
     elif command == 'display':
         if not m_state.is_interactive or m_state.options['remote']:
@@ -330,7 +320,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
 
     elif command == 'load' or command == 'source':
         filename = get_token(m_tokens)
-        process_load(m_state, filename, [try_process_expr(m_state, t) for t in m_tokens], 
+        return process_load(m_state, filename, [try_process_expr(m_state, t) for t in m_tokens], 
             preserve_mode=(command == 'source'))
 
     elif command == 'pause':
@@ -924,11 +914,39 @@ def process_load(m_state:state.GlobalState, filename:str, args:list, preserve_mo
     if not preserve_mode:
         backend.finalize(m_state)
         m_state.is_interactive = False
-        handler.proc_file(full_filename)
+        ret = handler.proc_file(full_filename)
     else:
-        handler.proc_source(full_filename)
+        ret = handler.proc_source(full_filename)
+    logger.debug('Return value: ' + str(ret))
     m_state._vmhost.pop_args()
     os.chdir(cwd)
     if not preserve_mode:
         m_state.is_interactive = is_interactive
         backend.initialize(m_state, silent=m_state.options['remote'] or not is_interactive)
+    return ret
+
+
+def process_input(m_state:state.GlobalState, render_exisiting_figures=True):
+    handler = terminal.CMDHandler(m_state)
+    is_interactive = m_state.is_interactive
+    cwd = os.getcwd()
+
+    # render all figures
+    if render_exisiting_figures:
+        _cur_figurename = m_state.cur_figurename
+        for fig in m_state.figures:
+            m_state.cur_figurename = fig
+            m_state.cur_figure().is_changed = True
+            render_cur_figure(m_state)
+        m_state.cur_figurename = _cur_figurename
+
+    m_state._vmhost.push_args(['<interactive>'])
+    m_state._history.clear()
+    ret = handler.input_loop()
+    logger.debug('Return value: ' + str(ret))
+
+    m_state._vmhost.pop_args(discard_incomplete_control=True)
+
+    os.chdir(cwd)
+    m_state.is_interactive = is_interactive
+    return ret

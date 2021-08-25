@@ -17,8 +17,11 @@ def showwarning(message:Warning, category, filename, lineno, file=None, line=Non
         if session.has_instance():
             ldi, tokens = session.get_vm().pc
             print_error_formatted(
-                message, LineDebugInfo(ldi.filename, ldi.lineid, ldi.token_pos[max(-len(tokens)-1, -len(ldi.token_pos))]), 
-                    session.is_interactive(), extra_indent=6 if session.is_interactive() else 0)
+                message, LineDebugInfo(ldi.filename, ldi.lineid, ldi.token_pos[max(-len(tokens)-1, -len(ldi.token_pos))]), None, 
+                print_source=not session.is_interactive(),
+                print_indicator=session.is_interactive(),   #  TODO use shell_interactive instead.
+                extra_indent=6 if session.is_interactive() else 0,
+                )
         else:
             print_formatted_text(FormattedText([
                 ('magenta', 'Warning: '),
@@ -44,20 +47,23 @@ def print_error_string(text:str):
     ), file=sys.stderr)
 
 
-def print_error_formatted(error, dbg_info:LineDebugInfo, is_interactive:bool, code_line=None, extra_indent=0):
+def print_error_formatted(error, dbg_info:LineDebugInfo, code_line=None, print_error=True, print_source=False, print_indicator=False, extra_indent=0):
     """ Display formatted error string.
-    If `is_interactive': Will show column position instead of display column index;
+    Args:
+        error: will be formatted by errors.format_error()
+        dbg_info: LineDebugInfo instance.
+        code_line: str/None. If None, will not print the code line.
+        print_error: Print the error name.
+        print_source: Print row and column position.
+        print_indicator: Print a small indicator below the code_line (if given), or above error string (otherwise).
     """
     if isinstance(dbg_info.token_pos, tuple):
         dbg_info = LineDebugInfo(dbg_info.filename, dbg_info.token_pos[0], dbg_info.token_pos[1])
 
-    if is_interactive and not code_line: # just display the line
-        display_code = False
+    if code_line is None and print_indicator: # just display the line
         print_formatted_text(FormattedText([
             ('white', ' ' * (extra_indent + dbg_info.token_pos)),
             ('green', '^')]), file=sys.stderr)
-    else:
-        display_code = True
     
     error_str = format_error(error)
     if isinstance(error, Warning):
@@ -68,18 +74,21 @@ def print_error_formatted(error, dbg_info:LineDebugInfo, is_interactive:bool, co
     else:
         error_str_f = [('red', 'Error: '), ('', error_str)]
 
-    if not display_code:
+    if not print_error:
+        pass
+    elif not print_source:
         print_formatted_text(FormattedText(error_str_f), file=sys.stderr)
     else:
         print_formatted_text(FormattedText([
             ('white', '%sline %d, col %d: ' % (
-                        ('"%s", ' % dbg_info.filename if dbg_info.filename and not is_interactive else ''),
+                        ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
                         dbg_info.lineid + 1,
                         dbg_info.token_pos + 1,)),
         ] + error_str_f), file=sys.stderr)
 
-    if display_code and code_line:
+    if code_line is not None:
         print_formatted_text('    ' + code_line, file=sys.stderr)
-        print_formatted_text(FormattedText([
-            ('white', ' ' * (dbg_info.token_pos + 4)),
-            ('green', '^')]), file=sys.stderr)
+        if print_indicator:
+            print_formatted_text(FormattedText([
+                ('white', ' ' * (dbg_info.token_pos + 4)),
+                ('green', '^')]), file=sys.stderr)

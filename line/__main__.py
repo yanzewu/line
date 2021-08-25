@@ -79,15 +79,14 @@ Additional options can be shown by `line -e 'show option'`'''
     elif mode == 'script':
         ret_code = cmd_handler.proc_file(args[0])
     elif mode == 'eval':
-        cmd_handler._filename = '<command>'
-        ret_code = cmd_handler.proc_lines([' '.join(args)])
+        ret_code = cmd_handler.proc_lines([' '.join(args)], filename='<command>')
     elif mode == 'plot':
         cmd_handler.m_state.options['display-when-quit'] = True
         if not args[0].startswith('$'):
             line0 = ' '.join(['plot', '"'+args[0].replace('\\','/') + '"'] + args[1:])
         else:
             line0 = ' '.join(['plot'] + args)
-        ret_code = cmd_handler.proc_lines([line0])
+        ret_code = cmd_handler.proc_lines([line0], filename='<command>')
 
     if ret_code == 0:
         try:

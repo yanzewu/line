@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from . import process
 from . import parse_util
+from . import option_util
 from . import errors
 from . import keywords
 
@@ -16,12 +17,32 @@ class CodeBlock:
 
 LineDebugInfo = namedtuple('LineDebugInfo', ['filename', 'lineid', 'token_pos'])
 
+class Frame:
+
+    def __init__(self, argv:list, caller:tuple, block_level:int):
+        self.argv = argv
+        self.caller_pc = caller
+        self.option_cache = None
+        self.block_level = block_level
+
+    def get_arg(self, index:int):
+        return self.argv[index] if index < len(self.argv) else ''
+
+    def argc(self):
+        return len(self.argv)
+
+    def get_option(self, name):
+        if self.option_cache is None:
+            self.option_cache = option_util.get_options(self.argv[1:], option_util.parse_token)
+        return self.option_cache.get(name, None)
+
 class VMHost:
 
     MODE_EXEC = 0
     MODE_RECORD = 1
     MODE_RECORD_IF = 2
     MODE_RECORD_LOOP = 3
+    MODE_ERROR = 7
 
     def __init__(self, debug=False):
         self.mode = VMHost.MODE_EXEC
@@ -29,11 +50,10 @@ class VMHost:
         self.records = {}
         self.cur_record_name = None
 
-        self.arg_stack = []
+        self.stack = []
         self.block_level = 0    # control block stack height
         self.pc = None
-        self.backtrace = None
-        self.error = None
+        self.backtrace = []     # list of (error, ldi)
 
         import numpy as np
         
@@ -42,8 +62,9 @@ class VMHost:
             '__varpi': np.pi,
             '__vartrue': True,
             '__varfalse': False,
-            'arg':lambda x:self.arg_stack[-1][int(x)] if int(x) < len(self.arg_stack[-1]) else '', 
-            'argc': lambda: len(self.arg_stack[-1]),
+            'arg': lambda x: self.stack[-1].get_arg(int(x)),
+            'argc': lambda: self.stack[-1].argc(),
+            'option': lambda x=None: self.stack[-1].get_option(x),
             'cond': lambda x,a,b: a if x else b,
             'set':self.set_variable,
             'exist': self.exist_variable,
@@ -53,20 +74,15 @@ class VMHost:
     def process(self, state, tokens, line_debug_info:LineDebugInfo):
         try:
             self.pc = (line_debug_info, tokens)     # point to LDI, tokens
-            self.error = None
+            self.backtrace.clear()
             return self.process_unsafe(state, tokens, line_debug_info)
         except Exception as e:
             if self.debug:
                 raise
             else:
-                p = -len(tokens)-1
-                if p <= -len(line_debug_info.token_pos):
-                    p = 0
-                self.error = e
-                self.backtrace = LineDebugInfo(line_debug_info.filename, 
-                    line_debug_info.lineid,
-                    line_debug_info.token_pos[p])
-                return 3, self.backtrace, self.error
+                self.mode = VMHost.MODE_ERROR
+                self.backtrace.append((e, self._assemble_backtrace(self.pc)))
+                return 3
 
     def process_unsafe(self, state, tokens, line_debug_info):
         
@@ -93,7 +109,8 @@ class VMHost:
                     parse_util.lookup(tokens) == 'let' and parse_util.lookup(tokens, 3) == 'do'):
                     self.block_level += 1
                 return self.record(tokens, line_debug_info)
-
+        elif self.mode == VMHost.MODE_ERROR:
+            return 3
         else:
             raise ValueError(self.mode)
 
@@ -216,16 +233,43 @@ class VMHost:
     def exist_variable(self, name:str):
         return process.expr_proc.ExprEvaler.convert_varname(name) in self.variables
 
-    def push_args(self, args):
-        if len(self.arg_stack) > 512:
+    def push_args(self, args:list):
+        if len(self.stack) > 512:
             raise errors.LineProcessError("Maximum recursion (512) reached.")
-        self.arg_stack.append(args)
+        self.stack.append(Frame(args, self.pc, self.block_level))
+        self.set_variable('argv', self.stack[-1].argv)
+        self.block_level = 0
 
-    def pop_args(self):
-        self.arg_stack.pop()
-        if self.mode != VMHost.MODE_EXEC:
-            self.mode = VMHost.MODE_EXEC
-            raise errors.LineParseError("Missing 'end'")
+    def pop_args(self, discard_incomplete_control=False):
+        lastframe = self.stack.pop()
+        self.block_level = lastframe.block_level
+        if len(self.stack) > 0:
+            self.set_variable('argv', self.stack[-1].argv)
+        if self.mode in (VMHost.MODE_RECORD, VMHost.MODE_RECORD_LOOP, VMHost.MODE_RECORD_IF):
+            if not discard_incomplete_control:
+                self.mode = VMHost.MODE_ERROR
+                raise errors.LineParseError("Missing 'end' of control block in file \"%s\"" % (self.pc[0].filename))
+            else:
+                self.mode = VMHost.MODE_EXEC
+        elif self.mode == VMHost.MODE_ERROR:
+            context = self.stack[-1].argv[0] if self.stack and self.stack[-1].argv else ''
+            self.backtrace.append((errors.LineBacktrace(context), self._assemble_backtrace(lastframe.caller_pc)))
+
+    def set_error(self):
+        self.mode = VMHost.MODE_ERROR
+
+    def deset_error(self):
+        self.mode = VMHost.MODE_EXEC
+        self.backtrace.clear()
+
+    def _assemble_backtrace(self, pc):
+        line_debug_info, tokens = pc
+        p = -len(tokens)-1
+        if p <= -len(line_debug_info.token_pos):
+            p = 0
+        return LineDebugInfo(line_debug_info.filename, 
+            line_debug_info.lineid,
+            line_debug_info.token_pos[p])
 
     def _cur_record(self):
         return self.records.get(self.cur_record_name, None)

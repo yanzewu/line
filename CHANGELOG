@@ -154,3 +154,12 @@ Features:
 - Missing 'end' in control block until EOF is now identified as an error.
 - Fixed a bug in group detection. Now group name with "abcde..." are identified as monotonic repetetion instead of simple repetition.
 - Fixed a bug that twice withdraw may not be recovered correctly by 'redo'.
+
+08-24-21:
+---
+- The calling backtrace will be printed in error message.
+- If now accepts boolean operators between expressions.
+- Renamed and(), or(), not() to mand(), mor(), mnot() as they conflict with python operators.
+- Added dict(), ismember(), split(), startswith() to functions. Added argv, true, false to variable.
+- Added option() as an easy way to fetch optional arguments.
+- Fixed a bug of incorrect labels when plotting multiple files.

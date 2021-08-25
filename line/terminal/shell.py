@@ -12,7 +12,7 @@ import signal
 pt_inputhooks = None
 
 from .. import defaults
-from ..errors import LineParseError, format_error
+from ..errors import LineParseError, LineBacktrace, format_error
 from .. import state
 from .. import session
 from .. import process
@@ -54,10 +54,6 @@ class CMDHandler:
             m_state: If `None', will create one. Otherwise will use the given one.
             preload_input: Asynchronously load the input string.
         """
-        self.token_buffer = deque()
-        self.token_begin_pos = []
-        self._filename = None
-        self._unpaired_quote = None
         signal.signal(signal.SIGINT, lambda x, f: sys.exit(1))
 
         if preload_input:
@@ -135,7 +131,6 @@ class CMDHandler:
         self.init_input()
         self.m_state.is_interactive = True
         self.ps = CMDHandler.PS1
-        self._filename = '<interactive>'
 
         def fetch_next_line(forced):
             if self._input_cache is not None:
@@ -152,7 +147,8 @@ class CMDHandler:
         def fetch_previous_line(offset):
             return CMDHandler._input_session.history.get_strings()[offset-1] if offset < 0 else None
 
-        self.proc_(fetch_next_line, fetch_previous_line, exit_on_error=False, disable_input=True)
+        filename = '<interactive %d>' % len(session.get_instance().shell_state)
+        self.proc_(fetch_next_line, fetch_previous_line, filename=filename, interactive=True, exit_on_error=False)
         self.finalize_input()
         return 0
 
@@ -160,19 +156,16 @@ class CMDHandler:
 
     def proc_file(self, filename):
         with open(filename, 'r') as f:
-            self._filename = filename
-            return self.proc_lines(f.readlines())
+            return self.proc_lines(f.readlines(), filename=filename)
 
     def proc_source(self, filename):
         """ Similar to proc_file(), but without intervening current running mode.
         """
         with open(filename, 'r') as f:
-            self._filename = filename
-            return self.proc_lines(f.readlines(), disable_input=True, interactive_error_display=False, refresh_backend=False)
+            return self.proc_lines(f.readlines(), filename=filename, refresh_backend=False)
 
     def proc_stdin(self):
-        self._filename = '<stdin>'
-        return self.proc_lines(sys.stdin.readlines())
+        return self.proc_lines(sys.stdin.readlines(), filename='<stdin>')
 
     def proc_lines(self, lines, **kwargs):
         j = [-1]
@@ -185,15 +178,14 @@ class CMDHandler:
 
         return self.proc_(fetch_next_line, fetch_previous_line, **kwargs)
 
-    def proc_(self, fetch_next_line, fetch_previous_line, exit_on_error=True, disable_input=False, interactive_error_display=None, refresh_backend=True):
+    def proc_(self, fetch_next_line, fetch_previous_line, filename:str='', interactive:bool=False, exit_on_error:bool=True, refresh_backend:bool=True):
         """ The REPL loop.
         fetch_next_line(forced:bool)->str: Should return the next line without break ('\\n'); 
             If continuing last line, `forced` will be true.
         fetch_previous_line(offset:int)->str: Should return current lineid + offset (if 0 then current line).
+        interactive: Whether the shell is interactive. Note this is different from state.is_interactive (which controls plotting).
         exit_on_error: Break when an error occurs (even if it is handled);
             Otherwise only returns when ret == RET_EXIT or RET_SYSERROR.
-        disable_input: Being not able to respond command `input` (happens when state.is_interactive is switched to True).
-        interactive_error_display: Display error in interactive format (None -> depending on state.is_interactive).
         """
 
         l = lexer.Lexer()
@@ -201,8 +193,8 @@ class CMDHandler:
             backend.initialize(session.get_state(), silent=session.get_state().options['remote'] or not session.get_state().is_interactive)
         ret = 0
         emittor = l.run(fetch_next_line)
-        if interactive_error_display is None:
-            interactive_error_display = session.get_state().is_interactive
+
+        session.get_instance().push_shell(filename, interactive)
 
         while True:
             try:
@@ -212,12 +204,15 @@ class CMDHandler:
                     raise
                 else:
                     logging_util.print_error_formatted(e, 
-                        LineDebugInfo(self._filename, 0, (l.lineid, l.head)), 
-                        interactive_error_display,
+                        LineDebugInfo(filename, 0, (l.lineid, l.head)),
                         fetch_previous_line(0),
-                        len(self.ps) if interactive_error_display else 0)
+                        print_error=True,
+                        print_source=not interactive,
+                        print_indicator=True,
+                        extra_indent=len(self.ps) if interactive else 0)
 
                     emittor = l.run(fetch_next_line)
+                    session.get_vm().set_error()
                     ret = self.RET_USERERROR
             except (StopIteration, EOFError):
                 ret = self.RET_EXIT
@@ -227,28 +222,38 @@ class CMDHandler:
                 if not tokens:
                     continue
                 logger.debug("Tokens are: %s" % list(tokens))
-                ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(self._filename, l.lineid, tp))
+                ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(filename, l.lineid, tp))
                 if ret == 0:
-                    if not disable_input and session.get_state().is_interactive:     # initiate an input_loop, when switch to input mode
-                        self.proc_input()
-                        session.get_state().is_interactive = False
+                    pass
                 elif ret == self.RET_EXIT:
                     pass
-                elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
-                    m_vm = session.get_vm()
-                    logging_util.print_error_formatted(m_vm.error, 
-                        m_vm.backtrace, 
-                        interactive_error_display,
-                        fetch_previous_line(m_vm.backtrace.token_pos[0] - l.lineid),
-                        len(self.ps) if interactive_error_display else 0)
-                    ret = ret[0]
+                elif ret == self.RET_USERERROR:
+                    for e, ldi in session.get_vm().backtrace:
+                        is_backtrace = isinstance(e, LineBacktrace)
+                        is_lastline = (ldi.token_pos[0] - l.lineid == 0) and interactive and ldi.filename == filename
+                        if (not is_lastline or is_backtrace) and ldi.filename == filename:
+                            code_line = fetch_previous_line(ldi.token_pos[0] - l.lineid)
+                        else:
+                            code_line = None
+
+                        logging_util.print_error_formatted(e, ldi, code_line, 
+                            print_error=True,
+                            print_source=not is_lastline or is_backtrace,
+                            print_indicator=not is_backtrace and (code_line or is_lastline),
+                            extra_indent=len(self.ps) if is_lastline and not is_backtrace else 0,
+                            )
+                    session.get_vm().backtrace.clear()
+                    if interactive:
+                        session.get_vm().deset_error()
                 else:
-                    logging_util.print_error_string('Undefined return: %r' % ret)
+                    logging_util.print_error_string('Undefined return: ' + str(ret))
                     ret = self.RET_SYSERROR
 
             if not (ret == self.RET_USERERROR and not exit_on_error or ret == 0):
                 break
                 
+        session.get_instance().pop_shell()
+
         if refresh_backend:
             backend.finalize(session.get_state())
         return 0 if ret == self.RET_EXIT else ret

@@ -48,7 +48,6 @@ class CMDHandler:
         self.token_buffer = deque()
         self.token_begin_pos = []
         self.completion_buffer = []
-        self._filename = None
         self._unpaired_quote = None
 
         if preload_input:
@@ -105,18 +104,18 @@ class CMDHandler:
     def proc_file(self, filename, do_interactive=False):
         with open(filename, 'r') as f:
             self.m_state.is_interactive = do_interactive
-            self._filename = filename
-            return self.proc_lines(f.readlines())
+            return self.proc_lines(f.readlines(), filename)
 
     def proc_stdin(self):
-        self._filename = '<stdin>'
-        return self.proc_lines(sys.stdin.readlines())
+        return self.proc_lines(sys.stdin.readlines(), '<stdin>')
 
-    def proc_lines(self, lines):
+    def proc_lines(self, lines, filename):
+
         backend.initialize(self.m_state)
+        session.get_instance().push_shell(filename, False)
         for j, line in enumerate(lines):
             try:
-                ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, j)
+                ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, j, filename=filename)
             except Exception as e:
                 ret = self.RET_SYSERROR
                 if self._debug:
@@ -131,31 +130,29 @@ class CMDHandler:
                     break
                 elif ret == self.RET_CONTINUE:
                     continue
-                elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
-                    dbg_info = ret[1]
-                    print('%sline %d, col %d (near "%s")' % (
-                        ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
-                        dbg_info.lineid + 1,
-                        dbg_info.token_pos + 1,
-                        lines[dbg_info.lineid][dbg_info.token_pos:dbg_info.token_pos+5].strip('\n')
-                    ), file=sys.stderr)
-                    # FIXME here lineid is constant; cannot handle the case of multiple \\
-                    print_error(ret[2])
-                    break
+                elif ret == self.RET_USERERROR:
+                    for e, dbg_info in session.get_vm().backtrace:
+                        print('%sline %d, col %d (near "%s")' % (
+                            ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
+                            dbg_info.lineid + 1,
+                            dbg_info.token_pos + 1,
+                            lines[dbg_info.lineid][dbg_info.token_pos:dbg_info.token_pos+5].strip('\n')
+                        ), file=sys.stderr)
+                        print_error(e)
+                    session.get_vm().backtrace.clear()
+                    if session.get_instance().shell_state[-1].interactive:
+                        session.get_vm().deset_error()
                 else:
                     print('Undefined return:', ret)
 
                 self.token_buffer.clear()
                 self.token_begin_pos.clear()
-            
-            if self.m_state.is_interactive:
-                self.input_loop()
-                self.m_state.is_interactive = False
 
+        session.get_instance().pop_shell()
         backend.finalize(self.m_state)
         return ret if ret != self.RET_EXIT else 0
 
-    def proc_input(self, ps=PS1):
+    def proc_input(self, ps=PS1, filename=''):
         self.m_state.is_interactive = True
         if self._input_cache is not None:
             line = self._input_cache
@@ -167,7 +164,7 @@ class CMDHandler:
                 return 1
 
         try:
-            ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True)
+            ret = self.handle_line(line, self.token_buffer, self.token_begin_pos, True, filename=filename)
         except Exception as e:
             
             if self._debug:
@@ -183,18 +180,21 @@ class CMDHandler:
             elif ret == self.RET_EXIT:
                 return 1
             elif ret == self.RET_CONTINUE:
-                return self.proc_input(self.PS2)
-            elif isinstance(ret, tuple) and ret[0] == self.RET_USERERROR:
-                dbg_info = ret[1]
-                if dbg_info.lineid == 0:
-                    print(' ' * (len(ps) + dbg_info.token_pos) + '^')
-                else:
-                    print('%sline %d, col %d' % (
-                        ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
-                        dbg_info.lineid + 1,
-                        dbg_info.token_pos + 1,
-                    ), file=sys.stderr)
-                print_error(ret[2])
+                return self.proc_input(self.PS2, filename=filename)
+            elif ret == self.RET_USERERROR:
+                for e, dbg_info in session.get_vm().backtrace:
+                    if dbg_info.lineid == 0:
+                        print(' ' * (len(ps) + dbg_info.token_pos) + '^')
+                    else:
+                        print('%sline %d, col %d' % (
+                            ('"%s", ' % dbg_info.filename if dbg_info.filename else ''),
+                            dbg_info.lineid + 1,
+                            dbg_info.token_pos + 1,
+                        ), file=sys.stderr)
+                    print_error(e)
+                session.get_vm().backtrace.clear()
+                if session.get_instance().shell_state[-1].interactive:
+                    session.get_vm().deset_error()
             else:
                 print('Undefined return:', ret)
 
@@ -213,16 +213,18 @@ class CMDHandler:
 
     def input_loop(self):
         self.init_input()
-        self._filename = '<interactive>'
         backend.initialize(self.m_state, silent=session.get_state().options['remote'])
+        filename = '<interactive %d>' % len(session.get_instance().shell_state)
+        session.get_instance().push_shell(filename, True)
         ret = 0
         while ret == 0:
-            ret = self.proc_input()
+            ret = self.proc_input(filename=filename)
         backend.finalize(self.m_state)
+        session.get_instance().pop_shell()
         self.finalize_input()
         return 0
 
-    def handle_line(self, line, token_buffer, token_begin_pos, execute=True, lineid=0):
+    def handle_line(self, line, token_buffer, token_begin_pos, execute=True, lineid=0, filename=''):
         """ Preprocessing and execute
         """
         logger.debug('Handle input line: %s' % line)
@@ -268,7 +270,7 @@ class CMDHandler:
                 elif char == ';':
                     if execute:
                         ret = self.m_state._vmhost.process(self.m_state, self.token_buffer, 
-                            vm.LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
+                            vm.LineDebugInfo(filename, lineid, self.token_begin_pos.copy()))
                         #ret = process.parse_and_process_command(self.token_buffer, self.m_state)
                         if ret != 0:
                             return ret
@@ -284,7 +286,7 @@ class CMDHandler:
 
         if execute:
             return self.m_state._vmhost.process(self.m_state, self.token_buffer, 
-                vm.LineDebugInfo(self._filename, lineid, self.token_begin_pos.copy()))
+                vm.LineDebugInfo(filename, lineid, self.token_begin_pos.copy()))
             # return process.parse_and_process_command(self.token_buffer, self.m_state)
         else:
             return 0
