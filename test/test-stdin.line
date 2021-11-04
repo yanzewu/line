@@ -1,4 +1,5 @@
 $f = load_stdin()
 plot f t:y1
 display
+save test/stdin-1.png
 $_ = save_stdout($f)

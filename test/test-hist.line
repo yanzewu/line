@@ -38,3 +38,4 @@ $b = a[2]
 hist a 2, b
 hist a y1, b 0
 display
+save test/hist-1.png

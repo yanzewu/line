@@ -46,6 +46,10 @@ plot example/test-data.txt t:cols('y*'), t:cols('y?'), t:cols('y[1-2]'), t:cols(
 
 plot test/dataload/titles.txt t:'y(a)', t:'(b)', t:"'c'"
 
+# and
+plot 'test/dataload/batch1.txt' and 'test/dataload/batch*.txt'
+plot 'test/dataload/batch1.txt' and 'test/dataload/batch*.txt' and 'test/dataload/batch2.txt' 1:2
+
 # variable
 $a = load('example/test-data.txt')
 $b = a[2]
@@ -53,9 +57,12 @@ $b = a[2]
 plot a 2, b
 plot a t:y1, b 0
 display
+save test/plot-1.png
 
 update line1,line2 a t:y2,y1
 display
+save test/plot-2.png
 
 scatter example/test-data.txt 1:2
 display
+save test/plot-3.png

@@ -650,7 +650,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         # handle expressions appeared in style values
         for s in style_list:
             if isinstance(style_list[s], str):
-                style_list[s] = try_process_expr(m_state, style_list[s])
+                style_list[s] = try_process_expr(m_state, style_list[s], execute_vars=False)
 
         snapshot_cc = process_snapshot(m_state, 'style', cache=True)
         if m_state.apply_styles(

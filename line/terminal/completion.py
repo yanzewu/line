@@ -60,7 +60,7 @@ class Completer(pt.completion.Completer):
                 if cur_idx == 1:
                     if self.m_state:
                         yield from self.generate_completion_list(d, self.m_state._vmhost.variables.keys(), self.format_varname)
-                elif cur_idx == 2 or (len(tokens)>2 and tokens[cur_idx-2] == ',') or tokens[cur_idx-1] in ':,':
+                elif cur_idx == 2 or (len(tokens)>2 and tokens[cur_idx-2] == ',') or tokens[cur_idx-1] in ':,' or is_quoted(tokens[cur_idx-1]):
                     if tokens[cur_idx-1] in ':,':
                         inspect_idx = cur_idx-1
                         while inspect_idx > 1 and tokens[inspect_idx-1] != ',':
@@ -158,6 +158,15 @@ class Completer(pt.completion.Completer):
         return (c.lower() for c in style.Color.__dict__ if not c.startswith('__') and c.startswith(ud))
 
     def complete_title(self, d, filename):
+
+        if '*' in filename or '?' in filename:
+            import glob
+            m_filenames = glob.glob(filename, recursive=True)
+            if not m_filenames:
+                self.inspect_cache[filename] = ()
+            else:
+                filename = m_filenames[0] # just use the first one -- assume they are all same
+
         if filename not in self.inspect_cache:
             try:
                 l = open(filename, 'r').readline().strip()

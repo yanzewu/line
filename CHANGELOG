@@ -163,3 +163,12 @@ Features:
 - Added dict(), ismember(), split(), startswith() to functions. Added argv, true, false to variable.
 - Added option() as an easy way to fetch optional arguments.
 - Fixed a bug of incorrect labels when plotting multiple files.
+
+11-04-21:
+---
+- Now "and" can be used to plot multiple files simutaneously.
+- Title completion supports wildcard file data.
+- Direct vars (e.g. $x) are not supported as style values.
+- Improved error message of script not found.
+- Testing results are outputed to files, which makes it easier to compare and identify errors.
+- The custom formatting of tick is put into graphing.formatting.

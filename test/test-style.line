@@ -11,6 +11,7 @@ set line1 'r'
 set line1 '-'
 
 display
+save test/style-1.png
 
 # set
 
@@ -71,6 +72,7 @@ grid on
 grid lt=- lc=black zindex=-1
 
 display
+save test/style-2.png
 
 # inheritance, font
 clear
@@ -81,6 +83,7 @@ style yaxis fontsize=14 fontstyle=italic
 set ylabel fontsize=20
 set figure title=title
 display
+save test/style-3.png
 
 # data components
 
@@ -98,6 +101,7 @@ set polygon1 lt=- lc=yellow fillcolor=lightyellow alpha=0.9 colorid=2
 set text1 font=Times fontsize=15 color=k pos=0.5,0.5 coord=data 
 set label,tick,legend fontsize=12
 display
+save test/style-4.png
 
 # class
 
@@ -132,6 +136,7 @@ set palette point default
 replot
 
 display
+save test/style-5.png
 
 # floating position
 
@@ -147,6 +152,7 @@ text "a long text" top,right
 replot
 subplot 1
 display
+save test/style-6.png
 
 # show
 
@@ -179,3 +185,4 @@ legend pos=top,right
 legend off
 legend on
 display
+save test/style-7.png

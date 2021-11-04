@@ -17,6 +17,7 @@ subfigure 6
 set title "subfigure 6"
 
 display
+save test/figure-1.png
 
 split 1,2
 split 3,2
@@ -37,14 +38,17 @@ set suplegend column=3
 set suplegend pos=top,center
 set suplegend alpha=1
 display
+save test/figure-2.png
 
 set suplegend pos=left,center column=1
 display
+save test/figure-3.png
 
 set suplegend pos=bottom,center column=3
 subfigure 4
 xlabel x
 display
+save test/figure-4.png
 
 # figure
 
@@ -59,3 +63,4 @@ plot cos(x)
 figure 1
 
 display
+save test/figure-5.png

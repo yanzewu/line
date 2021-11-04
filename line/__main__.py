@@ -77,7 +77,12 @@ Additional options can be shown by `line -e 'show option'`'''
     elif mode == 'stdin':
         ret_code = cmd_handler.proc_stdin()
     elif mode == 'script':
-        ret_code = cmd_handler.proc_file(args[0])
+        from . import io_util
+        if io_util.file_exist(args[0]):
+            ret_code = cmd_handler.proc_file(args[0])
+        else:
+            print('Error: File \'%s\' does not exist.' % args[0])
+            ret_code = 3
     elif mode == 'eval':
         ret_code = cmd_handler.proc_lines([' '.join(args)], filename='<command>')
     elif mode == 'plot':

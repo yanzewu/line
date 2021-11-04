@@ -23,7 +23,7 @@ def get_token_raw(m_tokens):
         raise LineParseError("Incomplete command")
 
 def is_quoted(token:str):
-    return len(token) > 0 and token[0] in '\'\"'
+    return len(token) > 1 and token[0] in '\'\"' and token[-1] in '\'\"'
 
 def strip_quote(token:str) -> str:
     return token[1:-1] if token[0] in '\'\"' else token

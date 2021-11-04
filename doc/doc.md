@@ -126,18 +126,21 @@ Plot data from file to current subfigure. Any exisiting lines will be removed.
 
 Usage:
 
-    plot (source1) (xexpr:)(yexpr) (style=val) (linespec) ..., (source2) (xexpr2:)(yexpr2) (style=val), ...
+    plot source1 (and source ...) (xexpr:)(yexpr) (style=val) (linespec) ..., source2 (xexpr2:)(yexpr2) (style=val), ...
 
 Example:
 
     plot a.txt 1:2 lw=2, lc=red, 3 lc=blue, ($4+1) lc=green
     plot a.txt t:x r-,y b-
+    plot a*.txt 1:2
+    plot a.txt and b.txt
 
 Args:
 
-- source: Variable name, filename or [expression](#expressions). If source is not given, the previous source in current command is used.
-    - If no xexpr, yexpr are given, filename with "/" must be quoted (otherwise it will be treated as a division expression);
-    - Expression must be quoted by `$()`;
+- source: Variable name, filename or [expression](#expressions).
+    - If no xexpr, yexpr are given, filename with "/" must be quoted (otherwise it will be treated as a division expression).
+    - Expression must be quoted by `$()`.
+    - The "and" connection only applies to filenames.
 - xexpr, yexpr: Column index, column title, or [expression](#expressions).
     - If the expr is a single token, it will be automatically mapped to column title or index. See [Automatic Variable Mapping](#automatic-variable-mapping).
     - If xexpr is omitted, the xaxis will be the data indices.

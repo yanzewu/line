@@ -79,7 +79,15 @@ class PlotParser:
         pg = PlottingPackage()
         self.token_stack = []
 
-        self.shift_expr()
+        while True:
+            self.shift_expr()
+            if self.next() == 'and':
+                get_token(self.m_tokens)
+            else:
+                break
+
+        if len(self.token_stack) > 1:
+            self.token_stack = ['$(load(' + ','.join((self.make_load_expr(h) for h in self.token_stack)) + '))']
 
         if self.next() == ':':  # expr :
             pg.hint1 = self.cur_hint
@@ -289,11 +297,12 @@ class PlotParser:
 
     def evaluate(self, hintvar, expr):
         evaler = expr_proc.ExprEvaler(self.m_state._vmhost.variables, self.m_state.file_caches)
+
         if expr.isdigit():
             expr = '$' + expr
         if is_quoted(expr):
             if hintvar is None or io_util.file_or_wildcard_exist(strip_quote(expr)):
-                expr = 'load(%s)' % expr if not ('*' in expr or '?' in expr) else 'load(*expand(%s))' % expr
+                expr = 'load(%s)' % (self.make_load_expr(expr))
             else:
                 expr = 'col(%s)' % expr
         evaler.load(expr, omit_dollar=True)
@@ -313,3 +322,6 @@ class PlotParser:
             hintvalue = None
         return evaler.evaluate_with_hintvar(hintvalue)
         
+
+    def make_load_expr(self, expr):
+        return '"%s"' % strip_quote(expr) if not ('*' in expr or '?' in expr) else '*expand("%s")' % strip_quote(expr)

@@ -40,8 +40,8 @@ fill line1 line2
 fill line2-line3
 set polygon1,polygon2,polygon3 alpha=0.5
 remove polygon1
-
 display
+save test/element-1.png
 
 # fit
 
@@ -56,6 +56,7 @@ yscale log
 yrange 0.1:0.2:1000
 
 display
+save test/element-2.png
 
 # plotr
 
@@ -68,7 +69,9 @@ plotr x+10 x-
 add x o-
 remove line1
 display
+save test/element-3.png
 
 # clear
 clear
 display
+save test/element-4.png

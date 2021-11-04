@@ -2,7 +2,7 @@
 import numpy as np
 import re
 
-from ..graphing import scale
+from ..graphing import scale, formatting
 from .. import defaults
 
 from . import style
@@ -106,16 +106,7 @@ class Tick(FigObject):
 
     def _update_formatter(self, oldval, value):
 
-        # special formatter for log
-        if r'%mp' in value:
-            self.computed_style['formatter'] = lambda x, pos: value.replace('%mp', ('$\mathregular{10^{%d}}$' % np.log10(x)) if (x > 0 and x < 0.01 or x > 100) else '%.4G' % x)
-        elif r'%mP' in value:
-            self.computed_style['formatter'] = lambda x, pos: value.replace('%mP', ('$\mathregular{10^{%d}}$' % np.log10(x)) if x > 0 else '%.4G' % x)
-        elif 'm' in value:
-            value1 = value.replace('m', 'g')
-            self.computed_style['formatter'] = lambda x, pos: '$\mathregular{%s}$' % re.sub(r'e\+?(|\-)0*(\d+)', '\\\\times10^{\\1\\2}', (value1 % x))
-        else:
-            self.computed_style['formatter'] = lambda x, pos:value % x
+        self.computed_style['formatter'] = formatting.gen_tickformat(value)
 
         if self.render_callback:
             self.render_callback(1)

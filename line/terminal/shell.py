@@ -73,7 +73,7 @@ class CMDHandler:
             except KeyboardInterrupt:
                 exit()
             
-        # should talk with backend here.
+        # should talk with backend here (other than QT)
         _, hook = pt_inputhooks.get_inputhook_name_and_func('qt')
         asyncio.set_event_loop(pt.eventloop.new_eventloop_with_inputhook(hook))
 
@@ -140,7 +140,7 @@ class CMDHandler:
             else:
                 self.ps = CMDHandler.PS1 if not forced else CMDHandler.PS2
                 try:
-                    return CMDHandler._input_session.prompt(self.ps, completer=completion.Completer(self.m_state))
+                    return CMDHandler._input_session.prompt(self.ps, completer=completion.Completer(session.get_state()))
                 except KeyboardInterrupt:
                     return None
 

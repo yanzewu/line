@@ -41,6 +41,7 @@ let fun = do
 done
 fun
 display
+save test/vm-1.png
 
 # Function with args
 
