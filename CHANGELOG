@@ -172,3 +172,13 @@ Features:
 - Improved error message of script not found.
 - Testing results are outputed to files, which makes it easier to compare and identify errors.
 - The custom formatting of tick is put into graphing.formatting.
+
+02-06-22:
+---
+- Added a makerange() function. Users can specify custom tick positions by "set xrange=$(makerange(start, stop, tickpos))".
+- Added the functionality of switching to Non-QT backends. Program will no longer crash if the gui backend fails to start.
+- Pressing control-C when rendering will no longer quit the program.
+- Added a orient style for text: horizontal and vertical.
+- Added none as a variable.
+- option() can specify whether to group multiple arguments.
+- Added/modified several palettes.

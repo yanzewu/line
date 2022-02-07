@@ -133,6 +133,8 @@ let fun7 = do
     print "Should be True:" $(option('c'))
     print "Should be None:" $(option('d'))
     print "Should be [X1, X2]:" $(option())
+    print "Should be [d1, d2]:" $(option('d', true))
+    print "Should be d2:" $(option('d', false))
 end
 
-fun7 -c $false -a A -c -b $(1+2) X1 X2
+fun7 -c $false -a A -c -b $(1+2) -d d1 -d d2 X1 X2

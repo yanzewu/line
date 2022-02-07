@@ -76,7 +76,7 @@ def _get_label_and_tick_size(subfigure, axis):
 
     has_label = m_label.attr('visible') and subfigure.axes[axis_idx].attr('visible')
     has_tick = m_tick.attr('visible') and subfigure.axes[axis_idx].attr('visible')
-    has_ticklabel = len(subfigure.axes[axis_idx].get_style('tickpos')) > 0 and has_tick
+    has_ticklabel = has_tick
 
     label_width = m_label.attr('frame')[size_idx] if has_label else 0
     ticklabel_width = max((x[size_idx] for x in m_tick.attr('frame'))) if has_ticklabel else 0

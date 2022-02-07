@@ -105,7 +105,7 @@ def parse_option_list(option_list, option_range=None, default_handler=parse_gene
 
     return ret
             
-def get_options(arg_list:list, handler=parse_general, allow_multiple:bool=False) -> dict:
+def get_options(arg_list:list, handler=parse_general, group_repeated:bool=False) -> dict:
     """ Parse a unix-style argument list => dict of {opt:arg}
     Example:
         get_options("-a 1 --b 2 3 4".split()) => {'a':1, 'b':2, None:[3, 4]}
@@ -113,7 +113,7 @@ def get_options(arg_list:list, handler=parse_general, allow_multiple:bool=False)
         arg_list: Iterable of string. Option must begin with '-'/'--' followed by a letter (e.g. "-2"
             is treated as a number rather than an option). Both '-' and '--' are treated as same options.
         handler: function to parse the string; If None then just return the string.
-        allow_multiple: If one option appears multiple times, the args will be grouped as a list.
+        group_repeated: If one option appears multiple times, the args will be grouped as a list.
     Returns:
         dict(opt=arg). The entry `None` stores all the positional args, and is always guaranteed to be a list.
     """
@@ -125,7 +125,7 @@ def get_options(arg_list:list, handler=parse_general, allow_multiple:bool=False)
 
     def appending_option(opt, v):
         if opt in ret:
-            if allow_multiple or opt is None:
+            if group_repeated or opt is None:
                 if isinstance(ret[opt], list):
                     ret[opt].append(v)
                 else:

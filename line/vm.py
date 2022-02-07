@@ -31,10 +31,8 @@ class Frame:
     def argc(self):
         return len(self.argv)
 
-    def get_option(self, name):
-        if self.option_cache is None:
-            self.option_cache = option_util.get_options(self.argv[1:], option_util.parse_token)
-        return self.option_cache.get(name, None)
+    def get_option(self, name=None, group_repeated=False):
+        return option_util.get_options(self.argv[1:], option_util.parse_token, group_repeated=group_repeated).get(name, None)
 
 class VMHost:
 
@@ -62,9 +60,10 @@ class VMHost:
             '__varpi': np.pi,
             '__vartrue': True,
             '__varfalse': False,
+            '__varnone': None,
             'arg': lambda x: self.stack[-1].get_arg(int(x)),
             'argc': lambda: self.stack[-1].argc(),
-            'option': lambda x=None: self.stack[-1].get_option(x),
+            'option': lambda x=None, y=None: self.stack[-1].get_option(x,y),
             'cond': lambda x,a,b: a if x else b,
             'set':self.set_variable,
             'exist': self.exist_variable,
@@ -76,7 +75,7 @@ class VMHost:
             self.pc = (line_debug_info, tokens)     # point to LDI, tokens
             self.backtrace.clear()
             return self.process_unsafe(state, tokens, line_debug_info)
-        except Exception as e:
+        except (Exception, KeyboardInterrupt) as e:
             if self.debug:
                 raise
             else:

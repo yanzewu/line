@@ -165,7 +165,7 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         parse_and_process_fill(m_state, m_tokens)
         
     elif command == 'text':
-        text = try_process_expr(m_state, get_token(m_tokens))
+        text = try_process_expr(m_state, get_token_raw(m_tokens))
         token1 = get_token(m_tokens)
         if lookup(m_tokens) == ',':
             get_token(m_tokens)
@@ -821,14 +821,17 @@ def process_save(m_state:state.GlobalState, filename:str, remote_save=False):
 def process_display(m_state:state.GlobalState):
 
     backend.finalize(m_state)
-    backend.initialize(m_state, silent=m_state.options['remote'])   # not remote --> must be displayable
+    backend.initialize(m_state, silent=m_state.is_remote())   # not remote --> must be displayable
+    if not m_state._gui_backend and not m_state.is_remote():
+        warn('The GUI backend failed to start. The picture won\'t be displayed')
+
     if m_state.cur_figurename:
         cf = m_state.cur_figurename
         for f in m_state.figures:
             m_state.cur_figurename = f
             render_cur_figure(m_state)
         m_state.cur_figurename = cf
-        if not m_state.options['remote']:
+        if not m_state.is_remote():
             backend.show(m_state)
         else:
             # TODO display every figure?
@@ -922,7 +925,7 @@ def process_load(m_state:state.GlobalState, filename:str, args:list, preserve_mo
     os.chdir(cwd)
     if not preserve_mode:
         m_state.is_interactive = is_interactive
-        backend.initialize(m_state, silent=m_state.options['remote'] or not is_interactive)
+        backend.initialize(m_state, silent=m_state.is_remote() or not is_interactive)
     return ret
 
 

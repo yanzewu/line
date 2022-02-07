@@ -46,7 +46,7 @@ def translate_style_val(style_name:str, style_val:str):
             raise LineParseError(str(e))
 
     elif style_name == 'orient':
-        if style_val not in ('in', 'out'):
+        if style_val not in ('in', 'out', 'horizontal', 'vertical'):
             raise LineParseError('Invalid orient style "%s"' % style_val)
         return style_val
 

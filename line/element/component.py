@@ -66,29 +66,14 @@ class Axis(FigObject):
 
         if maxpos < minpos:
             maxpos = minpos
-        step = r[2]
-        # TODO minpos, maxpos are not always vmin, vmax; they may have some padding around data.
-        bound = [None, None]
 
-        if self.computed_style['scale'] == 'linear':
-            tickpos = scale.get_ticks(minpos, maxpos, step)
-            bound[0] = tickpos[0] if r[0] is None else minpos
-            bound[1] = tickpos[-1] if r[1] is None else maxpos
-            
-            self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (bound[0], bound[1],
-                self.computed_style['tickpos'][1] - self.computed_style['tickpos'][0])
-            # This is a trick: If range is None instead of actual value, the updater will be called
-            # every time.
-            
-        elif self.computed_style['scale'] == 'log':
-            numticks = int(1.0/step) if step else None
-            tickpos = scale.get_ticks_log(minpos, maxpos, numticks)
-            bound[0] = tickpos[0] if r[0] is None else minpos
-            bound[1] = tickpos[-1] if r[1] is None else maxpos
-
-            self.computed_style['tickpos'] = tickpos
-            self.computed_style['range'] = (bound[0], bound[1], 1.0/numticks if numticks else None)
+        if isinstance(r, scale.AxisRange):      # tickpos already provided -> use provided tickpos
+            self.computed_style['range'] = scale.AxisRange(minpos, maxpos, r.vinterval, r.tickpos, is_default_tickpos=False)
+        else:       # compute
+            self.computed_style['range'] = scale.compute_range_and_tickpos(minpos, maxpos, r[2], 
+                align_bound=(r[0] is None, r[1] is None), scale=self.computed_style['scale']
+            )
+        # This is a trick: If range is None instead of actual value, the updater will be called every time
 
 
 class Tick(FigObject):
@@ -172,6 +157,7 @@ class DataLine(FigObject):
         _set_data(self, data)
 
     def _set_label(self, m_style, label):
+        label = str(label)
         if label.startswith('!'):
             try:
                 pattern, repl = label[1:].split('>')

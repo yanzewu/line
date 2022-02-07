@@ -27,6 +27,7 @@ class GlobalState:
         self.options = {}   # Additional program options
         self._vmhost = None
         self._history = None
+        self._gui_backend = None
 
     def cur_figure(self, create_if_empty:bool=False) -> Figure:
         """ Get current figure object. 
@@ -194,3 +195,6 @@ class GlobalState:
 
     def get_option(self, name:str):
         return self.options[name]
+
+    def is_remote(self) -> bool:
+        return self.options['remote']

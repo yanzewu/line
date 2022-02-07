@@ -60,6 +60,7 @@ style_alias = {
     'ec': 'edgecolor',
     'xlim': 'xrange',
     'ylim': 'yrange',
+    'fill': 'fillstyle',
     'font': 'fontfamily',
     'fontname': 'fontfamily',
 }

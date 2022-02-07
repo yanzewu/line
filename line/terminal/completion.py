@@ -71,6 +71,7 @@ class Completer(pt.completion.Completer):
 
                     if is_quoted(varname):
                         yield from self.complete_title(d, strip_quote(varname))
+                        yield from self.generate_completion_list(d, ('and ',))
 
                     if self.m_state:    # model will only be available after state is initialized.
                         if not is_quoted(varname) and '__var' + varname in self.m_state._vmhost.variables:

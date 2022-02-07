@@ -54,7 +54,9 @@ class CMDHandler:
             m_state: If `None', will create one. Otherwise will use the given one.
             preload_input: Asynchronously load the input string.
         """
-        signal.signal(signal.SIGINT, lambda x, f: sys.exit(1))
+
+        self.init_finished = False
+        signal.signal(signal.SIGINT, self.handle_interrupt)
 
         if preload_input:
             th = threading.Thread(target=self.get_input_cache)
@@ -73,9 +75,7 @@ class CMDHandler:
             except KeyboardInterrupt:
                 exit()
             
-        # should talk with backend here (other than QT)
-        _, hook = pt_inputhooks.get_inputhook_name_and_func('qt')
-        asyncio.set_event_loop(pt.eventloop.new_eventloop_with_inputhook(hook))
+        self.init_finished = True
 
     def init_backend(self):
         """ Initialize states and backends.
@@ -108,6 +108,7 @@ class CMDHandler:
     def get_input_cache(self):
         """ Asynchronic version for input. Main thread is loading modules.
         """
+        logger.debug('Launching the input thread')
         self.init_input()
         self._input_cache = None
         try:
@@ -116,6 +117,12 @@ class CMDHandler:
             import os
             os._exit(1)
  
+    def handle_interrupt(self, x, f):
+        logger.debug('Interrupt triggered')
+        if self.init_finished:
+            raise KeyboardInterrupt
+        else:
+            sys.exit(1)
 
     def read_source(self):
         """ Read the ~/.linerc file.
@@ -190,7 +197,16 @@ class CMDHandler:
 
         l = lexer.Lexer()
         if refresh_backend:
-            backend.initialize(session.get_state(), silent=session.get_state().options['remote'] or not session.get_state().is_interactive)
+            s = session.get_state()
+            is_silent = s.is_remote() and not s.is_interactive
+            backend.initialize(s, silent=is_silent)
+            logger.debug('GUI backend is %s' % s._gui_backend)
+            if s._gui_backend:
+                _, hook = pt_inputhooks.get_inputhook_name_and_func(s._gui_backend)
+                asyncio.set_event_loop(pt.eventloop.new_eventloop_with_inputhook(hook))
+            elif not is_silent:
+                logger.warn('Warning: The GUI backend failed to start. Displaying images are disabled')
+
         ret = 0
         emittor = l.run(fetch_next_line)
 
@@ -229,6 +245,8 @@ class CMDHandler:
                     pass
                 elif ret == self.RET_USERERROR:
                     for e, ldi in session.get_vm().backtrace:
+                        if isinstance(e, KeyboardInterrupt) and session.get_state().is_interactive: # keyboardinterrupt does not need remind
+                            break
                         is_backtrace = isinstance(e, LineBacktrace)
                         is_lastline = (ldi.token_pos[0] - l.lineid == 0) and interactive and ldi.filename == filename
                         if (not is_lastline or is_backtrace) and ldi.filename == filename:

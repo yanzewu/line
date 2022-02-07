@@ -63,6 +63,14 @@ def initialize(m_state:state.GlobalState, silent=None):
         if not switch_success:
             logger.info('Cannot switch to any alternative backend. Use default instead')
         
+    actual_backend = matplotlib.get_backend().lower()
+    if actual_backend == 'agg':
+        m_state._gui_backend = None
+    elif actual_backend.endswith('agg'):
+        m_state._gui_backend = actual_backend[:-3]
+    else:
+        m_state._gui_backend = actual_backend
+
     if interactive_plot:
         plt.ion()
         for name, figure in m_state.figures.items():
@@ -432,6 +440,7 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
             text.attr('text'),
             color=m_style['color'],
             fontproperties=font_manager.FontProperties(family=m_style['fontfamily'], **m_style['fontprops'].export()),
+            rotation=m_style['orient'],
             transform=ax.transData if m_style['coord'] == 'data' else ax.transAxes,
             visible=m_style['visible'],
             zorder=m_style['zindex']
@@ -443,19 +452,18 @@ def _update_subfigure(m_subfig:state.Subfigure, renderer):
         if b is None:
             continue
 
-        a_begin, a_end, a_interval = m_subfig.axes[i].attr('range')
-        a_ticks = m_subfig.axes[i].attr('tickpos')
+        a_begin, a_end, a_interval, a_ticks = m_subfig.axes[i].attr('range')
         set_boundfunc = b.set_xbound if is_xside[i] else b.set_ybound
 
         set_tickfunc = b.set_xticks if is_xside[i] else b.set_yticks
         set_tickfunc(a_ticks)
         set_boundfunc(a_begin, a_end)
 
-        # This is a hack -- when you move your figure, the ticker positions are not gauranteed.
+        # This is a hack -- when you move your figure, the ticker positions are not guaranteed.
         target_axis = b.xaxis if is_xside[i] else b.yaxis
         target_axis.set_minor_formatter(ticker.NullFormatter())
         if m_subfig.axes[i].attr('scale') == 'linear':
-            if m_subfig.axes[i].attr('range')[2] is None:
+            if a_interval is None:
                 target_axis.set_major_locator(ticker.MaxNLocator(nbins=len(a_ticks), steps=[1,1.5,2,2.5,3,4,5,6,7.5,8,10]))
             target_axis.set_minor_locator(ticker.AutoMinorLocator(tick_styles[i]['minor'] + 1))
         elif m_subfig.axes[i].attr('scale') == 'log':

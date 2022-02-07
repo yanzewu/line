@@ -147,6 +147,7 @@ text {
     text: '';
     pos: top,left;
     margin: 0.02,0.02,0.02,0.02;
+    orient: horizontal;
 }
 
 legend {

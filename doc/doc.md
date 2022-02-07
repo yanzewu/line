@@ -763,7 +763,8 @@ expand('wildcard') | Expand the wildcard into list of files
 len(object) | Get the length of string/array
 arg(index) | Get args passed in shell, by [load](#load) command or by [call](#call) command
 argc() | Get number of args passed in shell, by [load](#load) command or by [call](#call) command
-option(val=None) | Get shell-style command options (e.g. "-opt val") or positional args (with val=None)
+option(val=None, group=False) | Get shell-style command options (e.g. "-opt val") or positional args (with val=None). If group is True, will group repeated arguments to a list
+makerange(start, stop, ticks) | Used by `set range=$(makerange(...))`, to generate a AxisRange object
 split(s, sep=' \t') | Split string s by delimeter sep
 startswith(s, prefix) | Check whether string s startswith prefix
 ismember(a, b) | Check whether a is an element of b
@@ -908,7 +909,7 @@ These can be found in [styles/defaults.d.css](../styles/defaults.d.css).
  bar | bin, norm, linewidth, linecolor, fillcolor, width, label, xlabel, alpha, colorid, visible, zindex
  drawline | linewidth, linecolor, linetype, pointsize, pointtype, edgewidth, edgecolor, fillcolor, fillstyle, color, coord, visible, zindex
  polygon | linetype, linecolor, fillcolor, color, alpha, colorid, visible, zindex
- text | font, fontfamily, fontsize, color, pos, coord, text, visible, zindex
+ text | font, fontfamily, fontsize, color, pos, coord, text, orient, visible, zindex
  legend | linewidth, linecolor, linetype, alpha, fontfamily, fontsize, color, pos, column, visible, zindex
 
 ### List of Valid Style Values
@@ -942,7 +943,7 @@ linewidth-minor | float
 margin | float,float,float,float (left,bottom,right,top)
 margin-top,margin-bottom,margin-left,margin-right | float
 norm | 'pdf'/'density'/'distribution'/'probability'/'count'
-orient | 'in/out'
+orient | 'in/out' (for ticklabel) 'horizontal/vertical' (for text)
 padding | float,float,float,float (left,bottom,right,top)
 padding-top,padding-bottom,padding-left,padding-right | float
 pointsize or ps| float

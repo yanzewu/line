@@ -8,6 +8,7 @@ import warnings
 from . import stat_util
 from . import model
 from . import io_util
+from .graphing import scale
 from .errors import LineParseError, LineProcessError
 
 _VAR_EXPR = re.compile(r'\$[_0-9a-zA-Z\*\?\.]+\b')
@@ -51,6 +52,7 @@ class ExprEvaler:
             'expand': io_util.expand,
             'load_stdin': model.load_stdin,
             'save_stdout': model.save_stdout,
+            'makerange': scale.make_range,
             'col':None,
             'cols': None,
             'hint':None,
