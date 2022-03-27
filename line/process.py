@@ -323,6 +323,19 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         return process_load(m_state, filename, [try_process_expr(m_state, t) for t in m_tokens], 
             preserve_mode=(command == 'source'))
 
+    elif command == 'export':
+        if not m_state.is_interactive:
+            warn('"export" is expected to work in interactive mode')
+        else:
+        filename = get_token(m_tokens)
+            try:
+        with open(filename, 'w') as foutput:
+                    foutput.write('\n'.join(m_state._vmhost.code_history))
+            except (FileNotFoundError, IOError) as e:
+                raise LineProcessError('Writting file failed because %s' % e)
+            finally:
+        print('Exported to %s' % filename)
+
     elif command == 'pause':
         interval = stof(get_token(m_tokens))
         if interval > 0:
@@ -375,7 +388,7 @@ def render_cur_figure(m_state:state.GlobalState):
                 backend.update_figure(m_state, True)
             m_state.cur_figure().update_style(margin=subfigure_arr.get_compact_figure_padding(m_state.cur_figure()))
             for sf in m_state.cur_figure().subfigures:
-                sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
+                sf.update_style(padding=subfigure_arr.get_compact_subfigure_padding(sf))
             if len(m_state.cur_figure().subfigures) > 1:
                 m_state.refresh_style(True)
                 split.align_subfigures(m_state.cur_figure(), 'axis')
@@ -416,6 +429,14 @@ def parse_and_process_plot(m_state:state.GlobalState, m_tokens:deque, keep_exist
     if not parser.plot_groups:
         warn('No data to plot')
         return
+
+    if m_state.get_option('auto-style') and len(parser.plot_groups) > 1:
+        style_base = {}
+        for pg in reversed(parser.plot_groups):
+            if pg.style:
+                style_base = pg.style
+            else:
+                pg.style.update(style_base.copy())
 
     if side == style.FloatingPos.RIGHT:
         for pg in parser.plot_groups:
@@ -637,7 +658,7 @@ def parse_and_process_set(m_state:state.GlobalState, m_tokens:deque):
         for sf in m_state.cur_figure().subfigures:
             sf.update_style({'padding': subfigure_arr.get_compact_subfigure_padding(sf)})
 
-    elif test_token_inc(m_tokens, ('palette', 'palettes')):
+    elif test_token_inc(m_tokens, ('palette', 'palettes', 'colormap')):
         target = get_token(m_tokens) if len(m_tokens) >= 2 else 'line'
         palette_name = get_token(m_tokens)
         assert_no_token(m_tokens)
@@ -853,7 +874,7 @@ def process_save_remote(m_state:state.GlobalState, fmt='svg', filename='image', 
     img_id = remote.place_image_data(f.read(), filename=filename if filename.endswith(fmt) else '%s.%s' % (filename, fmt))
 
     display_cmd = 'display' if fmt == 'svg' else 'save'
-    display_info = '%s @ [%s:%d]' % (display_cmd, escape(m_state._vmhost.pc[0].filename), m_state._vmhost.pc[0].lineid) if m_state._vmhost else display_cmd
+    display_info = '%s @ [%s:%d]' % (display_cmd, escape(m_state._vmhost.pc[0].filename), m_state._vmhost.pc[0].lineid+1) if m_state._vmhost else display_cmd
     remote.place_block(display_info, img_id=img_id, is_svg=fmt=='svg', img_name=filename)
     if wait_client:
         if not m_state.is_interactive:  # assuming we would stay a while in interactive; I'm not sure why this works.
@@ -881,8 +902,8 @@ def process_expr(m_state:state.GlobalState, expr:str):
 
 def process_snapshot(m_state:state.GlobalState, *snapshot_type, cache=False):
     if m_state.is_interactive:
-        if snapshot_type != 'state':
-            m_state.cur_figure()
+        if snapshot_type != ('state',):
+            m_state.cur_figure()    # sanity check
         if cache:
             return m_state._history.cache_snapshot(m_state, snapshot_type)
         else:
@@ -941,6 +962,8 @@ def process_input(m_state:state.GlobalState, render_exisiting_figures=True):
             m_state.cur_figurename = fig
             m_state.cur_figure().is_changed = True
             render_cur_figure(m_state)
+            if m_state.is_remote():
+                process_save_remote(m_state)
         m_state.cur_figurename = _cur_figurename
 
     m_state._vmhost.push_args(['<interactive>'])

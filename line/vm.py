@@ -52,6 +52,7 @@ class VMHost:
         self.block_level = 0    # control block stack height
         self.pc = None
         self.backtrace = []     # list of (error, ldi)
+        self.code_history = []
 
         import numpy as np
         

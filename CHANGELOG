@@ -182,3 +182,15 @@ Features:
 - Added none as a variable.
 - option() can specify whether to group multiple arguments.
 - Added/modified several palettes.
+
+03-27-22:
+---
+Features:
+- Added a command argument --save=[filename] to save image.
+- Added a command "export [filename]" to export the history in current session.
+- If option auto-style is set to true, when plot multiple lines, styles of later lines will be broadcasted to former lines (if they are not set).
+
+Bugs fixes:
+- Fixed a bug in "set style figure" complaining "no figure is created".
+- Fixed a bug that when list properties, e.g. margin, padding or spacing cannot be set separately in one command.
+- Line should be able to function properly in MacOS, by setting "mpl-backend=macos" in option.ini.

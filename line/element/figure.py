@@ -25,10 +25,10 @@ class Figure(FigObject):
         super().__init__('figure', name, {
             'dpi':self._set_dpi,
             'title': lambda s,v: self.title.update_style({'text': v}),
-            **_gen_size_setter(self, defaults.default_style_sheet.find_type('figure')),
-            **_gen_margin_setter(self, defaults.default_style_sheet.find_type('figure')),
-            **_gen_spacing_setter(self, defaults.default_style_sheet.find_type('figure')),
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('figure')),
+            **_gen_size_setter(),
+            **_gen_margin_setter(),
+            **_gen_spacing_setter(),
+            **_gen_fontprops_setter(),
         }, {
             **_gen_size_getter(self),
             **_gen_margin_getter(self),

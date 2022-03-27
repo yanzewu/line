@@ -55,7 +55,7 @@ Execute commands directly:
 Plot from file directly:
 
     line -p [filename] (columnx:)(columny)
-
+    line --save=[filename_img] -p [filename] (columnx:)(columny)    # save the image
 
 ### Plotting
 

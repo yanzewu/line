@@ -198,7 +198,7 @@ class CMDHandler:
         l = lexer.Lexer()
         if refresh_backend:
             s = session.get_state()
-            is_silent = s.is_remote() and not s.is_interactive
+            is_silent = s.is_remote() or not s.is_interactive
             backend.initialize(s, silent=is_silent)
             logger.debug('GUI backend is %s' % s._gui_backend)
             if s._gui_backend:
@@ -238,9 +238,11 @@ class CMDHandler:
                 if not tokens:
                     continue
                 logger.debug("Tokens are: %s" % list(tokens))
+                history_str = ' '.join(tokens)
                 ret = session.get_vm().process(session.get_state(), tokens, LineDebugInfo(filename, l.lineid, tp))
                 if ret == 0:
-                    pass
+                    if session.get_state().is_interactive:
+                        session.get_vm().code_history.append(history_str)
                 elif ret == self.RET_EXIT:
                     pass
                 elif ret == self.RET_USERERROR:

@@ -25,8 +25,8 @@ class Subfigure(FigObject):
             'x2scale': lambda s,v:self.axes[3].update_style({'scale': v}, priority=self._style_priority(s)),
             'title': lambda s,v: self.title.update_style({'text': v}),
             'legend': self._set_legend,
-            **_gen_padding_setter(self, defaults.default_style_sheet.find_type('subfigure')),
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('subfigure')),
+            **_gen_padding_setter(),
+            **_gen_fontprops_setter(),
         }, {
             'xlabel': lambda x:self.axes[0].get_style('text'),
             'ylabel': lambda x:self.axes[1].get_style('text'),

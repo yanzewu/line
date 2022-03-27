@@ -47,6 +47,10 @@ inheritable_styles = {
     'visible', 'fontfamily', 'fontprops', 'color', 'linecolor'
 }
 
+clustered_styles = {
+    'margin', 'padding', 'spacing', 'fontprops', 'size', 'rsize', 'rpos',
+}
+
 style_alias = {
     'w':'linewidth',
     'c':'color',
@@ -75,6 +79,7 @@ command_keywords = {
     'cd',
     'clear',
     'display',
+    'export',
     'figure',
     'fill',
     'fit',
@@ -120,7 +125,8 @@ command_alias = {
 }
 
 extended_set_keywords = {
-    'grid', 'hold', 'palette', 'title',
+    'grid', 'hold', 'palette', 'colormap',
+    'title',
     'xlabel', 'ylabel',
     'xrange', 'yrange',
     'xlim', 'ylim',

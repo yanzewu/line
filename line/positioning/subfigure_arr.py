@@ -1,8 +1,8 @@
 
 import numpy as np
-from ..style import FloatingPos, Rect
+from ..style import FloatingPos, Rect, Padding
 
-def get_compact_figure_padding(figure):
+def get_compact_figure_padding(figure) -> Padding:
 
     figure_size = figure.attr('frame')
     paddings = [0,0,0,0]
@@ -24,15 +24,15 @@ def get_compact_figure_padding(figure):
         else:
             paddings[3] = max(paddings[3], title_h)     # we don't care if they overlap
 
-    return [
+    return Padding(
         max(paddings[0]/figure_size.width + 0.02, 0.03),    # 0.02 is MPL default
         max(paddings[1]/figure_size.height + 0.02, 0.03),
         max(paddings[2]/figure_size.width + 0.02, 0.03),
         max(paddings[3]/figure_size.height + 0.02, 0.03),  # if user want to customize, they can disable --auto-compact 
-    ]
+    )
 
 
-def get_compact_subfigure_padding(subfigure):
+def get_compact_subfigure_padding(subfigure) -> Padding:
     """ Calculate and update the padding (relative to figure size) that a compact 
     subfigure should have.
     """
@@ -62,8 +62,8 @@ def get_compact_subfigure_padding(subfigure):
     padding_right = 10 + max(offset_right, axis_right_d, legend_offset[2])
     padding_top = 10 + max(offset_top, title_h + max(axis_top_d, 0), legend_offset[3])
 
-    return [padding_left / fig_size_h, padding_bottom / fig_size_v, 
-        padding_right / fig_size_h, padding_top / fig_size_v]
+    return Padding(padding_left / fig_size_h, padding_bottom / fig_size_v, 
+        padding_right / fig_size_h, padding_top / fig_size_v)
 
 
 def _get_label_and_tick_size(subfigure, axis):

@@ -3,7 +3,6 @@ import numpy as np
 import re
 
 from ..graphing import scale, formatting
-from .. import defaults
 
 from . import style
 from . import errors
@@ -24,7 +23,7 @@ class Axis(FigObject):
 
         super().__init__('axis', name, {
             'scale':self._set_scale,
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('axis')),
+            **_gen_fontprops_setter(),
         }, {
             **_gen_fontprops_getter(self),
         }, {
@@ -79,7 +78,7 @@ class Axis(FigObject):
 class Tick(FigObject):
     def __init__(self, name, **kwargs):
         super().__init__('tick', name, {
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('tick')),}, {
+            **_gen_fontprops_setter(),}, {
             **_gen_fontprops_getter(self)}, {
             'format': self._update_formatter,
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
@@ -103,7 +102,7 @@ class Grid(FigObject):
 class Legend(FigObject):
     def __init__(self, name, **kwargs):
         super().__init__('legend', name, {
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
+            **_gen_fontprops_setter(),}, {
             **_gen_fontprops_getter(self)}, {
             'fontprops': lambda a, b: self._check_render(),
             'fontfamily': lambda a, b: self._check_render(),
@@ -129,7 +128,7 @@ class Legend(FigObject):
 class SupLegend(FigObject):
     def __init__(self, name, **kwargs):
         super().__init__('legend', name, {
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('legend')),}, {
+            **_gen_fontprops_setter(),}, {
             **_gen_fontprops_getter(self)}, {
             'fontprops': lambda a, b: self.render_callback(2) if self.render_callback else None,
             'fontfamily': lambda a, b: self.render_callback(2) if self.render_callback else None,
@@ -304,7 +303,7 @@ class Text(FigObject):
     def __init__(self, name, **kwargs):
 
         super().__init__('text', name, {
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('text')),}, {
+            **_gen_fontprops_setter(),}, {
             **_gen_fontprops_getter(self)}, {
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,
@@ -320,7 +319,7 @@ class Label(FigObject):
     def __init__(self, name, **kwargs):
 
         super().__init__('label', name, {
-            **_gen_fontprops_setter(self, defaults.default_style_sheet.find_type('label')),}, {
+            **_gen_fontprops_setter(),}, {
             **_gen_fontprops_getter(self)}, {
             'fontfamily': lambda a, b: self.render_callback(1) if self.render_callback else None,
             'fontprops': lambda a, b: self.render_callback(1) if self.render_callback else None,

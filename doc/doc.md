@@ -77,6 +77,7 @@ Contents:
 - [call](#call)
 - [clear,cla](#clear)
 - [display](#display)
+- [export](#export)
 - [figure,fig,subfigure,subplot,sp](#figure%44-subfigure)
 - [fill](#fill)
 - [fit](#fit)
@@ -145,7 +146,7 @@ Args:
     - If the expr is a single token, it will be automatically mapped to column title or index. See [Automatic Variable Mapping](#automatic-variable-mapping).
     - If xexpr is omitted, the xaxis will be the data indices.
     - If xexpr and yexpr are both omitted, all columns in the file are added into current figure. If there are multiple columns and the source is a file, the first column is treated as x column.
-- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-values).
+- style, val: Styles of the plotted line. See [Style name and value](#list-of-valid-style-values). Note that if multiple lines are being plotted and the former lines have no style set, they will get the style of the later lines. For example, `plot x, y o-` will show both lines as `o-` style, but `plot x color=red, y o-` will still show the first line in default style.
 - linespec: Matlab-style line descriptor, which consists of short abbreviation of various line/point types and colors. See [this link](https://www.mathworks.com/help/matlab/ref/linespec.html) for details.
 
 Related options:
@@ -583,6 +584,14 @@ Filename may be an expression.
 When using `load`, the working directory will be changed and the displaying mode will always be set to file mode. `source` will preserve both the working directory and the displaying mode, which could be faster in some cases.
 
 `source` is not available for legacy prompts (--fancy-prompt=false).
+
+### export
+---
+Export the current history to a file. Only works in interactive mode.
+
+Usage:
+
+    export filename
 
 ### cd
 ---

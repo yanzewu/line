@@ -228,6 +228,9 @@ class Padding:
     def __len__(self):
         return 4
 
+    def __iter__(self):
+        return self.data.__iter__()
+
     def __eq__(self, other):
         if isinstance(other, Padding):
             return self.data == other.data
@@ -355,6 +358,9 @@ class FontProperty:
 
     def __setitem__(self, key, val):
         return self.update(key, val)
+
+    def __iter__(self):
+        return FontProperty._UPDATORS.__iter__()
 
     def __eq__(self, other):
         return self._holder == other._holder if isinstance(other, FontProperty) else False

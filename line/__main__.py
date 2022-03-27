@@ -7,6 +7,8 @@ from . import defaults
 from . import terminal
 from .process import process_display, process_save
 
+VERSION = '0.2'
+
 def main():
 
     help_str = '''
@@ -33,12 +35,17 @@ Additional options can be shown by `line -e 'show option'`'''
         elif arg in ('-d', '--debug'):
             logging.getLogger('line').setLevel(logging.DEBUG)
             terminal.CMDHandler._debug = True
+        elif arg == '--version':
+            print('Line version %s' % VERSION)
+            exit(0)
+        elif arg.startswith('--save='):
+            kwargs.append(['display-when-quit', arg.split('=',1)[1]])
         elif arg.startswith('--'):
             kwargs.append(arg[2:].split('=', 1) if '=' in arg else (arg[2:], 'true'))
         else:
             args.append(arg)
     
-    if len(args) == 0:
+    if len(args) == 0 and mode == 'script':
         if sys.stdin.isatty():
             mode = 'interactive'
         else:

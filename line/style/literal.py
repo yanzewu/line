@@ -1,5 +1,5 @@
 
-from ..keywords import style_keywords, inheritable_styles
+from ..keywords import style_keywords, inheritable_styles, clustered_styles
 from ..parse_util import *
 from ..option_util import parse_general, parse_range
 
@@ -13,6 +13,10 @@ def is_inheritable_style(token):
 def is_copyable_style(token):
     return token in style_keywords
 
+def is_clustered_style(token):
+    """ style that is a group of several individual keys (or indices)
+    """
+    return token in clustered_styles
 
 def translate_style_val(style_name:str, style_val:str):
     """ Parse style value depends on name
@@ -76,7 +80,7 @@ def translate_style_val(style_name:str, style_val:str):
 
     elif style_name == 'size':
         v1, v2 = style_val.split(',')
-        return stod(v1), stod(v2)
+        return [stod(v1), stod(v2)]
 
     elif style_name == 'dpi':
         if style_val in ('high', 'mid', 'low'):
@@ -128,3 +132,27 @@ def translate_style_val(style_name:str, style_val:str):
     # general    
     else:
         return parse_general(style_val)
+
+
+def merge_cluster_styles(style1, style2):
+    """Merge both list/Padding/FontProps: If style2[key] is none, use style1[key]. otherwise use style2[key].
+    If merge fails, will return the second one."""
+
+    if isinstance(style1, list) and isinstance(style2, (list, tuple)):
+        if len(style1) == len(style2):
+            return _merge_list(style1, style2)
+
+    elif isinstance(style1, style.Padding) and isinstance(style2, (style.Padding, list, tuple)):
+        return style.Padding(*_merge_list(style1, style2))
+
+    elif isinstance(style1, style.FontProperty) and isinstance(style2, (style.FontProperty, dict)):
+        s = style.FontProperty()
+        for k in style1:
+            s[k] = style1[k] if style2[k] is None else style2[k]
+        return s
+
+    return style2
+
+
+def _merge_list(l1:list, l2:list):
+    return [l1_ if l2_ is None else l2_ for l1_, l2_ in zip(l1, l2)]

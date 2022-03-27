@@ -15,7 +15,7 @@ save test/style-1.png
 
 # set
 
-set figure size=800,600 margin=0.07,0.07,0.07,0.07 hspacing=0.03 dpi=high
+set figure size=800,600 margin=0.07 margin-left=0.05 margin-right=0.05 hspacing=0.03 dpi=high
 set figure dpi=200
 set subfigure rsize=0.8,0.8 rpos=0.05,0.05 padding-left=0.1 title=abc
 set subfigure color=green linecolor=blue
@@ -34,7 +34,7 @@ xlabel on
 xrange 0:12; xrange '0:' ;xrange ':12'; xrange ':'; xrange '::'; xrange '0::'; xrange ':2:'; xrange '::12'; xrange ':2:12'; xrange '0:2:'; xrange 0:2:12
 yrange 0:12; yrange '0:' ;yrange ':12'; yrange ':'; yrange '::'; yrange '0::'; yrange ':2:'; yrange '::12'; yrange ':2:12'; yrange '0:2:'; yrange 0:2:12
 xrange $(makerange(0, 12, [3,4,5,6]))
-yrange $(makerange(none, 12, [3,4,5,6]))
+yrange $(makerange(none, 12, [9,10,11]))
 
 xrange 0:2
 yscale log
@@ -81,8 +81,8 @@ clear
 plot x
 set figure fontprops=italic,bold,x-large
 set gca fontprops=light,medium
-style yaxis fontsize=14 fontstyle=italic
-set ylabel fontsize=20
+style yaxis fontsize=16
+set ylabel fontstyle=italic
 set figure title=title
 display
 save test/style-3.png

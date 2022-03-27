@@ -68,6 +68,8 @@ def initialize(m_state:state.GlobalState, silent=None):
         m_state._gui_backend = None
     elif actual_backend.endswith('agg'):
         m_state._gui_backend = actual_backend[:-3]
+    elif actual_backend == 'macosx':
+        m_state._gui_backend = 'osx'
     else:
         m_state._gui_backend = actual_backend
 

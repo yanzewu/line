@@ -2,6 +2,8 @@
 import warnings
 
 from . import css
+from . import style
+from . import keywords
 from . import defaults
 from . import errors
 
@@ -10,12 +12,12 @@ class FigObject:
     """ Style-modifiable object in the figure.
     """
 
-    def __init__(self, typename, name, custom_style_setter={}, custom_style_getter={}, style_change_handler={}, **init_styles):
-        """ typename -> object idenfier;
-            name -> object name;
-            custom_style_setter: lambda accepts style, value, priority;
-            custom_style_getter: lambda accepts name;
-            style_change_handler: lambda accepts oldstyle, newstyle;
+    def __init__(self, typename:str, name:str, custom_style_setter:dict={}, custom_style_getter:dict={}, style_change_handler:dict={}, **init_styles):
+        """ typename: object idenfier;
+            name: object name;
+            custom_style_setter: dict[name:str, (style:css.Style, value:Any)->Any] overrides the update_style() behavior;
+            custom_style_getter: dict[name:str, style:css.Style->value:Any] overrides the get_style() behavior;
+            style_change_handler: dict[name:str, (old_val, new_val)->Any] invoked when compute_style() finds a update;
         """
 
         self.typename = typename
@@ -78,6 +80,7 @@ class FigObject:
 
         raise KeyError if value not found.
         """
+        # TODO for 'clustered' styles, the merge is taken element-wise. (but this only affects display, not real calculation)
         for s in reversed(self.style):
             if name in self.custom_style_getter:
                 return self.custom_style_getter[name](s)
@@ -110,6 +113,20 @@ class FigObject:
         """
         ret = self.style[0].copy()
         ret.update(self.style[1])
+
+        # special care about 'clusted styles'
+        for s in keywords.clustered_styles.intersection(ret):
+            if s in self.style[0] and s in self.style[1]:
+                v1 = style.merge_cluster_styles(self.style[0][s], self.style[1][s]) # 1 has a higher priority.
+            elif s in self.style[0]:
+                v1 = self.style[0][s]
+            elif s in self.style[1]:
+                v1 = self.style[1][s]
+
+            if self.computed_style and s in self.computed_style:
+                ret[s] = style.merge_cluster_styles(self.computed_style[s], v1)
+            else:
+                ret[s] = style.merge_cluster_styles(defaults.default_style_sheet.find_type(self.typename)[s], v1)
         return ret
 
     def get_computed_style(self, name):
@@ -120,7 +137,7 @@ class FigObject:
     def on_style_updated(self, old_style, new_style):
         for s, v in self.style_change_handler.items():
             oldst = old_style.get(s, None)
-            newst = new_style[s]
+            newst = new_style.get(s, None)
             if oldst != newst:
                 v(oldst, newst)
 

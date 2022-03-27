@@ -2,8 +2,6 @@
 
 import copy
 
-from numpy.lib.arraysetops import isin
-
 from . import state
 from .errors import LineProcessError
 from .element import figobject

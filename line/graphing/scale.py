@@ -33,7 +33,8 @@ class AxisRange:
 
 
 def make_range(vmin, vmax, tickpos):
-    return AxisRange(vmin, vmax, None, np.array(tickpos), False)
+    vinterval = (vmax - vmin)/len(tickpos) if vmax is not None and vmin is not None else 2 # otherwise backend will calculate dynamically
+    return AxisRange(vmin, vmax, vinterval, np.array(tickpos), False)
     
 
 def compute_range_and_tickpos(vmin, vmax, vinterval, align_bound=(False, False), scale='linear'):
@@ -46,7 +47,10 @@ def compute_range_and_tickpos(vmin, vmax, vinterval, align_bound=(False, False),
 
     if scale == 'linear':
         tickpos = get_ticks(vmin, vmax, vinterval)
-        return AxisRange(tickpos[0] if align_bound[0] else vmin, tickpos[-1] if align_bound[1] else vmax, tickpos[1] - tickpos[0], tickpos)
+        return AxisRange(tickpos[0] if align_bound[0] else vmin, 
+            tickpos[-1] if align_bound[1] else vmax, 
+            tickpos[1] - tickpos[0] if len(tickpos) > 1 else vinterval, 
+            tickpos)
         
     elif scale == 'log':
         numticks = int(1.0/vinterval) if vinterval else None

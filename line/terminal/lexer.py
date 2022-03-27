@@ -17,7 +17,9 @@ class Lexer:
 
     def run(self, fetch_nextline):
         """ 
-        When line is not enough, will call fetch_nextline(forced:bool) -> str.
+        When line is not enough, will call fetch_nextline(forced:bool) -> [str|None]
+            fetch_nextline() should be blocking; It returns None if no new line is available.
+            `forced' just changes the PS style, to inform user that the new line is required.
         Returns a generator of tokens.
         """
         self.buffer = fetch_nextline(False)
