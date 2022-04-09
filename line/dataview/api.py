@@ -85,7 +85,7 @@ def _plot(m_state, chart_type, assembler, *args, labelfmt='%T', auto_range=None,
     m_state.cur_subfigure(True)
     return plot.do_plot(m_state, 
         (pg,), 
-        keep_existed=True, 
+        keep_existed=kwargs.get('keep_existed', m_state.gca().get_style('hold', raise_error=False, default=True)), 
         labelfmt=labelfmt,
         auto_range=auto_range,
         chart_type=chart_type)[0]

@@ -44,6 +44,11 @@ def initialize(m_state:state.GlobalState, silent=None):
     global interactive_plot
     interactive_plot = m_state.is_interactive and not silent
 
+    if matplotlib.get_backend().startswith('module://'):
+        logger.info('Jupyter notebook detected')
+        m_state._gui_backend = 'jupyter'
+        return
+
     try:
         if not silent:
             plt.switch_backend(primary_backend)

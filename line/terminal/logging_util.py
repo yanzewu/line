@@ -2,7 +2,7 @@
 import logging
 import warnings
 import sys
-from prompt_toolkit import print_formatted_text
+from prompt_toolkit import print_formatted_text as _print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 
 from .. import session
@@ -10,6 +10,21 @@ from ..vm import LineDebugInfo
 from ..errors import format_error
         
 showwarning_default = warnings.showwarning
+
+def print_formatted_text_default(text, file=sys.stdout):
+    if isinstance(text, FormattedText):
+        print(str(text))
+    else:
+        print(text)
+
+print_formatted_text = _print_formatted_text
+
+def set_jupyter():
+    # Redirect error to normal print: print_formatted_text does not work here.
+    global print_formatted_text, print_formatted_text_default
+
+    print_formatted_text = print_formatted_text_default
+
 
 def showwarning(message:Warning, category, filename, lineno, file=None, line=None):
     

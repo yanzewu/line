@@ -107,7 +107,7 @@ class TypeSelector(Selector):
     """
     WEIGHT = 0
 
-    def __init__(self, typename):
+    def __init__(self, typename:str):
         self.typename = typename
 
     def _select(self, stylable, ret):
@@ -125,7 +125,7 @@ class ClassSelector(Selector):
     """
     WEIGHT = 10
 
-    def __init__(self, classname):
+    def __init__(self, classname:str):
         self.classname = classname
 
     def _select(self, stylable, ret):
@@ -142,7 +142,7 @@ class ClassTypeSelector(Selector):
 
     WEIGHT = 20
 
-    def __init__(self, classname, typename):
+    def __init__(self, classname:str, typename:str):
         self.classname = classname
         self.typename = typename
 
@@ -168,7 +168,7 @@ class StyleSelector(Selector):
 
     WEIGHT = 30
 
-    def __init__(self, stylename, styleval):
+    def __init__(self, stylename:str, styleval):
         self.stylename = stylename
         self.styleval = styleval
 
@@ -186,7 +186,7 @@ class TypeStyleSelector(Selector):
 
     WEIGHT = 40
 
-    def __init__(self, typename, stylename, styleval):
+    def __init__(self, typename:str, stylename:str, styleval):
         self.typename = typename
         self.stylename = stylename
         self.styleval = styleval
@@ -206,7 +206,7 @@ class ClassStyleSelector(Selector):
 
     WEIGHT = 50
 
-    def __init__(self, classname, stylename, styleval):
+    def __init__(self, classname:str, stylename:str, styleval):
         self.classname = classname
         self.stylename = stylename
         self.styleval = styleval
@@ -226,7 +226,7 @@ class NameSelector(Selector):
     
     WEIGHT = 60
 
-    def __init__(self, name):
+    def __init__(self, name:str):
         self.name = name
 
     def _select(self, stylable, ret):
@@ -244,7 +244,7 @@ class ClassNameSelector(Selector):
     """
     WEIGHT = 70
 
-    def __init__(self, classname, name):
+    def __init__(self, classname:str, name:str):
         self.classname = classname
         self.name = name
 
@@ -268,7 +268,7 @@ class ClassNameSelector(Selector):
 
 class StyleSheet:
     
-    def __init__(self, selectors=[], style=None):
+    def __init__(self, selectors=[], style:dict=None):
         
         if isinstance(selectors, list):
             self.data = dict((s, style) for s in selectors)  # selector:style dict
@@ -355,7 +355,7 @@ class StyleSheet:
         return self.data[TypeSelector(key)]
 
 
-def compute_inheritance(stylable, parent_style, default_stylesheet):
+def compute_inheritance(stylable, parent_style:dict, default_stylesheet:StyleSheet):
     """ Compute inheritance and write into computed_style
     """
 
@@ -389,7 +389,7 @@ def compute_inheritance(stylable, parent_style, default_stylesheet):
         compute_inheritance(c, stylable.computed_style, default_stylesheet)
         
 
-def compute_style(stylable, default_stylesheet):
+def compute_style(stylable, default_stylesheet:StyleSheet):
     """ Compute default and inherit for computed_style for stylable.
     """
 
@@ -397,7 +397,7 @@ def compute_style(stylable, default_stylesheet):
     compute_inheritance(stylable, {}, default_stylesheet)
 
     
-def parse_selector(selector):
+def parse_selector(selector:str):
     m_selector = _selector_matcher.match(selector)
     if m_selector is None:
         raise errors.LineParseError('Invalid selection: %s' % selector)

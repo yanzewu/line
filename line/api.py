@@ -3,15 +3,16 @@ import collections as _collections
 
 from . import backend as _plot
 from . import process as _process
+from . import session as _session
+from . import state as _state
 from . import style
 from . import keywords
 from . import proc_api
 
 _m_state = None
 
-
 def _init_state():
-
+    print('init-state triggered')
     from . import state
     from . import defaults
 
@@ -26,8 +27,16 @@ def _init_state():
         from . import remote
         remote.start_application(defaults.default_options['port'])
 
+    _plot.initialize(_m_state)
+    if _m_state._gui_backend == 'jupyter':
+        _m_state.is_interactive = True
+        from . import terminal
+        if not terminal.legacy_shell:
+            from .terminal import logging_util
+            logging_util.set_jupyter()
 
-def _get_state():
+
+def _get_state() -> _state.GlobalState:
     if _m_state is None:
         _init_state()
     
@@ -36,6 +45,13 @@ def _get_state():
 def _translate_style(kwargs):
     return dict(((keywords.style_alias.get(s, s), v) for s, v in kwargs.items()))
 
+
+def _return_draw(ret):
+    if _m_state and _m_state.is_interactive:
+        draw()
+    return ret
+
+
 # Figure/subfigure management
 
 def figure(name=None, **kwargs):
@@ -43,7 +59,7 @@ def figure(name=None, **kwargs):
 
     Kwargs: Will be passed to figure styles.
     """
-    return _get_state().figure(name, **kwargs)
+    return _return_draw(_get_state().figure(name, **kwargs))
 
 
 def subfigure(*args, **kwargs):
@@ -54,7 +70,7 @@ def subfigure(*args, **kwargs):
     - subfig (a, b, idx) => split, set current subfigure to idx
     - subfig (desc) => same as (a, b, idx). e.g., subfigure (111) is same as subfigure (1, 1, 1)
     """
-    return proc_api.subfigure(_get_state(), *args, **kwargs)
+    return _return_draw(proc_api.subfigure(_get_state(), *args, **kwargs))
 
 subplot = subfigure
 
@@ -74,7 +90,7 @@ def remove_figure(name):
     """
     return _get_state().remove_figure(name)
 
-def get_element(name, multiple=False):
+def get_element(name:str, multiple:bool=False):
     """ Get element by name. If `multiple` is set, return all that matches, otherwise return one of them.
     """
     return _get_state().get_element_by_name(name, multiple=multiple)
@@ -118,7 +134,7 @@ def plot(*args, **kwargs):
         `element.DataLine' instance.
     """
     from . import dataview
-    return dataview.api.plot_line(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.plot_line(_get_state(), *args, **_translate_style(kwargs)))
 
 
 def bar(*args, **kwargs):
@@ -135,7 +151,7 @@ def bar(*args, **kwargs):
         `element.Bar' instance.
     """
     from . import dataview
-    return dataview.api.plot_bar(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.plot_bar(_get_state(), *args, **_translate_style(kwargs)))
 
 
 def hist(*args, **kwargs):
@@ -152,7 +168,7 @@ def hist(*args, **kwargs):
         `element.Bar' instance.
     """
     from . import dataview
-    return dataview.api.plot_hist(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.plot_hist(_get_state(), *args, **_translate_style(kwargs)))
 
 
 def fill(*args, **kwargs):
@@ -168,7 +184,7 @@ def fill(*args, **kwargs):
         `element.Polygon` instance.
     """
     from . import dataview
-    return dataview.api.fill(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.fill(_get_state(), *args, **_translate_style(kwargs)))
     
 area = fill
 
@@ -188,7 +204,7 @@ def fill_between(*args, **kwargs):
         `element.Polygon` instance.
     """
     from . import dataview
-    return dataview.api.fill_between(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.fill_between(_get_state(), *args, **_translate_style(kwargs)))
     
 def fill_betweenx(*args, **kwargs):
     """ Fill a region where vertices share y values.
@@ -206,7 +222,7 @@ def fill_betweenx(*args, **kwargs):
         `element.Polygon` instance.
     """
     from . import dataview
-    return dataview.api.fill_betweenx(_get_state(), *args, **_translate_style(kwargs))
+    return _return_draw(dataview.api.fill_betweenx(_get_state(), *args, **_translate_style(kwargs)))
 
 
 def line(target1, target2, **kwargs):
@@ -219,7 +235,7 @@ def line(target1, target2, **kwargs):
     Returns:
         `element.DrawLine` instance.
     """
-    return proc_api.line(_get_state(), startpos=target1, endpos=target2, style_dict=_translate_style(kwargs))
+    return _return_draw(proc_api.line(_get_state(), startpos=target1, endpos=target2, style_dict=_translate_style(kwargs)))
 
 def hlines(y, xmin, xmax, **kwargs):
     """ Draw a series horitonzal lines from different y. Equivalent to `[line((xmin, y1), (xmax, y1)) for y1 in y]`
@@ -256,7 +272,7 @@ def text(content, pos, **kwargs):
     Returns:
         `element.Text` instance.
     """
-    return proc_api.text(_get_state(), text=content, pos=pos, style_dict=_translate_style(kwargs))
+    return _return_draw(proc_api.text(_get_state(), text=content, pos=pos, style_dict=_translate_style(kwargs)))
 
 # Other element management
 
@@ -264,11 +280,13 @@ def xlabel(text:str, **kwargs):
     """ Set xlabel. Additional args will be passed to style properties.
     """
     _m_state.gca().axes[0].label.update_style(text=text, **_translate_style(kwargs))
+    return _return_draw(None)
 
 def ylabel(text:str, **kwargs):
     """ Set ylabel. Additional args will be passed to style properties.
     """
     _m_state.gca().axes[1].label.update_style(text=text, **_translate_style(kwargs))
+    return _return_draw(None)
 
 def _set_lim(axis, *args, **kwargs):
     if kwargs:
@@ -282,6 +300,7 @@ def _set_lim(axis, *args, **kwargs):
     else:
         raise ValueError("Invalid args")
     _get_state().gca().axes[axis].update_style(range=(v0, v1, kwargs.get('step', None)))
+    return _return_draw(None)
     
 def xlim(*args, **kwargs):
     """ Set range of x coord. Can be called as `xlim(a, b)`, `xlim([a, b])`, `xlim(left=a)` or `xlim(right=b)`.
@@ -303,11 +322,13 @@ def xscale(value):
     """ Set scale of xaxis. value can be 'linear' or 'log'.
     """
     _m_state.gca().axes[0].update_style(scale=value)
+    return _return_draw(None)
 
 def yscale(value):
     """ Set scale of yaxis. value can be 'linear' or 'log'.
     """
     _m_state.gca().axes[1].update_style(scale=value)
+    return _return_draw(None)
 
 def tick_params(axis='both', **kwargs):
     """ Get/Set tick properties. 
@@ -320,6 +341,7 @@ def tick_params(axis='both', **kwargs):
     if kwargs:
         for a in axis_idx:
             _m_state.gca().axes[a].tick.update_style(_translate_style(kwargs))
+        return _return_draw(None)
     else:
         if len(axis_idx) == 2:
             return [_m_state.gca().axes[a].tick.export_style() for a in axis]
@@ -340,17 +362,19 @@ def legend(*args, **kwargs):
     if len(args) == 2:
         args = [args[1], args[0]]
     proc_api.legend(_get_state(), *args, **kwargs)
-    return _m_state.gca().legend
+    return _return_draw(_m_state.gca().legend)
 
 def title(text:str, **kwargs):
     """ Set subfigure title. Additional args will be passed as style properties of `Text`.
     """
     _m_state.gca().title.update_style(text=text, **_translate_style(kwargs))
+    return _return_draw(None)
 
 def suptitle(text:str, **kwargs):
     """ Set figure title. Additional args will be passed as style properties of `Text`.
     """
     _m_state.gcf().title.update_style(text=text, **_translate_style(kwargs))
+    return _return_draw(None)
 
 def grid(on:bool=True, axis:str='both', **kwargs):
     """ Set grid visibility on certain axis. 
@@ -362,6 +386,7 @@ def grid(on:bool=True, axis:str='both', **kwargs):
     axis_idx = {'x':(0,), 'y':(1,), 'both':(0, 1)}[axis]
     for a in axis_idx:
         _m_state.gca().axes[a].grid.update_style(visible=bool(on), **_translate_style(kwargs))
+    return _return_draw(None) if axis_idx else None
 
 def group(group_desc:str):
     """ Set lines groupid and colorid from a short description (e.g. aabbcc). See doc.md#group for details.
@@ -369,7 +394,7 @@ def group(group_desc:str):
     from . import group_proc
     _get_state().gca().update_style(group=group_proc.parse_group(group_desc))
     _get_state().refresh_style()
-
+    return _return_draw(None)
 
 def palette(palette_name:str, target:str='line', target_style:str='color'):
     """ Set the palette (colormap) for certain objects. See doc.md#set for details.
@@ -379,17 +404,27 @@ def palette(palette_name:str, target:str='line', target_style:str='color'):
         target: the name of target, can be 'line', 'bar', 'point', 'polygon' or 'drawline'.
         target_style: can be 'color', 'facecolor', 'edgecolor' or 'linecolor' as long as the element supports it.
     """
-    return proc_api.palette(_get_state(), palette_name, target, target_style)
+    return _return_draw(proc_api.palette(_get_state(), palette_name, target, target_style))
 
 set_cmap = palette
 
 def clear():
     """ Clear the current subfigure.
     """
-    _m_state.gca().clear()
+    _get_state().gca().clear()
+    return _return_draw(None)
 
 cla = clear
 
+def holdon():
+    """ Shorthand for gca().update_style(hold=True)
+    """
+    _m_state.gca().update_style(hold=True)
+
+def holdoff():
+    """ Shorthand for gca().update_style(hold=False)
+    """
+    _m_state.gca().update_style(hold=False)
 
 # IO
 
@@ -406,10 +441,8 @@ def show():
     """
     if not _m_state:
         return
-    _plot.initialize(_m_state)
     _m_state.refresh_style(True)
     _process.process_display(_m_state)
-    _plot.finalize(_m_state)
 
 
 def save(filename):
@@ -428,6 +461,137 @@ def load_file(filename, *args, **kwargs):
 
     return model.load_file(filename, *args, **kwargs)
 
-def pause(interval):
+load = load_file
+
+def pause(second):
+    """ Shorthand for time.sleep(second)
+    """
     from time import sleep
-    sleep(interval)
+    sleep(second)
+
+def ion():
+    """ Entering interactive mode.
+    """
+    if _m_state:
+        _plot.finalize(_m_state)
+    _get_state().is_interactive = True
+    _plot.initialize(_get_state())
+
+def ioff():
+    """ Leaving interactive mode.
+    """
+    if _m_state:
+        _plot.finalize(_m_state)
+    _get_state().is_interactive = False
+    _plot.initialize(_get_state())
+
+# settings
+
+def set_option(**kwargs):
+    """ Shorthand for state.set_option(name, val).
+    Raises error when the option key does not exist.
+    """
+    for opt, arg in kwargs.items():
+        if opt in _get_state().options:
+            _get_state().options[opt] = arg
+        else:
+            raise ValueError('Option %s does not exist' % opt)
+
+def set_default(element_type:str, **kwargs):
+    """ Set the default style for element. element_type must be a typename (e.g. figure, line, etc.)
+    """
+    _get_state().update_default_stylesheet(style.css.StyleSheet(
+        style.css.TypeSelector(element_type),
+        _translate_style(kwargs)
+    ))
+
+
+def set_style(selector, **kwargs):
+    """ Set the future style for elements.
+    selector may be a string or list of strings. It can be either an element name
+        or a typename, or elements with specific attributes ("name:attr=val").
+    kwargs will be the styles.
+    """
+    from .style_proc import parse_single_style_selector
+
+    if isinstance(selector, str):
+        selection = [parse_single_style_selector(selector)]
+    else:
+        selection = [parse_single_style_selector(s) for s in selector]
+    
+    _get_state().update_local_stylesheet(style.css.StyleSheet(
+        selection, _translate_style(kwargs)))
+    
+
+# processing
+
+def evaluate(command):
+    """ Evaluate a command using line's internal processor.
+    command: str/list[str]. 
+    Note that the command will be split using python's internal split() function, so
+        if your input has many spaces, please use list as input, or use execute() instead.
+    Also note that a command may execute external codes using system() functions, 
+        please considering modifying "safety=0" in option.ini if it is not desired.
+    """
+    from . import vm
+    from . import history
+
+    if _get_state()._vmhost is None:
+        _get_state()._vmhost = vm.VMHost()
+    if _m_state._history is None:
+        _m_state._history = history.DummyHistoryManager()
+
+    if isinstance(command, str):
+        tokens = _collections.deque(command.split())
+    else:
+        tokens = _collections.deque(command)
+
+    return _process.parse_and_process_command(tokens, _get_state())
+
+
+def execute(command):
+    """ Execute a command/list of command using line's internal parser+processor.
+    command: str/list[str].
+    Since a parser will be built and read the string, execute() will be slower than evaluate().
+    Note that any changes will be directly written to the current state.
+    Also note that a command may execute external codes using system() functions, 
+        please considering modifying "safety=0" in option.ini if it is not desired.
+    """
+    from .terminal import CMDHandler
+    from . import history
+    
+    if _session._instance is None:
+        _session._instance = _session.Session(enable_history=False)
+        _session._instance.state = _get_state()
+        if not _m_state._vmhost:
+            _m_state._vmhost = _session.get_vm()
+        if not _m_state._history:
+            _m_state._history = history.DummyHistoryManager()
+    _m_state._vmhost.deset_error()
+
+    handler = CMDHandler(_get_state(), False)
+    return handler.proc_lines(
+        [command] if isinstance(command, str) else command, refresh_backend=False)
+
+
+def load_script(filename:str):
+    """ Execute a external script.
+    Note that any changes will be directly written to the current state.
+    Also note that a command may execute external codes using system() functions, 
+        please considering modifying "safety=0" in option.ini if it is not desired.
+    """
+    from .terminal import CMDHandler
+    from . import history
+
+    if _session._instance is None:
+        _session._instance = _session.Session(enable_history=False)
+        _session._instance.state = _get_state()
+        if not _m_state._vmhost:
+            _m_state._vmhost = _session.get_vm()
+        if not _m_state._history:
+            _m_state._history = history.DummyHistoryManager()
+    _m_state._vmhost.deset_error()
+
+    handler = CMDHandler(_get_state(), False)
+    return handler.proc_source(filename)
+

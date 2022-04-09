@@ -327,14 +327,14 @@ def parse_and_process_command(tokens, m_state:state.GlobalState):
         if not m_state.is_interactive:
             warn('"export" is expected to work in interactive mode')
         else:
-        filename = get_token(m_tokens)
+            filename = get_token(m_tokens)
             try:
-        with open(filename, 'w') as foutput:
+                with open(filename, 'w') as foutput:
                     foutput.write('\n'.join(m_state._vmhost.code_history))
             except (FileNotFoundError, IOError) as e:
                 raise LineProcessError('Writting file failed because %s' % e)
             finally:
-        print('Exported to %s' % filename)
+                print('Exported to %s' % filename)
 
     elif command == 'pause':
         interval = stof(get_token(m_tokens))

@@ -194,3 +194,10 @@ Bugs fixes:
 - Fixed a bug in "set style figure" complaining "no figure is created".
 - Fixed a bug that when list properties, e.g. margin, padding or spacing cannot be set separately in one command.
 - Line should be able to function properly in MacOS, by setting "mpl-backend=macos" in option.ini.
+
+04-09-22
+---
+Support for jupyter notebook.
+Added several API functions: holdon(), holdoff(), set_option(), set_default(), set_style(), evaluate(), execute(), load_script().
+Fixed an indentation error in process.py.
+Fixed an error in dataview.do_plot which does not read state's holding status.

@@ -206,6 +206,8 @@ class CMDHandler:
                 asyncio.set_event_loop(pt.eventloop.new_eventloop_with_inputhook(hook))
             elif not is_silent:
                 logger.warn('Warning: The GUI backend failed to start. Displaying images are disabled')
+            if s._gui_backend != 'jupyter':
+                logging_util.set_jupyter()
 
         ret = 0
         emittor = l.run(fetch_next_line)
