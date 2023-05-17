@@ -406,7 +406,7 @@ def show():
     """
     if not _m_state:
         return
-    _plot.initialize(_m_state)
+    _plot.initialize(_m_state, silent=True)
     _m_state.refresh_style(True)
     _process.process_display(_m_state)
     _plot.finalize(_m_state)

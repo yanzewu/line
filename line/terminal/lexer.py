@@ -87,7 +87,10 @@ class Lexer:
                 self.reduce()
             elif c in ' \t':
                 self.reduce()
-                self.inc()
+                if self.state == Lexer.STATE_BRACKET:
+                    self.shift()
+                else:
+                    self.inc()
             elif c in ',=:' and self.state != Lexer.STATE_BRACKET:
                 self.reduce()
                 self.tokens.append(c)

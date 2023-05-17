@@ -133,7 +133,10 @@ def get_options(arg_list:list, handler=parse_general, group_repeated:bool=False)
             else:
                 ret[opt] = v
         else:
-            ret[opt] = v
+            if group_repeated:
+                ret[opt] = [v]
+            else:
+                ret[opt] = v
 
     for a in arg_list:
         if isinstance(a, str) and a.startswith('--') and (len(a) < 3 or a[2].isalpha()):

@@ -66,6 +66,7 @@ class VMHost:
             'argc': lambda: self.stack[-1].argc(),
             'option': lambda x=None, y=None: self.stack[-1].get_option(x,y),
             'cond': lambda x,a,b: a if x else b,
+            'get':self.get_variable,
             'set':self.set_variable,
             'exist': self.exist_variable,
             }
